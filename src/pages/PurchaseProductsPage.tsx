@@ -3,7 +3,7 @@ import { Plus, CheckCircle2 } from 'lucide-react';
 import AppShell from '../components/AppShell';
 import { useInventory } from '../context/InventoryContext';
 import { hasFirebaseConfig } from '../lib/firebase';
-import { loadCollection, saveDocument } from '../lib/firestore';
+import { loadCollection, saveDocument, deleteDocument } from '../lib/firestore';
 import { formatMVR } from '../lib/mvr';
 import type { PurchaseOrder, RFQItem } from '../types';
 
@@ -17,6 +17,27 @@ const defaultPurchase: Partial<PurchaseOrder> = {
   date: new Date().toISOString().slice(0, 10),
 };
 
+const unitOptions = [
+  'pcs',
+  'kg',
+  'g',
+  'ltr',
+  'ml',
+  'box',
+  'pack',
+  'dozen',
+  'bottle',
+  'bag',
+  'sheet',
+  'slice',
+  'packet',
+  'roll',
+  'piece',
+  'carton',
+  'case',
+  'jar',
+];
+
 export default function PurchaseProductsPage() {
   const { inventory, addInventoryItem, updateInventoryItem } = useInventory();
   const [orders, setOrders] = useState<PurchaseOrder[]>([]);
@@ -25,7 +46,7 @@ export default function PurchaseProductsPage() {
   const [rfqItems, setRfqItems] = useState<RFQItem[]>([]);
   const [rfqForm, setRfqForm] = useState<Partial<RFQItem>>({ productName: '', quantity: 1, unit: 'pcs' });
 
-  const addRfqItem = () => {
+  const addRfqItem = async () => {
     const productName = rfqForm.productName?.trim();
     if (!productName || !rfqForm.quantity || rfqForm.quantity <= 0) return;
 
@@ -40,16 +61,53 @@ export default function PurchaseProductsPage() {
 
     setRfqItems((current) => [newItem, ...current]);
     setRfqForm({ productName: '', quantity: 1, unit: 'pcs' });
+
+    if (hasFirebaseConfig) {
+      try {
+        await saveDocument('rfqItems', newItem.id, newItem);
+      } catch (error) {
+        console.error('Failed to save RFQ item to Firestore:', error);
+      }
+    }
   };
 
-  const updateRfqItem = (id: string, field: keyof RFQItem, value: string | number) => {
+  const persistRfqItem = async (item: RFQItem) => {
+    if (!hasFirebaseConfig) return;
+    try {
+      await saveDocument('rfqItems', item.id, item);
+    } catch (error) {
+      console.error('Failed to persist RFQ item to Firestore:', error);
+    }
+  };
+
+  const removeRfqItem = async (id: string) => {
+    setRfqItems((current) => current.filter((item) => item.id !== id));
+    if (hasFirebaseConfig) {
+      try {
+        await deleteDocument('rfqItems', id);
+      } catch (error) {
+        console.error('Failed to delete RFQ item from Firestore:', error);
+      }
+    }
+  };
+
+  const updateRfqItem = async (id: string, field: keyof RFQItem, value: string | number) => {
     setRfqItems((current) =>
       current.map((item) => (item.id === id ? { ...item, [field]: value } : item)),
     );
+
+    if (!hasFirebaseConfig) return;
+
+    const existingItem = rfqItems.find((item) => item.id === id);
+    if (existingItem) {
+      const updatedItem = { ...existingItem, [field]: value };
+      await persistRfqItem(updatedItem);
+    }
   };
 
-  const removeRfqItem = (id: string) => {
-    setRfqItems((current) => current.filter((item) => item.id !== id));
+  const saveAllRfqItems = async () => {
+    if (!hasFirebaseConfig) return;
+    await Promise.all(rfqItems.map((item) => persistRfqItem(item)));
   };
 
   const canGeneratePurchaseOrders = rfqItems.length > 0 && rfqItems.every(
@@ -92,14 +150,20 @@ export default function PurchaseProductsPage() {
       return;
     }
 
-    loadCollection<PurchaseOrder>('purchaseOrders', [])
-      .then((loadedOrders) => {
+    Promise.all([
+      loadCollection<PurchaseOrder>('purchaseOrders', []),
+      loadCollection<RFQItem>('rfqItems', []),
+    ])
+      .then(([loadedOrders, loadedRfqItems]) => {
         if (loadedOrders.length) {
           setOrders(loadedOrders);
         }
+        if (loadedRfqItems.length) {
+          setRfqItems(loadedRfqItems);
+        }
       })
       .catch((error) => {
-        console.error('Failed to load purchase orders from Firestore:', error);
+        console.error('Failed to load purchase orders or RFQ items from Firestore:', error);
       });
   }, []);
 
@@ -211,19 +275,37 @@ export default function PurchaseProductsPage() {
     <AppShell title="Purchase products">
       <div className="grid gap-6 xl:grid-cols-[0.85fr_1fr]">
         <section className="rounded-3xl border border-slate-800 bg-slate-950/70 p-6 shadow-2xl shadow-slate-950/20">
-          <div className="mb-6 flex items-center justify-between gap-3">
+          <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <div>
               <h3 className="text-xl font-semibold text-white">RFQ item list</h3>
-              <p className="text-sm text-slate-400">Build a request-for-quotation list first, then assign shop prices and generate purchase orders.</p>
+              <p className="text-sm text-slate-400">Build a request-for-quotation list first, then assign shop prices and generate purchase orders later.</p>
             </div>
-            <button
-              type="button"
-              onClick={addRfqItem}
-              disabled={!products.length || !rfqForm.productName?.trim()}
-              className="inline-flex items-center gap-2 rounded-3xl bg-violet-600 px-4 py-3 text-sm font-semibold text-white hover:bg-violet-500 disabled:cursor-not-allowed disabled:opacity-50"
-            >
-              <Plus className="h-4 w-4" /> Add RFQ item
-            </button>
+            <div className="flex flex-wrap items-center gap-3">
+              <button
+                type="button"
+                onClick={addRfqItem}
+                disabled={!products.length || !rfqForm.productName?.trim()}
+                className="inline-flex items-center gap-2 rounded-3xl bg-violet-600 px-4 py-3 text-sm font-semibold text-white hover:bg-violet-500 disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                <Plus className="h-4 w-4" /> Add RFQ item
+              </button>
+              <button
+                type="button"
+                onClick={saveAllRfqItems}
+                disabled={!rfqItems.length}
+                className="inline-flex items-center gap-2 rounded-3xl bg-slate-800 px-4 py-3 text-sm font-semibold text-slate-200 hover:bg-slate-700 disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                Save RFQ list
+              </button>
+              <button
+                type="button"
+                onClick={() => window.print()}
+                disabled={!rfqItems.length}
+                className="inline-flex items-center gap-2 rounded-3xl bg-slate-700 px-4 py-3 text-sm font-semibold text-slate-100 hover:bg-slate-600 disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                Print RFQ
+              </button>
+            </div>
           </div>
 
           <div className="grid gap-4 sm:grid-cols-3">
@@ -260,14 +342,18 @@ export default function PurchaseProductsPage() {
             </label>
             <label className="block text-sm text-slate-300">
               Unit
-              <input
+              <select
                 value={rfqForm.unit}
                 onChange={(event) => setRfqForm((current) => ({
                   ...current,
                   unit: event.target.value,
                 }))}
                 className="mt-2 w-full rounded-3xl border border-slate-700 bg-slate-950 px-4 py-3 text-slate-100 outline-none"
-              />
+              >
+                {unitOptions.map((unit) => (
+                  <option key={unit} value={unit}>{unit}</option>
+                ))}
+              </select>
             </label>
           </div>
 
@@ -414,11 +500,15 @@ export default function PurchaseProductsPage() {
               </label>
               <label className="block text-sm text-slate-300">
                 Unit
-                <input
+                <select
                   value={form.unit}
                   onChange={(event) => setForm((current) => ({ ...current, unit: event.target.value }))}
                   className="mt-2 w-full rounded-3xl border border-slate-700 bg-slate-950 px-4 py-3 text-slate-100 outline-none"
-                />
+                >
+                  {unitOptions.map((unit) => (
+                    <option key={unit} value={unit}>{unit}</option>
+                  ))}
+                </select>
               </label>
               <label className="block text-sm text-slate-300">
                 Unit cost (MVR)

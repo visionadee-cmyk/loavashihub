@@ -1,12 +1,13 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Pen, Trash2, Check } from 'lucide-react';
 import AppShell from '../components/AppShell';
-import { demoCategories, demoProducts } from '../data/demo';
 import { formatMVR } from '../lib/mvr';
 import { hasFirebaseConfig } from '../lib/firebase';
 import { deleteDocument, loadCollection, saveDocument } from '../lib/firestore';
 import { uploadImageToCloudinary, isCloudinaryEnabled } from '../lib/cloudinary';
 import type { MenuItem } from '../types';
+
+const CATEGORY_OPTIONS = ['Coffee', 'Tea', 'Burger', 'Pizza', 'Dessert', 'Juice', 'Others'] as const;
 
 const initialForm: Partial<MenuItem> = {
   name: '',
@@ -17,16 +18,15 @@ const initialForm: Partial<MenuItem> = {
 };
 
 export default function MenuManagement() {
-  const [products, setProducts] = useState<MenuItem[]>(demoProducts);
+  const [products, setProducts] = useState<MenuItem[]>([]);
   const [form, setForm] = useState<Partial<MenuItem>>(initialForm);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
-  const [uploadingImage, setUploadingImage] = useState(false);
   const [uploadError, setUploadError] = useState<string | null>(null);
 
   const recentItems = useMemo(() => products.slice(0, 6), [products]);
   const categoryOptions = useMemo(
-    () => (products.length ? Array.from(new Set(products.map((item) => item.category))) : demoCategories.map((category) => category.title)),
+    () => (products.length ? Array.from(new Set(products.map((item) => item.category))) : Array.from(CATEGORY_OPTIONS)),
     [products],
   );
 
@@ -54,7 +54,6 @@ export default function MenuManagement() {
       return;
     }
 
-    setUploadingImage(true);
     setUploadError(null);
 
     try {
@@ -62,8 +61,6 @@ export default function MenuManagement() {
       setForm((current) => ({ ...current, image: imageUrl }));
     } catch (error) {
       setUploadError((error as Error).message);
-    } finally {
-      setUploadingImage(false);
     }
   };
 

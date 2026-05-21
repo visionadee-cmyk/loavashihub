@@ -2,8 +2,8 @@ import { useEffect, useMemo, useState } from 'react';
 import { Plus, RefreshCcw, Zap } from 'lucide-react';
 import AppShell from '../components/AppShell';
 import { hasFirebaseConfig } from '../lib/firebase';
-import { loadCollection, saveDocument, deleteDocument } from '../lib/firestore';
-import { demoRecipes } from '../data/demo';
+import { loadCollection, saveDocument } from '../lib/firestore';
+
 import { useInventory } from '../context/InventoryContext';
 import type { Recipe, RecipeIngredient } from '../types';
 
@@ -19,7 +19,7 @@ export default function RecipeManagement() {
   const [recipes, setRecipes] = useState<Recipe[]>([]);
   useEffect(() => {
     if (!hasFirebaseConfig) {
-      setRecipes(demoRecipes);
+      setRecipes([]);
       return;
     }
 
@@ -28,7 +28,7 @@ export default function RecipeManagement() {
       .catch((error) => console.error('Failed to load recipes from Firestore:', error));
   }, []);
   const [form, setForm] = useState<Partial<Recipe>>(initialRecipe);
-  const [ingredient, setIngredient] = useState<Partial<RecipeIngredient>>({ inventoryId: inventory[0]?.id ?? '', quantity: 1, unit: inventory[0]?.unit ?? 'pcs', name: inventory[0]?.name ?? '' });
+  const [ingredient, setIngredient] = useState<Partial<RecipeIngredient>>({ inventoryId: '', quantity: 1, unit: 'pcs', name: '' });
 
   const stockWarning = useMemo(
     () => inventory.filter((item) => item.quantity <= item.lowStock).length,

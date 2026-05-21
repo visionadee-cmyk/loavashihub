@@ -1,7 +1,6 @@
 import { createContext, useContext, useEffect, useMemo, useState, type ReactNode } from 'react';
 import { collection, deleteDoc, doc, getDocs, setDoc } from 'firebase/firestore';
 import { db, hasFirebaseConfig } from '../lib/firebase';
-import { demoInventory } from '../data/demo';
 import type { InventoryItem, Recipe } from '../types';
 
 interface InventoryContextState {
@@ -19,27 +18,34 @@ export function InventoryProvider({ children }: { children: ReactNode }) {
   const [inventory, setInventory] = useState<InventoryItem[]>([]);
 
   useEffect(() => {
-    if (!hasFirebaseConfig || !db) {
-      setInventory(demoInventory);
+    const firestore = db;
+    if (!hasFirebaseConfig || !firestore) {
+      setInventory([]);
       return;
     }
 
     const loadInventory = async () => {
-      const snapshot = await getDocs(collection(db, 'inventory'));
-      setInventory(snapshot.docs.map((record) => ({ id: record.id, ...(record.data() as InventoryItem) })));
+      const snapshot = await getDocs(collection(firestore, 'inventory'));
+      setInventory(
+        snapshot.docs.map((record) => {
+          const data = record.data() as Omit<InventoryItem, 'id'>;
+          return { ...data, id: record.id };
+        }),
+      );
     };
 
     loadInventory().catch((error) => {
       console.error('Failed to load inventory from Firestore:', error);
-      setInventory(demoInventory);
+      setInventory([]);
     });
   }, []);
 
   const persistInventoryItem = async (item: InventoryItem) => {
-    if (!hasFirebaseConfig || !db) {
+    const firestore = db;
+    if (!hasFirebaseConfig || !firestore) {
       return;
     }
-    await setDoc(doc(db, 'inventory', item.id), item);
+    await setDoc(doc(firestore, 'inventory', item.id), item);
   };
 
   const addInventoryItem = (item: InventoryItem) => {
@@ -54,8 +60,9 @@ export function InventoryProvider({ children }: { children: ReactNode }) {
 
   const deleteInventoryItem = (id: string) => {
     setInventory((current) => current.filter((entry) => entry.id !== id));
-    if (hasFirebaseConfig && db) {
-      deleteDoc(doc(db, 'inventory', id)).catch((error) => console.error('Failed to delete inventory item:', error));
+    const firestore = db;
+    if (hasFirebaseConfig && firestore) {
+      deleteDoc(doc(firestore, 'inventory', id)).catch((error) => console.error('Failed to delete inventory item:', error));
     }
   };
 
@@ -79,9 +86,10 @@ export function InventoryProvider({ children }: { children: ReactNode }) {
     });
 
     setInventory(updatedInventory);
-    if (hasFirebaseConfig && db) {
+    const firestore = db;
+    if (hasFirebaseConfig && firestore) {
       updatedInventory.forEach((item) => {
-        setDoc(doc(db, 'inventory', item.id), item).catch((error) => {
+        setDoc(doc(firestore, 'inventory', item.id), item).catch((error) => {
           console.error('Failed to persist inventory adjustment:', error);
         });
       });

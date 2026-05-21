@@ -2,28 +2,10 @@ import { useEffect, useMemo, useState } from 'react';
 import { motion } from 'framer-motion';
 import { Search, Plus, Minus, Printer } from 'lucide-react';
 import AppShell from '../components/AppShell';
-import { demoProducts, demoTables } from '../data/demo';
 import { formatMVR } from '../lib/mvr';
 import { hasFirebaseConfig } from '../lib/firebase';
-import { loadCollection } from '../lib/firestore';
-import type { Bill, MenuItem, OrderItem } from '../types';
-
-const initialBills: Bill[] = [
-  {
-    id: 'bill-a',
-    title: 'Bill A',
-    table: 'Table 1',
-    items: [],
-    orderType: 'Dine-in',
-    discount: 0,
-    tax: 5,
-    status: 'Pending',
-    notes: '',
-    paymentMethod: 'Cash',
-    paymentStatus: 'Unpaid',
-    createdAt: new Date().toISOString(),
-  },
-];
+import { deleteDocument, loadCollection, saveDocument } from '../lib/firestore';
+import type { Bill, MenuItem, OrderItem, TableItem } from '../types';
 
 const orderTypes = ['Dine-in', 'Takeaway', 'Delivery'] as const;
 const paymentMethods = ['Cash', 'Card', 'Bank transfer'] as const;
@@ -39,31 +21,80 @@ function buildItem(product: MenuItem): OrderItem {
   };
 }
 
+function createEmptyBill(tableName: string): Bill {
+  return {
+    id: `bill-${Date.now()}`,
+    title: 'New bill',
+    table: tableName,
+    items: [],
+    orderType: 'Dine-in',
+    discount: 0,
+    tax: 5,
+    status: 'Pending',
+    notes: '',
+    paymentMethod: 'Cash',
+    paymentStatus: 'Unpaid',
+    createdAt: new Date().toISOString(),
+  };
+}
+
 export default function POSPage() {
   const [search, setSearch] = useState('');
   const [activeCategory, setActiveCategory] = useState('All');
-  const [products, setProducts] = useState<MenuItem[]>(demoProducts);
-  const [bills, setBills] = useState<Bill[]>(initialBills);
-  const [activeBillId, setActiveBillId] = useState(initialBills[0].id);
+  const [products, setProducts] = useState<MenuItem[]>([]);
+  const [tables, setTables] = useState<TableItem[]>([]);
+  const [bills, setBills] = useState<Bill[]>([]);
+  const [activeBillId, setActiveBillId] = useState<string>('');
   const [selectedBillIds, setSelectedBillIds] = useState<string[]>([]);
 
-  useEffect(() => {
-    if (!hasFirebaseConfig) {
-      return;
+  const persistBill = async (bill: Bill) => {
+    if (!hasFirebaseConfig) return;
+    try {
+      await saveDocument('bills', bill.id, bill);
+    } catch (error) {
+      console.error('Failed to persist bill:', error);
     }
+  };
 
-    loadCollection<MenuItem>('menuItems', [])
-      .then((items) => {
-        if (items.length) {
-          setProducts(items);
+  useEffect(() => {
+    if (!hasFirebaseConfig) return;
+
+    const loadData = async () => {
+      try {
+        const [loadedProducts, loadedTables, loadedBills] = await Promise.all([
+          loadCollection<MenuItem>('menuItems', []),
+          loadCollection<TableItem>('tables', []),
+          loadCollection<Bill>('bills', []),
+        ]);
+
+        setProducts(loadedProducts);
+        setTables(loadedTables);
+
+        if (loadedBills.length) {
+          setBills(loadedBills);
+          setActiveBillId(loadedBills[0].id);
+          return;
         }
-      })
-      .catch((error) => {
-        console.error('Failed to load menu items from Firestore:', error);
-      });
+
+        const defaultTable = loadedTables[0]?.name ?? 'Table 1';
+        const newBill = createEmptyBill(defaultTable);
+        setBills([newBill]);
+        setActiveBillId(newBill.id);
+      } catch (error) {
+        console.error('Failed to load POS data from Firestore:', error);
+      }
+    };
+
+    loadData();
   }, []);
 
-  const activeBill = bills.find((bill) => bill.id === activeBillId) ?? bills[0];
+  const activeBill = bills.find((bill) => bill.id === activeBillId) ?? bills[0] ?? createEmptyBill(tables[0]?.name ?? 'Table 1');
+
+  const updateBill = (updatedBill: Bill) => {
+    setBills((current) => current.map((bill) => (bill.id === updatedBill.id ? updatedBill : bill)));
+    persistBill(updatedBill);
+  };
+
   const occupiedTableCount = useMemo(() => new Set(bills.map((bill) => bill.table)).size, [bills]);
   const completedTableCount = useMemo(
     () => new Set(bills.filter((bill) => bill.status === 'Served').map((bill) => bill.table)).size,
@@ -79,11 +110,9 @@ export default function POSPage() {
   };
 
   const markBillServed = (billId: string) => {
-    setBills((current) =>
-      current.map((bill) =>
-        bill.id === billId ? { ...bill, status: 'Served', paymentStatus: 'Paid' } : bill,
-      ),
-    );
+    const bill = bills.find((entry) => entry.id === billId);
+    if (!bill) return;
+    updateBill({ ...bill, status: 'Served', paymentStatus: 'Paid' });
   };
 
   const filteredProducts = products.filter((product) => {
@@ -100,60 +129,43 @@ export default function POSPage() {
   const total = subtotal + taxAmount - activeBill.discount;
 
   const handleAddItem = (product: MenuItem) => {
-    setBills((current) =>
-      current.map((bill) => {
-        if (bill.id !== activeBill.id) return bill;
-        const existingItem = bill.items.find((item) => item.productId === product.id);
-        if (existingItem) {
-          return {
-            ...bill,
-            items: bill.items.map((item) =>
-              item.productId === product.id ? { ...item, quantity: item.quantity + 1 } : item,
-            ),
-          };
-        }
-        return { ...bill, items: [...bill.items, buildItem(product)] };
-      }),
-    );
+    const updatedBill = {
+      ...activeBill,
+      items: activeBill.items.some((item) => item.productId === product.id)
+        ? activeBill.items.map((item) =>
+            item.productId === product.id ? { ...item, quantity: item.quantity + 1 } : item,
+          )
+        : [...activeBill.items, buildItem(product)],
+    };
+
+    updateBill(updatedBill);
   };
 
   const updateQuantity = (itemId: string, amount: number) => {
-    setBills((current) =>
-      current.map((bill) => {
-        if (bill.id !== activeBill.id) return bill;
-        return {
-          ...bill,
-          items: bill.items
-            .map((item) =>
-              item.id === itemId ? { ...item, quantity: Math.max(1, item.quantity + amount) } : item,
-            )
-            .filter((item) => item.quantity > 0),
-        };
-      }),
-    );
+    const updatedBill = {
+      ...activeBill,
+      items: activeBill.items
+        .map((item) =>
+          item.id === itemId ? { ...item, quantity: Math.max(1, item.quantity + amount) } : item,
+        )
+        .filter((item) => item.quantity > 0),
+    };
+    updateBill(updatedBill);
   };
 
   const createBill = () => {
     const nextId = `bill-${Date.now()}`;
     const newBill: Bill = {
+      ...createEmptyBill(tables[0]?.name ?? 'Table 1'),
       id: nextId,
       title: `Bill ${String.fromCharCode(65 + bills.length)}`,
-      table: demoTables[0].name,
-      items: [],
-      orderType: 'Dine-in',
-      discount: 0,
-      tax: 5,
-      status: 'Pending',
-      notes: '',
-      paymentMethod: 'Cash',
-      paymentStatus: 'Unpaid',
-      createdAt: new Date().toISOString(),
     };
     setBills((current) => [...current, newBill]);
     setActiveBillId(nextId);
+    persistBill(newBill);
   };
 
-  const mergeSelectedBills = () => {
+  const mergeSelectedBills = async () => {
     if (!canMergeSelected) {
       window.alert('Select exactly two bills to merge.');
       return;
@@ -178,30 +190,24 @@ export default function POSPage() {
     );
     setActiveBillId(target.id);
     setSelectedBillIds([]);
+    updateBill(updatedTarget);
+    await deleteDocument('bills', source.id);
   };
 
   const splitBill = (itemId: string) => {
     const itemToSplit = activeBill.items.find((item) => item.id === itemId);
     if (!itemToSplit || itemToSplit.quantity < 2) return;
-    setBills((current) =>
-      current.map((bill) =>
-        bill.id === activeBill.id
-          ? {
-              ...bill,
-              items: bill.items.map((item) =>
-                item.id === itemId ? { ...item, quantity: item.quantity - 1 } : item,
-              ),
-            }
-          : bill,
-      ),
-    );
-    const splitBillId = `bill-${Date.now()}`;
-    const splitItem = { ...itemToSplit, id: `${itemToSplit.id}-split`, quantity: 1 };
-    setBills((current) => [
-      ...current,
-      {
+      const updatedOriginal = {
+        ...activeBill,
+        items: activeBill.items.map((item) =>
+          item.id === itemId ? { ...item, quantity: item.quantity - 1 } : item,
+        ),
+      };
+      const splitBillId = `bill-${Date.now()}`;
+      const splitItem = { ...itemToSplit, id: `${itemToSplit.id}-split`, quantity: 1 };
+      const splitBill: Bill = {
         id: splitBillId,
-        title: `Bill ${String.fromCharCode(65 + current.length)}`,
+        title: `Bill ${String.fromCharCode(65 + bills.length)}`,
         table: activeBill.table,
         items: [splitItem],
         orderType: activeBill.orderType,
@@ -212,9 +218,12 @@ export default function POSPage() {
         paymentMethod: activeBill.paymentMethod,
         paymentStatus: 'Unpaid',
         createdAt: new Date().toISOString(),
-      },
-    ]);
-  };
+      };
+
+      setBills((current) => [...current.map((bill) => (bill.id === activeBill.id ? updatedOriginal : bill)), splitBill]);
+      updateBill(updatedOriginal);
+      persistBill(splitBill);
+    };
 
   const printReceipt = () => {
     const receiptContent = `
@@ -414,13 +423,11 @@ export default function POSPage() {
                     value={activeBill.table}
                     onChange={(event) => {
                       const table = event.target.value;
-                      setBills((current) =>
-                        current.map((bill) => (bill.id === activeBill.id ? { ...bill, table } : bill)),
-                      );
+                      updateBill({ ...activeBill, table });
                     }}
                     className="mt-2 w-full rounded-3xl border border-slate-700 bg-slate-950 px-4 py-3 text-slate-100 outline-none"
                   >
-                    {demoTables.map((table) => (
+                    {tables.map((table) => (
                       <option key={table.id} value={table.name}>{table.name}</option>
                     ))}
                   </select>
@@ -432,9 +439,7 @@ export default function POSPage() {
                     value={activeBill.orderType}
                     onChange={(event) => {
                       const orderType = event.target.value as typeof orderTypes[number];
-                      setBills((current) =>
-                        current.map((bill) => (bill.id === activeBill.id ? { ...bill, orderType } : bill)),
-                      );
+                      updateBill({ ...activeBill, orderType });
                     }}
                     className="mt-2 w-full rounded-3xl border border-slate-700 bg-slate-950 px-4 py-3 text-slate-100 outline-none"
                   >
@@ -449,11 +454,7 @@ export default function POSPage() {
                 Notes for kitchen
                 <textarea
                   value={activeBill.notes}
-                  onChange={(event) =>
-                    setBills((current) =>
-                      current.map((bill) => (bill.id === activeBill.id ? { ...bill, notes: event.target.value } : bill)),
-                    )
-                  }
+                  onChange={(event) => updateBill({ ...activeBill, notes: event.target.value })}
                   className="mt-2 h-24 w-full rounded-3xl border border-slate-700 bg-slate-950 px-4 py-3 text-slate-100 outline-none"
                   placeholder="Add order instructions"
                 />

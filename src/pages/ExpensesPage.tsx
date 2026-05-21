@@ -1,10 +1,9 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Plus, Receipt, Upload } from 'lucide-react';
 import AppShell from '../components/AppShell';
-import { demoExpenses, demoMonthlyExpenses } from '../data/demo';
 import { formatMVR } from '../lib/mvr';
 import { hasFirebaseConfig } from '../lib/firebase';
-import { loadCollection, saveDocument, deleteDocument } from '../lib/firestore';
+import { loadCollection, saveDocument } from '../lib/firestore';
 import type { Expense, MonthlyExpense } from '../types';
 
 const defaultExpense: Partial<Expense> = {
@@ -28,8 +27,8 @@ export default function ExpensesPage() {
 
   useEffect(() => {
     if (!hasFirebaseConfig) {
-      setExpenses(demoExpenses);
-      setMonthlyExpenses(demoMonthlyExpenses);
+      setExpenses([]);
+      setMonthlyExpenses([]);
       return;
     }
 

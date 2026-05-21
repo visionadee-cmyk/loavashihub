@@ -87,6 +87,20 @@ Once installed, the app caches the shell and manifest assets. If the device goes
 - If the PWA icon does not appear, make sure `public/logo.jpeg` is available and referenced in `manifest.json`.
 - If receipt printing does not work, confirm your browser supports `window.print()`.
 
+## Deployment
+
+This app can be deployed automatically through Vercel when connected to GitHub.
+
+1. Push this repository to GitHub.
+2. Connect the repository to Vercel.
+3. In the Vercel dashboard, add the required Firebase and Cloudinary environment variables.
+4. Use the build command:
+   ```bash
+   npm run build
+   ```
+
+Vercel will deploy a preview or production build automatically whenever code is pushed to the connected branch.
+
 ## Support
 
 For testing or deployment questions, use the development commands:

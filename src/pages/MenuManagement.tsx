@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Pen, Trash2, Check } from 'lucide-react';
+import { Pen, Trash2, Check, Search, X } from 'lucide-react';
 import AppShell from '../components/AppShell';
 import { formatMVR } from '../lib/mvr';
 import { hasFirebaseConfig } from '../lib/firebase';
@@ -25,13 +25,24 @@ export default function MenuManagement() {
   const [loading, setLoading] = useState(false);
   const [uploadError, setUploadError] = useState<string | null>(null);
   const [saveError, setSaveError] = useState<string | null>(null);
+  const [searchQuery, setSearchQuery] = useState<string>('');
+  const [filterCategory, setFilterCategory] = useState<string>('All');
   const firebaseMissing = !hasFirebaseConfig;
 
-  const recentItems = useMemo(() => products.slice(0, 6), [products]);
   const categoryOptions = useMemo(
     () => (products.length ? Array.from(new Set(products.map((item) => item.category))) : Array.from(CATEGORY_OPTIONS)),
     [products],
   );
+
+  const filteredProducts = useMemo(() => {
+    return products.filter((product) => {
+      const matchesSearch = product.name.toLowerCase().includes(searchQuery.toLowerCase())
+        || product.description.toLowerCase().includes(searchQuery.toLowerCase())
+        || product.category.toLowerCase().includes(searchQuery.toLowerCase());
+      const matchesCategory = filterCategory === 'All' || product.category === filterCategory;
+      return matchesSearch && matchesCategory;
+    });
+  }, [products, searchQuery, filterCategory]);
 
   useEffect(() => {
     if (!hasFirebaseConfig) {
@@ -141,7 +152,7 @@ export default function MenuManagement() {
             </div>
             {firebaseMissing ? (
               <div className="rounded-3xl border border-amber-400 bg-amber-500/10 px-4 py-3 text-sm text-amber-200">
-                Firestore is not configured in this deployment. New menu items will only be stored locally in the browser.
+                Firestore is not configured in this deployment. Menu item changes will not sync to POS or persist across reloads unless Firebase is configured.
               </div>
             ) : null}
             {saveError ? (
@@ -149,14 +160,6 @@ export default function MenuManagement() {
                 {saveError}
               </div>
             ) : null}
-            <button
-              onClick={handleSave}
-              disabled={loading}
-              className="inline-flex items-center gap-2 rounded-3xl bg-violet-600 px-4 py-3 text-sm font-semibold text-white hover:bg-violet-500 disabled:cursor-not-allowed disabled:opacity-50"
-            >
-              <Check className="h-4 w-4" />
-              {editingId ? 'Save item' : 'Add item'}
-            </button>
           </div>
 
           <div className="grid gap-4">
@@ -248,16 +251,52 @@ export default function MenuManagement() {
 
         <section className="space-y-6">
           <div className="rounded-3xl border border-slate-800 bg-slate-950/70 p-6 shadow-2xl shadow-slate-950/20">
-            <div className="mb-4 flex items-center justify-between gap-3">
-              <div>
-                <h3 className="text-xl font-semibold text-white">Latest menu items</h3>
-                <p className="text-sm text-slate-400">Manage item details and pricing at a glance.</p>
+            <div className="mb-6 flex flex-col gap-4">
+              <div className="flex items-center justify-between gap-3">
+                <div>
+                  <h3 className="text-xl font-semibold text-white">Menu items</h3>
+                  <p className="text-sm text-slate-400">Manage all products and update menu item details, images, and pricing.</p>
+                </div>
+                <span className="rounded-full bg-slate-800 px-3 py-1 text-xs uppercase tracking-[0.24em] text-slate-300">{filteredProducts.length} of {products.length}</span>
               </div>
-              <span className="rounded-full bg-slate-800 px-3 py-1 text-xs uppercase tracking-[0.24em] text-slate-300">{products.length} items</span>
+              
+              <div className="flex flex-col gap-3 sm:flex-row">
+                <div className="relative flex-1">
+                  <Search className="absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-slate-500" />
+                  <input
+                    type="text"
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    placeholder="Search by name, category, or description..."
+                    className="w-full rounded-3xl border border-slate-700 bg-slate-900 py-3 pl-10 pr-4 text-sm text-slate-100 outline-none transition focus:border-violet-500"
+                  />
+                  {searchQuery && (
+                    <button
+                      type="button"
+                      onClick={() => setSearchQuery('')}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-300"
+                    >
+                      <X className="h-5 w-5" />
+                    </button>
+                  )}
+                </div>
+
+                <select
+                  value={filterCategory}
+                  onChange={(e) => setFilterCategory(e.target.value)}
+                  className="rounded-3xl border border-slate-700 bg-slate-900 px-4 py-3 text-sm text-slate-100 outline-none transition focus:border-violet-500 sm:min-w-[180px]"
+                >
+                  <option value="All">All categories</option>
+                  {categoryOptions.map((category) => (
+                    <option key={category} value={category}>{category}</option>
+                  ))}
+                </select>
+              </div>
             </div>
 
             <div className="grid gap-4">
-              {recentItems.map((product) => (
+              {filteredProducts.length > 0 ? (
+                filteredProducts.map((product) => (
                 <div key={product.id} className="rounded-3xl border border-slate-800 bg-slate-900 p-4">
                   <div className="flex items-center gap-4">
                     <div className="h-16 w-16 overflow-hidden rounded-3xl bg-slate-800">
@@ -292,7 +331,12 @@ export default function MenuManagement() {
                     </button>
                   </div>
                 </div>
-              ))}
+              ))
+              ) : (
+                <div className="rounded-3xl border border-slate-700 bg-slate-900/50 p-8 text-center">
+                  <p className="text-slate-400">No menu items found. Try adjusting your search or filters.</p>
+                </div>
+              )}
             </div>
           </div>
         </section>

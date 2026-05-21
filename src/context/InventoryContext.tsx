@@ -8,8 +8,8 @@ interface InventoryContextState {
   addInventoryItem: (item: InventoryItem) => void;
   updateInventoryItem: (item: InventoryItem) => void;
   deleteInventoryItem: (id: string) => void;
-  adjustInventoryByRecipe: (recipe: Recipe) => boolean;
-  hasSufficientInventory: (recipe: Recipe) => boolean;
+  adjustInventoryByRecipe: (recipe: Recipe, quantity?: number) => boolean;
+  hasSufficientInventory: (recipe: Recipe, quantity?: number) => boolean;
 }
 
 const InventoryContext = createContext<InventoryContextState | undefined>(undefined);
@@ -68,21 +68,21 @@ export function InventoryProvider({ children }: { children: ReactNode }) {
 
   const hasSufficientInventory = useMemo(
     () =>
-      (recipe: Recipe) =>
+      (recipe: Recipe, quantity = 1) =>
         recipe.ingredients.every((ingredient) => {
           const stock = inventory.find((item) => item.id === ingredient.inventoryId);
-          return stock ? stock.quantity >= ingredient.quantity : false;
+          return stock ? stock.quantity >= ingredient.quantity * quantity : false;
         }),
     [inventory],
   );
 
-  const adjustInventoryByRecipe = (recipe: Recipe) => {
-    if (!hasSufficientInventory(recipe)) return false;
+  const adjustInventoryByRecipe = (recipe: Recipe, quantity = 1) => {
+    if (!hasSufficientInventory(recipe, quantity)) return false;
 
     const updatedInventory = inventory.map((item) => {
       const ingredient = recipe.ingredients.find((entry) => entry.inventoryId === item.id);
       if (!ingredient) return item;
-      return { ...item, quantity: Math.max(0, item.quantity - ingredient.quantity) };
+      return { ...item, quantity: Math.max(0, item.quantity - ingredient.quantity * quantity) };
     });
 
     setInventory(updatedInventory);

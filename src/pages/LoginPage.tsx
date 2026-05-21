@@ -8,8 +8,8 @@ const logo = '/logo.jpeg';
 import type { UserRole } from '../types';
 
 const defaultCredentials = {
-  admin: { email: '', password: '' },
-  cashier: { email: '', password: '' },
+  admin: { email: 'admin@loavashi.com', password: 'Admin123' },
+  cashier: { email: 'cashier@loavashi.com', password: 'Cashier123' },
 };
 
 export default function LoginPage() {

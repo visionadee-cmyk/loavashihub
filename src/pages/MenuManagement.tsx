@@ -13,6 +13,7 @@ const initialForm: Partial<MenuItem> = {
   name: '',
   category: 'Coffee',
   price: 0,
+  costPrice: 0,
   description: '',
   image: 'https://images.unsplash.com/photo-1509042239860-f550ce710b93?auto=format&fit=crop&w=700&q=80',
 };
@@ -77,6 +78,7 @@ export default function MenuManagement() {
       name: form.name?.trim() || 'New item',
       category: form.category || 'Others',
       price: Number(form.price) || 0,
+      costPrice: Number(form.costPrice) || 0,
       description: form.description || 'Fresh product.',
       image: form.image ?? initialForm.image ?? '',
     };
@@ -119,7 +121,7 @@ export default function MenuManagement() {
   };
 
   return (
-    <AppShell title="Menu management">
+    <AppShell title="Menu items management">
       <div className="grid gap-6 xl:grid-cols-[0.85fr_0.95fr]">
         <section className="rounded-3xl border border-slate-800 bg-slate-950/70 p-6 shadow-2xl shadow-slate-950/20">
           <div className="mb-5 flex flex-col gap-3">
@@ -167,7 +169,7 @@ export default function MenuManagement() {
                 placeholder="Espresso, Burger, Juice"
               />
             </label>
-            <div className="grid gap-4 sm:grid-cols-2">
+            <div className="grid gap-4 sm:grid-cols-3">
               <label className="block text-sm text-slate-300">
                 Category
                 <select
@@ -181,7 +183,17 @@ export default function MenuManagement() {
                 </select>
               </label>
               <label className="block text-sm text-slate-300">
-                Price (MVR)
+                Cost price (MVR)
+                <input
+                  type="number"
+                  value={form.costPrice}
+                  onChange={(event) => setForm((current) => ({ ...current, costPrice: Number(event.target.value) }))}
+                  className="mt-2 w-full rounded-3xl border border-slate-700 bg-slate-950 px-4 py-3 text-slate-100 outline-none"
+                  placeholder="0"
+                />
+              </label>
+              <label className="block text-sm text-slate-300">
+                Selling price (MVR)
                 <input
                   type="number"
                   value={form.price}
@@ -256,6 +268,7 @@ export default function MenuManagement() {
                         <div>
                           <p className="text-base font-semibold text-white">{product.name}</p>
                           <p className="text-sm text-slate-400">{product.category}</p>
+                          <p className="text-sm text-slate-400">Cost: {formatMVR(product.costPrice ?? 0)}</p>
                         </div>
                         <span className="text-sm font-semibold text-violet-300">{formatMVR(product.price)}</span>
                       </div>

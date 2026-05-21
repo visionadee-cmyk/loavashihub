@@ -17,6 +17,7 @@ export interface MenuItem {
   name: string;
   category: string;
   price: number;
+  costPrice?: number;
   description: string;
   image: string;
 }
@@ -51,6 +52,7 @@ export interface InventoryItem {
 export interface PurchaseOrder {
   id: string;
   productName: string;
+  menuItemId?: string;
   vendor: string;
   quantity: number;
   unit: string;
@@ -114,6 +116,7 @@ export interface OrderItem {
 
 export interface Bill {
   id: string;
+  billNumber?: string;
   title: string;
   table: string;
   items: OrderItem[];

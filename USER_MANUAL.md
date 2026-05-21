@@ -27,8 +27,11 @@ Loavashi Hub is a cafe and restaurant management system with separate admin and 
 The POS page allows cashiers and admins to:
 
 - create and manage bills
+- save bills for later
+- complete payments and mark bills as served
+- review open and completed invoices
 - merge bills
-- print receipts
+- print receipts with invoice numbers and cafe details
 - view table occupancy and order status counts
 
 ## Inventory Management

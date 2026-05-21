@@ -1,0 +1,345 @@
+[
+  {
+    "title": "Bis Keemiya",
+    "ingredients": [
+      { "name": "All-purpose flour", "quantity": 2.0, "unit": "cups" },
+      { "name": "Vegetable oil", "quantity": 3.0, "unit": "tbsp" },
+      { "name": "Salt", "quantity": 0.5, "unit": "tsp" },
+      { "name": "Warm water", "quantity": 0.5, "unit": "cup" },
+      { "name": "Canned tuna in oil", "quantity": 185.0, "unit": "g" },
+      { "name": "White cabbage", "quantity": 2.0, "unit": "cups" },
+      { "name": "Red onion", "quantity": 1.0, "unit": "large" },
+      { "name": "Green chillies", "quantity": 2.0, "unit": "pieces" },
+      { "name": "Hard-boiled eggs", "quantity": 3.0, "unit": "pieces" },
+      { "name": "Black pepper powder", "quantity": 0.5, "unit": "tsp" },
+      { "name": "Lime juice", "quantity": 1.0, "unit": "tbsp" },
+      { "name": "Frying oil", "quantity": 500.0, "unit": "ml" }
+    ]
+  },
+  {
+    "title": "Kulhi Boakibaa",
+    "ingredients": [
+      { "name": "Parboiled rice", "quantity": 2.0, "unit": "cups" },
+      { "name": "Fresh grated coconut", "quantity": 1.5, "unit": "cups" },
+      { "name": "Canned tuna", "quantity": 370.0, "unit": "g" },
+      { "name": "Red onions", "quantity": 2.0, "unit": "large" },
+      { "name": "Green chillies", "quantity": 2.0, "unit": "pieces" },
+      { "name": "Fresh curry leaves", "quantity": 12.0, "unit": "pieces" },
+      { "name": "Ginger paste", "quantity": 2.0, "unit": "tsp" },
+      { "name": "Turmeric powder", "quantity": 0.5, "unit": "tsp" },
+      { "name": "Lime juice", "quantity": 2.5, "unit": "tbsp" },
+      { "name": "Salt", "quantity": 1.5, "unit": "tsp" }
+    ]
+  },
+  {
+    "title": "Riha Folhi",
+    "ingredients": [
+      { "name": "All-purpose flour", "quantity": 1.5, "unit": "cups" },
+      { "name": "Egg", "quantity": 1.0, "unit": "piece" },
+      { "name": "Water", "quantity": 1.5, "unit": "cups" },
+      { "name": "Turmeric powder", "quantity": 0.5, "unit": "tsp" },
+      { "name": "Salt", "quantity": 0.75, "unit": "tsp" },
+      { "name": "Canned tuna", "quantity": 185.0, "unit": "g" },
+      { "name": "Red onion", "quantity": 1.0, "unit": "large" },
+      { "name": "Green chilli", "quantity": 0.5, "unit": "piece" },
+      { "name": "Curry leaves", "quantity": 10.0, "unit": "pieces" },
+      { "name": "Black pepper", "quantity": 0.5, "unit": "tsp" },
+      { "name": "Lime juice", "quantity": 1.0, "unit": "tbsp" }
+    ]
+  },
+  {
+    "title": "Mas Roshi",
+    "ingredients": [
+      { "name": "All-purpose flour", "quantity": 2.0, "unit": "cups" },
+      { "name": "Grated coconut", "quantity": 1.0, "unit": "cup" },
+      { "name": "Warm water", "quantity": 0.75, "unit": "cup" },
+      { "name": "Smoked tuna (Valhoamas)", "quantity": 150.0, "unit": "g" },
+      { "name": "Red onion", "quantity": 1.0, "unit": "medium" },
+      { "name": "Green chilli", "quantity": 1.0, "unit": "piece" },
+      { "name": "Lime juice", "quantity": 1.5, "unit": "tbsp" },
+      { "name": "Salt", "quantity": 1.0, "unit": "tsp" }
+    ]
+  },
+  {
+    "title": "Bajiya",
+    "ingredients": [
+      { "name": "All-purpose flour", "quantity": 2.0, "unit": "cups" },
+      { "name": "Vegetable oil", "quantity": 4.0, "unit": "tbsp" },
+      { "name": "Smoked tuna", "quantity": 200.0, "unit": "g" },
+      { "name": "Red onions", "quantity": 3.0, "unit": "medium" },
+      { "name": "Curry powder", "quantity": 1.5, "unit": "tsp" },
+      { "name": "Curry leaves", "quantity": 15.0, "unit": "pieces" },
+      { "name": "Lime juice", "quantity": 1.0, "unit": "tbsp" },
+      { "name": "Frying oil", "quantity": 500.0, "unit": "ml" }
+    ]
+  },
+  {
+    "title": "Gulha",
+    "ingredients": [
+      { "name": "All-purpose flour", "quantity": 1.5, "unit": "cups" },
+      { "name": "Grated coconut", "quantity": 1.0, "unit": "cup" },
+      { "name": "Smoked tuna", "quantity": 150.0, "unit": "g" },
+      { "name": "Red onion", "quantity": 1.0, "unit": "medium" },
+      { "name": "Scotch bonnet pepper", "quantity": 0.5, "unit": "piece" },
+      { "name": "Lime juice", "quantity": 2.0, "unit": "tbsp" },
+      { "name": "Salt", "quantity": 1.0, "unit": "tsp" },
+      { "name": "Frying oil", "quantity": 400.0, "unit": "ml" }
+    ]
+  },
+  {
+    "title": "Mas Kavaabu",
+    "ingredients": [
+      { "name": "Smoked tuna", "quantity": 150.0, "unit": "g" },
+      { "name": "Ground rice", "quantity": 0.5, "unit": "cup" },
+      { "name": "Grated coconut", "quantity": 0.5, "unit": "cup" },
+      { "name": "Yellow lentils (Mugu)", "quantity": 0.25, "unit": "cup" },
+      { "name": "Red onion", "quantity": 1.0, "unit": "medium" },
+      { "name": "Green chilli", "quantity": 1.0, "unit": "piece" },
+      { "name": "Turmeric powder", "quantity": 0.25, "unit": "tsp" },
+      { "name": "Frying oil", "quantity": 400.0, "unit": "ml" }
+    ]
+  },
+  {
+    "title": "Kavaabu",
+    "ingredients": [
+      { "name": "Canned tuna", "quantity": 185.0, "unit": "g" },
+      { "name": "Boiled potatoes", "quantity": 2.0, "unit": "medium" },
+      { "name": "Red onion", "quantity": 1.0, "unit": "medium" },
+      { "name": "Green chilli", "quantity": 1.0, "unit": "piece" },
+      { "name": "Black pepper", "quantity": 0.5, "unit": "tsp" },
+      { "name": "Lime juice", "quantity": 1.0, "unit": "tbsp" },
+      { "name": "Frying oil", "quantity": 400.0, "unit": "ml" }
+    ]
+  },
+  {
+    "title": "Havaadhulee Bis",
+    "ingredients": [
+      { "name": "All-purpose flour", "quantity": 2.0, "unit": "cups" },
+      { "name": "Canned tuna", "quantity": 185.0, "unit": "g" },
+      { "name": "Red onion", "quantity": 1.5, "unit": "medium" },
+      { "name": "Maldivian curry paste", "quantity": 2.0, "unit": "tbsp" },
+      { "name": "Thick coconut milk", "quantity": 2.0, "unit": "tbsp" },
+      { "name": "Curry leaves", "quantity": 10.0, "unit": "pieces" },
+      { "name": "Vegetable oil", "quantity": 1.0, "unit": "tbsp" }
+    ]
+  },
+  {
+    "title": "Mas Banas",
+    "ingredients": [
+      { "name": "All-purpose flour", "quantity": 3.0, "unit": "cups" },
+      { "name": "Instant yeast", "quantity": 1.5, "unit": "tsp" },
+      { "name": "Butter", "quantity": 30.0, "unit": "g" },
+      { "name": "Warm milk", "quantity": 1.0, "unit": "cup" },
+      { "name": "Canned tuna", "quantity": 185.0, "unit": "g" },
+      { "name": "Potatoes", "quantity": 2.0, "unit": "small" },
+      { "name": "Curry powder", "quantity": 1.0, "unit": "tsp" },
+      { "name": "Red onion", "quantity": 1.0, "unit": "medium" }
+    ]
+  },
+  {
+    "title": "Tuna Patties",
+    "ingredients": [
+      { "name": "Canned tuna", "quantity": 185.0, "unit": "g" },
+      { "name": "Boiled potatoes", "quantity": 2.0, "unit": "medium" },
+      { "name": "Red onion", "quantity": 1.0, "unit": "medium" },
+      { "name": "All-purpose flour", "quantity": 2.0, "unit": "cups" },
+      { "name": "Butter", "quantity": 4.0, "unit": "tbsp" },
+      { "name": "Egg", "quantity": 1.0, "unit": "piece" },
+      { "name": "Frying oil", "quantity": 400.0, "unit": "ml" }
+    ]
+  },
+  {
+    "title": "Sausage Rolls",
+    "ingredients": [
+      { "name": "Puff pastry sheets", "quantity": 2.0, "unit": "pieces" },
+      { "name": "Chicken sausages", "quantity": 6.0, "unit": "pieces" },
+      { "name": "Egg", "quantity": 1.0, "unit": "piece" },
+      { "name": "Black pepper", "quantity": 0.25, "unit": "tsp" }
+    ]
+  },
+  {
+    "title": "Egg Puffs",
+    "ingredients": [
+      { "name": "Puff pastry sheets", "quantity": 2.0, "unit": "pieces" },
+      { "name": "Hard-boiled eggs", "quantity": 4.0, "unit": "pieces" },
+      { "name": "Tomato paste", "quantity": 2.0, "unit": "tbsp" },
+      { "name": "Red onion", "quantity": 1.0, "unit": "medium" },
+      { "name": "Egg", "quantity": 1.0, "unit": "piece" }
+    ]
+  },
+  {
+    "title": "Cutlets",
+    "ingredients": [
+      { "name": "Canned tuna", "quantity": 185.0, "unit": "g" },
+      { "name": "Boiled potatoes", "quantity": 2.0, "unit": "medium" },
+      { "name": "Red onion", "quantity": 1.0, "unit": "medium" },
+      { "name": "Egg", "quantity": 1.0, "unit": "piece" },
+      { "name": "Breadcrumbs", "quantity": 1.0, "unit": "cup" },
+      { "name": "Frying oil", "quantity": 500.0, "unit": "ml" }
+    ]
+  },
+  {
+    "title": "Fathafolhi",
+    "ingredients": [
+      { "name": "Ground rice", "quantity": 1.5, "unit": "cups" },
+      { "name": "Smoked tuna", "quantity": 100.0, "unit": "g" },
+      { "name": "Grated coconut", "quantity": 0.5, "unit": "cup" },
+      { "name": "Moringa leaves", "quantity": 0.5, "unit": "cup" },
+      { "name": "Red onion", "quantity": 1.0, "unit": "small" },
+      { "name": "Vegetable oil", "quantity": 2.0, "unit": "tbsp" }
+    ]
+  },
+  {
+    "title": "Mugu Boakibaa",
+    "ingredients": [
+      { "name": "Yellow lentils (Mugu)", "quantity": 1.0, "unit": "cup" },
+      { "name": "Smoked tuna", "quantity": 100.0, "unit": "g" },
+      { "name": "Grated coconut", "quantity": 0.5, "unit": "cup" },
+      { "name": "Red onion", "quantity": 1.0, "unit": "medium" },
+      { "name": "Green chilli", "quantity": 1.0, "unit": "piece" },
+      { "name": "Turmeric powder", "quantity": 0.25, "unit": "tsp" }
+    ]
+  },
+  {
+    "title": "Handulu Kavaabu",
+    "ingredients": [
+      { "name": "White rice", "quantity": 1.0, "unit": "cup" },
+      { "name": "Smoked tuna", "quantity": 150.0, "unit": "g" },
+      { "name": "Grated coconut", "quantity": 0.5, "unit": "cup" },
+      { "name": "Red onion", "quantity": 1.0, "unit": "medium" },
+      { "name": "Curry leaves", "quantity": 10.0, "unit": "pieces" },
+      { "name": "Frying oil", "quantity": 400.0, "unit": "ml" }
+    ]
+  },
+  {
+    "title": "Geri Mas Patties",
+    "ingredients": [
+      { "name": "Minced beef", "quantity": 200.0, "unit": "g" },
+      { "name": "All-purpose flour", "quantity": 2.0, "unit": "cups" },
+      { "name": "Red onion", "quantity": 1.0, "unit": "medium" },
+      { "name": "Garlic cloves", "quantity": 2.0, "unit": "pieces" },
+      { "name": "Pepper powder", "quantity": 0.5, "unit": "tsp" },
+      { "name": "Frying oil", "quantity": 400.0, "unit": "ml" }
+    ]
+  },
+  {
+    "title": "Chana Puri",
+    "ingredients": [
+      { "name": "Atta flour", "quantity": 1.5, "unit": "cups" },
+      { "name": "Dried chickpeas", "quantity": 0.5, "unit": "cup" },
+      { "name": "Red onion", "quantity": 1.0, "unit": "medium" },
+      { "name": "Curry powder", "quantity": 1.0, "unit": "tsp" },
+      { "name": "Frying oil", "quantity": 500.0, "unit": "ml" }
+    ]
+  },
+  {
+    "title": "Bambukeyo Kavaabu",
+    "ingredients": [
+      { "name": "Breadfruit", "quantity": 1.0, "unit": "cup" },
+      { "name": "Smoked tuna", "quantity": 100.0, "unit": "g" },
+      { "name": "Grated coconut", "quantity": 0.5, "unit": "cup" },
+      { "name": "Red onion", "quantity": 1.0, "unit": "medium" },
+      { "name": "Frying oil", "quantity": 400.0, "unit": "ml" }
+    ]
+  },
+  {
+    "title": "Fish Balls",
+    "ingredients": [
+      { "name": "Fresh minced tuna", "quantity": 250.0, "unit": "g" },
+      { "name": "Red onion", "quantity": 1.0, "unit": "small" },
+      { "name": "Cornstarch", "quantity": 1.0, "unit": "tbsp" },
+      { "name": "Pepper powder", "quantity": 0.5, "unit": "tsp" },
+      { "name": "Frying oil", "quantity": 400.0, "unit": "ml" }
+    ]
+  },
+  {
+    "title": "Kulhi Folhi",
+    "ingredients": [
+      { "name": "All-purpose flour", "quantity": 1.0, "unit": "cup" },
+      { "name": "Grated coconut", "quantity": 0.5, "unit": "cup" },
+      { "name": "Smoked tuna", "quantity": 75.0, "unit": "g" },
+      { "name": "Red onion", "quantity": 1.0, "unit": "small" },
+      { "name": "Turmeric powder", "quantity": 0.25, "unit": "tsp" }
+    ]
+  },
+  {
+    "title": "Paan Boakibaa",
+    "ingredients": [
+      { "name": "Sandwich bread slices", "quantity": 6.0, "unit": "pieces" },
+      { "name": "Canned tuna", "quantity": 185.0, "unit": "g" },
+      { "name": "Grated coconut", "quantity": 0.5, "unit": "cup" },
+      { "name": "Red onion", "quantity": 1.5, "unit": "medium" },
+      { "name": "Eggs", "quantity": 2.0, "unit": "pieces" }
+    ]
+  },
+  {
+    "title": "Aluvi Kavaabu",
+    "ingredients": [
+      { "name": "Potatoes", "quantity": 3.0, "unit": "medium" },
+      { "name": "Smoked tuna", "quantity": 100.0, "unit": "g" },
+      { "name": "Red onion", "quantity": 1.0, "unit": "medium" },
+      { "name": "Dried red chillies", "quantity": 4.0, "unit": "pieces" },
+      { "name": "Frying oil", "quantity": 400.0, "unit": "ml" }
+    ]
+  },
+  {
+    "title": "Kattala Kavaabu",
+    "ingredients": [
+      { "name": "Sweet potatoes", "quantity": 2.0, "unit": "large" },
+      { "name": "Smoked tuna", "quantity": 100.0, "unit": "g" },
+      { "name": "Red onion", "quantity": 1.0, "unit": "medium" },
+      { "name": "Lime juice", "quantity": 1.0, "unit": "tbsp" },
+      { "name": "Frying oil", "quantity": 400.0, "unit": "ml" }
+    ]
+  },
+  {
+    "title": "Samosa (Maldivian Style)",
+    "ingredients": [
+      { "name": "Samosa pastry sheets", "quantity": 15.0, "unit": "pieces" },
+      { "name": "Smoked tuna", "quantity": 150.0, "unit": "g" },
+      { "name": "Red onions", "quantity": 3.0, "unit": "medium" },
+      { "name": "Chilli powder", "quantity": 1.0, "unit": "tsp" },
+      { "name": "Frying oil", "quantity": 500.0, "unit": "ml" }
+    ]
+  },
+  {
+    "title": "Baraboa Kavaabu",
+    "ingredients": [
+      { "name": "Pumpkin", "quantity": 1.0, "unit": "cup" },
+      { "name": "Smoked tuna", "quantity": 100.0, "unit": "g" },
+      { "name": "Grated coconut", "quantity": 0.5, "unit": "cup" },
+      { "name": "Red onion", "quantity": 1.0, "unit": "medium" },
+      { "name": "Frying oil", "quantity": 400.0, "unit": "ml" }
+    ]
+  },
+  {
+    "title": "Mas Paan",
+    "ingredients": [
+      { "name": "All-purpose flour", "quantity": 3.0, "unit": "cups" },
+      { "name": "Yeast", "quantity": 1.5, "unit": "tsp" },
+      { "name": "Canned tuna", "quantity": 185.0, "unit": "g" },
+      { "name": "Red onions", "quantity": 2.0, "unit": "medium" },
+      { "name": "Milk", "quantity": 1.0, "unit": "cup" }
+    ]
+  },
+  {
+    "title": "Kulhi Roshi",
+    "ingredients": [
+      { "name": "All-purpose flour", "quantity": 2.0, "unit": "cups" },
+      { "name": "Smoked tuna powder", "quantity": 4.0, "unit": "tbsp" },
+      { "name": "Chilli powder", "quantity": 1.0, "unit": "tsp" },
+      { "name": "Water", "quantity": 0.66, "unit": "cup" },
+      { "name": "Frying oil", "quantity": 400.0, "unit": "ml" }
+    ]
+  },
+  {
+    "title": "Dhollu Gulha",
+    "ingredients": [
+      { "name": "All-purpose flour", "quantity": 1.5, "unit": "cups" },
+      { "name": "Smoked tuna", "quantity": 150.0, "unit": "g" },
+      { "name": "Grated coconut", "quantity": 1.0, "unit": "cup" },
+      { "name": "Red onion", "quantity": 1.0, "unit": "medium" },
+      { "name": "Frying oil", "quantity": 500.0, "unit": "ml" }
+    ]
+  }
+]

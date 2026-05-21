@@ -1,0 +1,170 @@
+[
+  {
+    "title": "Fresh Orange Juice",
+    "ingredients": [
+      { "name": "Fresh oranges", "quantity": 3.0, "unit": "pieces" },
+      { "name": "Sugar syrup", "quantity": 1.0, "unit": "tbsp" },
+      { "name": "Ice cubes", "quantity": 4.0, "unit": "pieces" }
+    ]
+  },
+  {
+    "title": "Fresh Mango Juice",
+    "ingredients": [
+      { "name": "Ripe mango pulp", "quantity": 1.0, "unit": "cup" },
+      { "name": "Water", "quantity": 0.5, "unit": "cup" },
+      { "name": "Sugar", "quantity": 1.0, "unit": "tbsp" },
+      { "name": "Ice cubes", "quantity": 4.0, "unit": "pieces" }
+    ]
+  },
+  {
+    "title": "Fresh Pineapple Juice",
+    "ingredients": [
+      { "name": "Diced pineapple", "quantity": 1.5, "unit": "cups" },
+      { "name": "Water", "quantity": 0.25, "unit": "cup" },
+      { "name": "Sugar syrup", "quantity": 1.5, "unit": "tbsp" },
+      { "name": "Ice cubes", "quantity": 4.0, "unit": "pieces" }
+    ]
+  },
+  {
+    "title": "Fresh Watermelon Juice",
+    "ingredients": [
+      { "name": "Diced watermelon", "quantity": 2.0, "unit": "cups" },
+      { "name": "Lime juice", "quantity": 0.5, "unit": "tsp" },
+      { "name": "Ice cubes", "quantity": 3.0, "unit": "pieces" }
+    ]
+  },
+  {
+    "title": "Lime Mint Cooler",
+    "ingredients": [
+      { "name": "Fresh lime juice", "quantity": 2.0, "unit": "tbsp" },
+      { "name": "Fresh mint leaves", "quantity": 8.0, "unit": "pieces" },
+      { "name": "Sugar syrup", "quantity": 2.0, "unit": "tbsp" },
+      { "name": "Water", "quantity": 1.0, "unit": "cup" },
+      { "name": "Ice cubes", "quantity": 5.0, "unit": "pieces" }
+    ]
+  },
+  {
+    "title": "Mango Coconut Smoothie",
+    "ingredients": [
+      { "name": "Ripe mango pulp", "quantity": 1.0, "unit": "cup" },
+      { "name": "Thick coconut milk", "quantity": 0.5, "unit": "cup" },
+      { "name": "Yogurt", "quantity": 0.25, "unit": "cup" },
+      { "name": "Honey", "quantity": 1.0, "unit": "tbsp" },
+      { "name": "Ice cubes", "quantity": 4.0, "unit": "pieces" }
+    ]
+  },
+  {
+    "title": "Pineapple Ginger Zing",
+    "ingredients": [
+      { "name": "Diced pineapple", "quantity": 1.5, "unit": "cups" },
+      { "name": "Fresh ginger root", "quantity": 10.0, "unit": "g" },
+      { "name": "Water", "quantity": 0.25, "unit": "cup" },
+      { "name": "Honey", "quantity": 1.0, "unit": "tbsp" }
+    ]
+  },
+  {
+    "title": "Watermelon Basil Cooler",
+    "ingredients": [
+      { "name": "Diced watermelon", "quantity": 2.0, "unit": "cups" },
+      { "name": "Fresh basil leaves", "quantity": 4.0, "unit": "pieces" },
+      { "name": "Ice crushed", "quantity": 0.5, "unit": "cup" }
+    ]
+  },
+  {
+    "title": "Espresso (Double Shot)",
+    "ingredients": [
+      { "name": "Finely ground coffee beans", "quantity": 18.0, "unit": "g" },
+      { "name": "Filtered hot water", "quantity": 60.0, "unit": "ml" }
+    ]
+  },
+  {
+    "title": "Cafe Americano",
+    "ingredients": [
+      { "name": "Finely ground coffee beans", "quantity": 18.0, "unit": "g" },
+      { "name": "Filtered hot water", "quantity": 240.0, "unit": "ml" }
+    ]
+  },
+  {
+    "title": "Espresso Macchiato",
+    "ingredients": [
+      { "name": "Finely ground coffee beans", "quantity": 18.0, "unit": "g" },
+      { "name": "Whole milk (for foam dollop)", "quantity": 30.0, "unit": "ml" },
+      { "name": "Filtered hot water", "quantity": 60.0, "unit": "ml" }
+    ]
+  },
+  {
+    "title": "Flat White",
+    "ingredients": [
+      { "name": "Finely ground coffee beans", "quantity": 18.0, "unit": "g" },
+      { "name": "Whole milk (steamed as microfoam)", "quantity": 120.0, "unit": "ml" },
+      { "name": "Filtered hot water", "quantity": 45.0, "unit": "ml" }
+    ]
+  },
+  {
+    "title": "Cafe Latte",
+    "ingredients": [
+      { "name": "Finely ground coffee beans", "quantity": 18.0, "unit": "g" },
+      { "name": "Whole milk (steamed)", "quantity": 200.0, "unit": "ml" },
+      { "name": "Filtered hot water", "quantity": 60.0, "unit": "ml" }
+    ]
+  },
+  {
+    "title": "Cappuccino",
+    "ingredients": [
+      { "name": "Finely ground coffee beans", "quantity": 18.0, "unit": "g" },
+      { "name": "Whole milk (steamed and deeply foamed)", "quantity": 120.0, "unit": "ml" },
+      { "name": "Filtered hot water", "quantity": 60.0, "unit": "ml" }
+    ]
+  },
+  {
+    "title": "Cortado",
+    "ingredients": [
+      { "name": "Finely ground coffee beans", "quantity": 18.0, "unit": "g" },
+      { "name": "Whole milk (steamed lightly)", "quantity": 60.0, "unit": "ml" },
+      { "name": "Filtered hot water", "quantity": 60.0, "unit": "ml" }
+    ]
+  },
+  {
+    "title": "Iced Latte",
+    "ingredients": [
+      { "name": "Finely ground coffee beans", "quantity": 18.0, "unit": "g" },
+      { "name": "Whole milk (cold)", "quantity": 180.0, "unit": "ml" },
+      { "name": "Ice cubes", "quantity": 6.0, "unit": "pieces" },
+      { "name": "Filtered hot water", "quantity": 60.0, "unit": "ml" }
+    ]
+  },
+  {
+    "title": "Cold Brew Coffee",
+    "ingredients": [
+      { "name": "Coarsely ground coffee beans", "quantity": 30.0, "unit": "g" },
+      { "name": "Filtered cold water", "quantity": 350.0, "unit": "ml" }
+    ]
+  },
+  {
+    "title": "Affogato",
+    "ingredients": [
+      { "name": "Finely ground coffee beans", "quantity": 9.0, "unit": "g" },
+      { "name": "Vanilla bean gelato/ice cream", "quantity": 1.0, "unit": "scoop" },
+      { "name": "Filtered hot water", "quantity": 30.0, "unit": "ml" }
+    ]
+  },
+  {
+    "title": "Iced Matcha Latte",
+    "ingredients": [
+      { "name": "Matcha green tea powder", "quantity": 1.5, "unit": "tsp" },
+      { "name": "Whole milk (or oat milk)", "quantity": 200.0, "unit": "ml" },
+      { "name": "Hot water", "quantity": 30.0, "unit": "ml" },
+      { "name": "Honey or vanilla syrup", "quantity": 1.0, "unit": "tbsp" },
+      { "name": "Ice cubes", "quantity": 5.0, "unit": "pieces" }
+    ]
+  },
+  {
+    "title": "Peach Green Tea Iced",
+    "ingredients": [
+      { "name": "Green tea bag", "quantity": 1.0, "unit": "piece" },
+      { "name": "Peach syrup concentration", "quantity": 2.0, "unit": "tbsp" },
+      { "name": "Hot water (to brew)", "quantity": 200.0, "unit": "ml" },
+      { "name": "Ice cubes", "quantity": 6.0, "unit": "pieces" }
+    ]
+  }
+]

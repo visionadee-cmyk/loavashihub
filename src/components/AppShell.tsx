@@ -1,11 +1,13 @@
 import { Link, NavLink } from 'react-router-dom';
-import { LogOut, LayoutDashboard, ShoppingCart, ShoppingBag, Coffee, Table, Users2, ClipboardList, Box, Layers, BookOpen, BarChart3, FileText } from 'lucide-react';
+import { LogOut, LayoutDashboard, ShoppingCart, ShoppingBag, Coffee, Table, Users2, ClipboardList, Box, Layers, BookOpen, BarChart3, FileText, Clock, CheckCircle2 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 const logo = '/logo.jpeg';
 
 const adminNav = [
   { path: '/admin', label: 'Dashboard', icon: LayoutDashboard },
-  { path: '/admin/menu', label: 'Menu', icon: Coffee },
+  { path: '/admin/menu', label: 'Menu items', icon: Coffee },
+  { path: '/bills/pending', label: 'Open bills', icon: Clock },
+  { path: '/bills/completed', label: 'Completed bills', icon: CheckCircle2 },
   { path: '/admin/tables', label: 'Tables', icon: Table },
   { path: '/admin/staff', label: 'Staff', icon: Users2 },
   { path: '/admin/inventory', label: 'Consumables', icon: Box },
@@ -18,6 +20,8 @@ const adminNav = [
 
 const cashierNav = [
   { path: '/pos', label: 'POS', icon: ShoppingCart },
+  { path: '/bills/pending', label: 'Open bills', icon: Clock },
+  { path: '/bills/completed', label: 'Completed bills', icon: CheckCircle2 },
   { path: '/admin/reports', label: 'Reports', icon: FileText },
 ];
 

@@ -1,10 +1,11 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Plus, DollarSign, CheckCircle2 } from 'lucide-react';
+import { Plus, CheckCircle2 } from 'lucide-react';
 import AppShell from '../components/AppShell';
 import { useInventory } from '../context/InventoryContext';
 import { hasFirebaseConfig } from '../lib/firebase';
 import { loadCollection, saveDocument } from '../lib/firestore';
-import type { PurchaseOrder } from '../types';
+import { formatMVR } from '../lib/mvr';
+import type { MenuItem, PurchaseOrder } from '../types';
 
 const defaultPurchase: Partial<PurchaseOrder> = {
   productName: '',
@@ -19,6 +20,7 @@ const defaultPurchase: Partial<PurchaseOrder> = {
 export default function PurchaseProductsPage() {
   const { inventory, addInventoryItem, updateInventoryItem } = useInventory();
   const [orders, setOrders] = useState<PurchaseOrder[]>([]);
+  const [products, setProducts] = useState<MenuItem[]>([]);
   const [form, setForm] = useState<Partial<PurchaseOrder>>(defaultPurchase);
 
   useEffect(() => {
@@ -26,19 +28,40 @@ export default function PurchaseProductsPage() {
       return;
     }
 
-    loadCollection<PurchaseOrder>('purchaseOrders', [])
-      .then((items) => {
-        if (items.length) {
-          setOrders(items);
+    Promise.all([
+      loadCollection<PurchaseOrder>('purchaseOrders', []),
+      loadCollection<MenuItem>('menuItems', []),
+    ])
+      .then(([loadedOrders, loadedProducts]) => {
+        if (loadedOrders.length) {
+          setOrders(loadedOrders);
+        }
+        if (loadedProducts.length) {
+          setProducts(loadedProducts);
+          setForm((current) => ({
+            ...current,
+            productName: current.productName || loadedProducts[0].name,
+            unitCost: current.unitCost ?? loadedProducts[0].costPrice ?? 0,
+          }));
         }
       })
       .catch((error) => {
-        console.error('Failed to load purchase orders from Firestore:', error);
+        console.error('Failed to load purchase orders or menu items from Firestore:', error);
       });
   }, []);
 
   const totalSpend = useMemo(
     () => orders.reduce((sum, order) => sum + order.totalCost, 0),
+    [orders],
+  );
+
+  const receivedOrders = useMemo(
+    () => orders.filter((order) => order.status === 'Received').length,
+    [orders],
+  );
+
+  const pendingOrders = useMemo(
+    () => orders.filter((order) => order.status !== 'Received').length,
     [orders],
   );
 
@@ -88,9 +111,11 @@ export default function PurchaseProductsPage() {
   };
 
   const saveOrder = async () => {
+    const selectedProduct = products.find((product) => product.name === form.productName) ?? products[0];
     const payload: PurchaseOrder = {
       id: `purchase-${Date.now()}`,
-      productName: form.productName?.trim() || 'New product',
+      menuItemId: selectedProduct?.id,
+      productName: selectedProduct?.name ?? (form.productName?.trim() || 'New item'),
       vendor: form.vendor?.trim() || 'Unknown vendor',
       quantity: form.quantity ?? 1,
       unit: form.unit || 'pcs',
@@ -123,7 +148,8 @@ export default function PurchaseProductsPage() {
             </div>
             <button
               onClick={saveOrder}
-              className="inline-flex items-center gap-2 rounded-3xl bg-violet-600 px-4 py-3 text-sm font-semibold text-white hover:bg-violet-500"
+              disabled={!products.length}
+              className="inline-flex items-center gap-2 rounded-3xl bg-violet-600 px-4 py-3 text-sm font-semibold text-white hover:bg-violet-500 disabled:cursor-not-allowed disabled:opacity-50"
             >
               <Plus className="h-4 w-4" /> Add purchase
             </button>
@@ -131,13 +157,29 @@ export default function PurchaseProductsPage() {
 
           <div className="grid gap-4">
             <label className="block text-sm text-slate-300">
-              Product name
-              <input
+              Menu item
+              <select
                 value={form.productName}
-                onChange={(event) => setForm((current) => ({ ...current, productName: event.target.value }))}
+                onChange={(event) => {
+                  const selectedProduct = products.find((product) => product.name === event.target.value);
+                  setForm((current) => ({
+                    ...current,
+                    productName: event.target.value,
+                    unitCost: selectedProduct?.costPrice ?? current.unitCost ?? 0,
+                  }));
+                }}
                 className="mt-2 w-full rounded-3xl border border-slate-700 bg-slate-950 px-4 py-3 text-slate-100 outline-none"
-                placeholder="Coffee beans"
-              />
+              >
+                {products.length ? (
+                  products.map((product) => (
+                    <option key={product.id} value={product.name}>
+                      {product.name} ({product.category})
+                    </option>
+                  ))
+                ) : (
+                  <option value="">No menu items available</option>
+                )}
+              </select>
             </label>
 
             <div className="grid gap-4 sm:grid-cols-2">
@@ -181,7 +223,7 @@ export default function PurchaseProductsPage() {
                 />
               </label>
               <label className="block text-sm text-slate-300">
-                Unit cost
+                Unit cost (MVR)
                 <input
                   type="number"
                   min={0}
@@ -226,10 +268,10 @@ export default function PurchaseProductsPage() {
                     </div>
                     <div className="text-right">
                       <p className="text-sm text-slate-400">{order.status}</p>
-                      <p className="text-lg font-semibold text-white"><DollarSign className="mr-1 inline h-4 w-4" />{order.totalCost}</p>
+                      <p className="text-lg font-semibold text-white">{formatMVR(order.totalCost)}</p>
                     </div>
                   </div>
-                  <div className="mt-3 flex flex-wrap items-center justify-end gap-2">
+                  <div className="mt-3 flex flex-wrap items-center justify-between gap-2">
                     {order.status !== 'Received' ? (
                       <button
                         type="button"
@@ -238,24 +280,42 @@ export default function PurchaseProductsPage() {
                       >
                         Mark received
                       </button>
-                    ) : null}
+                    ) : (
+                      <span className="rounded-full bg-emerald-600/10 px-3 py-2 text-sm text-emerald-300">Inventory restocked</span>
+                    )}
                   </div>
                 </div>
               ))}
             </div>
           </div>
 
-          <div className="rounded-3xl border border-slate-800 bg-slate-900/80 p-5 shadow-xl shadow-slate-950/20">
-            <div className="flex items-center justify-between gap-3">
-              <div>
-                <h3 className="text-xl font-semibold text-white">Spend total</h3>
-                <p className="text-sm text-slate-400">Real-time purchase cost total.</p>
+          <div className="grid gap-5">
+            <div className="rounded-3xl border border-slate-800 bg-slate-900/80 p-5 shadow-xl shadow-slate-950/20">
+              <div className="flex items-center justify-between gap-3">
+                <div>
+                  <h3 className="text-xl font-semibold text-white">Spend total</h3>
+                  <p className="text-sm text-slate-400">Real-time purchase cost total.</p>
+                </div>
+                <div className="inline-flex items-center gap-2 rounded-3xl bg-slate-800 px-4 py-3 text-sm text-slate-200">
+                  <CheckCircle2 className="h-4 w-4 text-emerald-400" /> {receivedOrders} received
+                </div>
               </div>
-              <div className="inline-flex items-center gap-2 rounded-3xl bg-slate-800 px-4 py-3 text-sm text-slate-200">
-                <CheckCircle2 className="h-4 w-4 text-emerald-400" /> {orders.filter((order) => order.status === 'Received').length} received
+              <p className="mt-4 text-3xl font-semibold text-white">{formatMVR(totalSpend)}</p>
+            </div>
+
+            <div className="rounded-3xl border border-slate-800 bg-slate-900/80 p-5 shadow-xl shadow-slate-950/20">
+              <div className="flex items-center justify-between gap-3">
+                <div>
+                  <h3 className="text-xl font-semibold text-white">Restock status</h3>
+                  <p className="text-sm text-slate-400">Orders that are pending inventory receipt.</p>
+                </div>
+                <span className="rounded-full bg-slate-800 px-3 py-1 text-xs uppercase tracking-[0.24em] text-slate-300">{pendingOrders} pending</span>
+              </div>
+              <div className="mt-4 space-y-3 text-slate-300">
+                <p>{receivedOrders} order{receivedOrders === 1 ? '' : 's'} have been restocked.</p>
+                <p>{pendingOrders} order{pendingOrders === 1 ? '' : 's'} still need receipt confirmation.</p>
               </div>
             </div>
-            <p className="mt-4 text-3xl font-semibold text-white"><DollarSign className="mr-2 inline h-5 w-5" />{totalSpend}</p>
           </div>
         </section>
       </div>

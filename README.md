@@ -13,6 +13,8 @@ Loavashi Hub is a local-first cafe and restaurant management system built with R
 - Installable PWA using `public/logo.jpeg` as the app icon
 - Offline asset caching and service worker support
 - Receipt printing for bills
+- Auto-generated invoice numbers and cafe details on printed receipts
+- Save bills, mark bills as paid/complete, and track completed invoices
 
 ## Local development
 

@@ -13,6 +13,9 @@ import ReportsPage from './pages/ReportsPage';
 import PurchaseProductsPage from './pages/PurchaseProductsPage';
 import RecipeManagement from './pages/RecipeManagement';
 import AssetManagement from './pages/AssetManagement';
+import BillManagement from './pages/BillManagement';
+import PendingBillsPage from './pages/PendingBillsPage';
+import CompletedBillsPage from './pages/CompletedBillsPage';
 import ProtectedRoute from './components/ProtectedRoute';
 
 function App() {
@@ -59,6 +62,30 @@ function App() {
               element={
                 <ProtectedRoute allowedRoles={['admin']}>
                   <InventoryManagement />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/admin/bills"
+              element={
+                <ProtectedRoute allowedRoles={['admin']}>
+                  <BillManagement />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/bills/pending"
+              element={
+                <ProtectedRoute allowedRoles={['admin', 'cashier']}>
+                  <PendingBillsPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/bills/completed"
+              element={
+                <ProtectedRoute allowedRoles={['admin', 'cashier']}>
+                  <CompletedBillsPage />
                 </ProtectedRoute>
               }
             />

@@ -1,0 +1,282 @@
+[
+  {
+    "title": "Miruhulee Kukulhu",
+    "ingredients": [
+      { "name": "Chicken pieces", "quantity": 1.0, "unit": "kg" },
+      { "name": "Dry red chillies", "quantity": 10.0, "unit": "pieces" },
+      { "name": "Grated coconut", "quantity": 0.5, "unit": "cup" },
+      { "name": "Red onions", "quantity": 2.0, "unit": "large" },
+      { "name": "Vegetable oil", "quantity": 3.0, "unit": "tbsp" }
+    ]
+  },
+  {
+    "title": "Kukulhu Riha",
+    "ingredients": [
+      { "name": "Chicken cuts", "quantity": 1.0, "unit": "kg" },
+      { "name": "Chicken curry powder", "quantity": 2.5, "unit": "tbsp" },
+      { "name": "Red onions", "quantity": 2.0, "unit": "medium" },
+      { "name": "Coconut milk", "quantity": 2.5, "unit": "cups" },
+      { "name": "Vegetable oil", "quantity": 2.0, "unit": "tbsp" }
+    ]
+  },
+  {
+    "title": "Tomato Chicken Curry",
+    "ingredients": [
+      { "name": "Chicken pieces", "quantity": 800.0, "unit": "g" },
+      { "name": "Chopped tomatoes", "quantity": 4.0, "unit": "large" },
+      { "name": "Tomato paste", "quantity": 2.0, "unit": "tbsp" },
+      { "name": "Red onions", "quantity": 2.0, "unit": "medium" },
+      { "name": "Vegetable oil", "quantity": 2.0, "unit": "tbsp" }
+    ]
+  },
+  {
+    "title": "Butter Chicken",
+    "ingredients": [
+      { "name": "Boneless chicken cubes", "quantity": 600.0, "unit": "g" },
+      { "name": "Butter", "quantity": 50.0, "unit": "g" },
+      { "name": "Heavy cream", "quantity": 0.5, "unit": "cup" },
+      { "name": "Tomato puree", "quantity": 1.0, "unit": "cup" },
+      { "name": "Garlic paste", "quantity": 1.0, "unit": "tbsp" }
+    ]
+  },
+  {
+    "title": "Devilled Chicken",
+    "ingredients": [
+      { "name": "Chicken pieces", "quantity": 500.0, "unit": "g" },
+      { "name": "Capsicum (Bell pepper)", "quantity": 1.0, "unit": "large" },
+      { "name": "Red onion", "quantity": 1.5, "unit": "medium" },
+      { "name": "Chilli sauce", "quantity": 4.0, "unit": "tbsp" },
+      { "name": "Tomato sauce", "quantity": 2.0, "unit": "tbsp" }
+    ]
+  },
+  {
+    "title": "Chicken Biriyani",
+    "ingredients": [
+      { "name": "Basmati rice", "quantity": 3.0, "unit": "cups" },
+      { "name": "Chicken pieces", "quantity": 1.0, "unit": "kg" },
+      { "name": "Yogurt", "quantity": 0.5, "unit": "cup" },
+      { "name": "Red onions (for crisping)", "quantity": 4.0, "unit": "large" },
+      { "name": "Ghee", "quantity": 4.0, "unit": "tbsp" }
+    ]
+  },
+  {
+    "title": "Easy Creamy Chicken",
+    "ingredients": [
+      { "name": "Chicken breast strips", "quantity": 500.0, "unit": "g" },
+      { "name": "Canned cream of mushroom soup", "quantity": 1.0, "unit": "can" },
+      { "name": "Red onion", "quantity": 1.0, "unit": "medium" },
+      { "name": "Garlic minced", "quantity": 1.0, "unit": "tsp" }
+    ]
+  },
+  {
+    "title": "Thai Cashew Chicken",
+    "ingredients": [
+      { "name": "Chicken breast cubes", "quantity": 400.0, "unit": "g" },
+      { "name": "Raw cashew nuts", "quantity": 0.5, "unit": "cup" },
+      { "name": "Soy sauce", "quantity": 2.0, "unit": "tbsp" },
+      { "name": "Capsicum", "quantity": 1.0, "unit": "medium" },
+      { "name": "Oyster sauce", "quantity": 1.0, "unit": "tbsp" }
+    ]
+  },
+  {
+    "title": "Hot & Sour Chicken",
+    "ingredients": [
+      { "name": "Chicken strips", "quantity": 400.0, "unit": "g" },
+      { "name": "White vinegar", "quantity": 2.0, "unit": "tbsp" },
+      { "name": "Chilli paste", "quantity": 1.5, "unit": "tbsp" },
+      { "name": "Soy sauce", "quantity": 1.0, "unit": "tbsp" }
+    ]
+  },
+  {
+    "title": "Chicken Aglio Olio",
+    "ingredients": [
+      { "name": "Spaghetti pasta", "quantity": 250.0, "unit": "g" },
+      { "name": "Cooked shredded chicken", "quantity": 1.5, "unit": "cups" },
+      { "name": "Olive oil", "quantity": 4.0, "unit": "tbsp" },
+      { "name": "Garlic cloves", "quantity": 5.0, "unit": "pieces" },
+      { "name": "Dry chilli flakes", "quantity": 1.5, "unit": "tsp" }
+    ]
+  },
+  {
+    "title": "Chicken Katsu Sandwich",
+    "ingredients": [
+      { "name": "Chicken breast", "quantity": 2.0, "unit": "pieces" },
+      { "name": "Panko breadcrumbs", "quantity": 1.0, "unit": "cup" },
+      { "name": "Sandwich bread loaf", "quantity": 4.0, "unit": "slices" },
+      { "name": "Egg", "quantity": 1.0, "unit": "piece" }
+    ]
+  },
+  {
+    "title": "Cornflakes Fried Chicken",
+    "ingredients": [
+      { "name": "Chicken drumsticks", "quantity": 6.0, "unit": "pieces" },
+      { "name": "Crushed cornflakes", "quantity": 2.0, "unit": "cups" },
+      { "name": "Buttermilk", "quantity": 1.0, "unit": "cup" },
+      { "name": "All-purpose flour", "quantity": 0.5, "unit": "cup" }
+    ]
+  },
+  {
+    "title": "Baked Honey Mustard Chicken",
+    "ingredients": [
+      { "name": "Chicken thighs boneless", "quantity": 4.0, "unit": "pieces" },
+      { "name": "Honey", "quantity": 3.0, "unit": "tbsp" },
+      { "name": "Dijon mustard", "quantity": 2.0, "unit": "tbsp" },
+      { "name": "Olive oil", "quantity": 1.0, "unit": "tbsp" }
+    ]
+  },
+  {
+    "title": "Rice Paper Chicken Dumplings",
+    "ingredients": [
+      { "name": "Minced chicken", "quantity": 300.0, "unit": "g" },
+      { "name": "Rice paper sheets", "quantity": 10.0, "unit": "pieces" },
+      { "name": "Spring onions", "quantity": 3.0, "unit": "pieces" },
+      { "name": "Sesame oil", "quantity": 1.0, "unit": "tsp" }
+    ]
+  },
+  {
+    "title": "Tandoori Pizza",
+    "ingredients": [
+      { "name": "Pre-baked pizza base", "quantity": 1.0, "unit": "piece" },
+      { "name": "Spiced tandoori chicken chunks", "quantity": 1.5, "unit": "cups" },
+      { "name": "Shredded Mozzarella", "quantity": 1.5, "unit": "cups" },
+      { "name": "Pizza sauce", "quantity": 4.0, "unit": "tbsp" }
+    ]
+  },
+  {
+    "title": "Butternut and Chicken Pasta",
+    "ingredients": [
+      { "name": "Penne pasta", "quantity": 250.0, "unit": "g" },
+      { "name": "Butternut squash puree", "quantity": 1.0, "unit": "cup" },
+      { "name": "Chicken breast strips", "quantity": 250.0, "unit": "g" },
+      { "name": "Cooking cream", "quantity": 0.25, "unit": "cup" }
+    ]
+  },
+  {
+    "title": "Marry Me Chicken Pasta",
+    "ingredients": [
+      { "name": "Pasta", "quantity": 250.0, "unit": "g" },
+      { "name": "Chicken breast slices", "quantity": 300.0, "unit": "g" },
+      { "name": "Sundried tomatoes", "quantity": 0.5, "unit": "cup" },
+      { "name": "Heavy cream", "quantity": 0.75, "unit": "cup" },
+      { "name": "Parmesan cheese grated", "quantity": 0.25, "unit": "cup" }
+    ]
+  },
+  {
+    "title": "Chilli Chicken Wraps",
+    "ingredients": [
+      { "name": "Flour tortillas", "quantity": 4.0, "unit": "pieces" },
+      { "name": "Crispy fried chicken strips", "quantity": 300.0, "unit": "g" },
+      { "name": "Chilli garlic sauce", "quantity": 3.0, "unit": "tbsp" },
+      { "name": "Shredded lettuce", "quantity": 1.0, "unit": "cup" }
+    ]
+  },
+  {
+    "title": "Thai Chicken with Coconut Cream",
+    "ingredients": [
+      { "name": "Chicken cubes", "quantity": 500.0, "unit": "g" },
+      { "name": "Thick coconut cream", "quantity": 1.0, "unit": "cup" },
+      { "name": "Thai green curry paste", "quantity": 1.5, "unit": "tbsp" },
+      { "name": "Fish sauce", "quantity": 1.0, "unit": "tbsp" }
+    ]
+  },
+  {
+    "title": "Kukulhu Musamma",
+    "ingredients": [
+      { "name": "Chicken cuts", "quantity": 1.0, "unit": "kg" },
+      { "name": "Spiced cashew & coconut paste", "quantity": 5.0, "unit": "tbsp" },
+      { "name": "Ghee", "quantity": 3.0, "unit": "tbsp" },
+      { "name": "Red onions", "quantity": 2.0, "unit": "medium" }
+    ]
+  },
+  {
+    "title": "Theluli Kukulhu",
+    "ingredients": [
+      { "name": "Chicken pieces", "quantity": 800.0, "unit": "g" },
+      { "name": "Local ginger-garlic-chilli paste", "quantity": 3.0, "unit": "tbsp" },
+      { "name": "Frying oil", "quantity": 500.0, "unit": "ml" }
+    ]
+  },
+  {
+    "title": "Chicken Fried Rice",
+    "ingredients": [
+      { "name": "Cold cooked basmati rice", "quantity": 3.0, "unit": "cups" },
+      { "name": "Diced chicken meat", "quantity": 200.0, "unit": "g" },
+      { "name": "Eggs", "quantity": 2.0, "unit": "pieces" },
+      { "name": "Soy sauce", "quantity": 2.0, "unit": "tbsp" },
+      { "name": "Vegetable oil", "quantity": 1.5, "unit": "tbsp" }
+    ]
+  },
+  {
+    "title": "Chicken Kavaabu",
+    "ingredients": [
+      { "name": "Cooked shredded chicken", "quantity": 200.0, "unit": "g" },
+      { "name": "Boiled potatoes", "quantity": 2.0, "unit": "medium" },
+      { "name": "Red onion", "quantity": 1.0, "unit": "medium" },
+      { "name": "Frying oil", "quantity": 400.0, "unit": "ml" }
+    ]
+  },
+  {
+    "title": "Foni Miruhulee Kukulhu",
+    "ingredients": [
+      { "name": "Chicken pieces", "quantity": 800.0, "unit": "g" },
+      { "name": "Dry red chillies", "quantity": 8.0, "unit": "pieces" },
+      { "name": "Maldivian palm sugar", "quantity": 2.0, "unit": "tbsp" },
+      { "name": "Vegetable oil", "quantity": 2.0, "unit": "tbsp" }
+    ]
+  },
+  {
+    "title": "Chicken Chow Mein",
+    "ingredients": [
+      { "name": "Egg noodles", "quantity": 200.0, "unit": "g" },
+      { "name": "Shredded chicken breast", "quantity": 200.0, "unit": "g" },
+      { "name": "Cabbage shredded", "quantity": 1.0, "unit": "cup" },
+      { "name": "Chow mein dark sauce mix", "quantity": 3.0, "unit": "tbsp" }
+    ]
+  },
+  {
+    "title": "Baked Chicken Wings",
+    "ingredients": [
+      { "name": "Chicken wings", "quantity": 12.0, "unit": "pieces" },
+      { "name": "Local hot sauce", "quantity": 4.0, "unit": "tbsp" },
+      { "name": "Honey", "quantity": 2.0, "unit": "tbsp" },
+      { "name": "Melted butter", "quantity": 1.0, "unit": "tbsp" }
+    ]
+  },
+  {
+    "title": "Chicken Macaroni",
+    "ingredients": [
+      { "name": "Macaroni pasta", "quantity": 250.0, "unit": "g" },
+      { "name": "Minced chicken", "quantity": 250.0, "unit": "g" },
+      { "name": "Tomato sauce", "quantity": 1.0, "unit": "cup" },
+      { "name": "Shredded Cheddar", "quantity": 1.0, "unit": "cup" }
+    ]
+  },
+  {
+    "title": "Garlic Butter Chicken",
+    "ingredients": [
+      { "name": "Chicken breast cutlets", "quantity": 500.0, "unit": "g" },
+      { "name": "Butter", "quantity": 4.0, "unit": "tbsp" },
+      { "name": "Garlic cloves minced", "quantity": 6.0, "unit": "pieces" },
+      { "name": "Lemon juice", "quantity": 1.5, "unit": "tbsp" }
+    ]
+  },
+  {
+    "title": "Chicken Satay",
+    "ingredients": [
+      { "name": "Chicken breast strips", "quantity": 500.0, "unit": "g" },
+      { "name": "Peanut butter", "quantity": 0.5, "unit": "cup" },
+      { "name": "Coconut milk", "quantity": 0.25, "unit": "cup" },
+      { "name": "Soy sauce", "quantity": 1.0, "unit": "tbsp" },
+      { "name": "Wooden skewers", "quantity": 10.0, "unit": "pieces" }
+    ]
+  },
+  {
+    "title": "Lemon Chicken",
+    "ingredients": [
+      { "name": "Battered chicken pieces", "quantity": 400.0, "unit": "g" },
+      { "name": "Fresh lemon juice", "quantity": 4.0, "unit": "tbsp" },
+      { "name": "Granulated sugar", "quantity": 3.0, "unit": "tbsp" },
+      { "name": "Cornstarch glue", "quantity": 1.0, "unit": "tsp" }
+    ]
+  }
+]

@@ -5,7 +5,7 @@ import { hasFirebaseConfig } from '../lib/firebase';
 import { loadCollection, saveDocument } from '../lib/firestore';
 
 import { useInventory } from '../context/InventoryContext';
-import type { Recipe, RecipeIngredient } from '../types';
+import type { MenuItem, Recipe, RecipeIngredient } from '../types';
 
 const initialRecipe: Partial<Recipe> = {
   name: '',
@@ -17,15 +17,21 @@ const initialRecipe: Partial<Recipe> = {
 export default function RecipeManagement() {
   const { inventory, adjustInventoryByRecipe } = useInventory();
   const [recipes, setRecipes] = useState<Recipe[]>([]);
+  const [menuItems, setMenuItems] = useState<MenuItem[]>([]);
+
   useEffect(() => {
     if (!hasFirebaseConfig) {
       setRecipes([]);
+      setMenuItems([]);
       return;
     }
 
-    loadCollection<Recipe>('recipes', [])
-      .then((items) => { if (items.length) setRecipes(items); })
-      .catch((error) => console.error('Failed to load recipes from Firestore:', error));
+    Promise.all([loadCollection<Recipe>('recipes', []), loadCollection<MenuItem>('menuItems', [])])
+      .then(([loadedRecipes, loadedMenuItems]) => {
+        if (loadedRecipes.length) setRecipes(loadedRecipes);
+        if (loadedMenuItems.length) setMenuItems(loadedMenuItems);
+      })
+      .catch((error) => console.error('Failed to load recipes or menu items from Firestore:', error));
   }, []);
   const [form, setForm] = useState<Partial<Recipe>>(initialRecipe);
   const [ingredient, setIngredient] = useState<Partial<RecipeIngredient>>({ inventoryId: '', quantity: 1, unit: 'pcs', name: '' });
@@ -45,9 +51,27 @@ export default function RecipeManagement() {
       status: form.status ?? 'Active',
     };
     setRecipes((current) => [payload, ...current]);
+
+    const menuItemPayload: MenuItem = {
+      id: menuItems.find((item) => item.name.toLowerCase() === payload.name.toLowerCase())?.id ?? `product-${Date.now()}`,
+      name: payload.name,
+      category: menuItems.find((item) => item.name.toLowerCase() === payload.name.toLowerCase())?.category ?? 'Others',
+      price: payload.salePrice,
+      description:
+        menuItems.find((item) => item.name.toLowerCase() === payload.name.toLowerCase())?.description ||
+        payload.ingredients.map((ingredient) => `${ingredient.quantity} ${ingredient.unit} ${ingredient.name}`).join(', ') ||
+        'Menu item generated from recipe.',
+      image: menuItems.find((item) => item.name.toLowerCase() === payload.name.toLowerCase())?.image ??
+        'https://images.unsplash.com/photo-1509042239860-f550ce710b93?auto=format&fit=crop&w=700&q=80',
+    };
+
+    setMenuItems((current) => [menuItemPayload, ...current.filter((item) => item.id !== menuItemPayload.id)]);
+
     if (hasFirebaseConfig) {
       saveDocument('recipes', payload.id, payload).catch((error) => console.error('Failed to save recipe:', error));
+      saveDocument('menuItems', menuItemPayload.id, menuItemPayload).catch((error) => console.error('Failed to save menu item from recipe:', error));
     }
+
     setForm(initialRecipe);
     setIngredient({ inventoryId: inventory[0]?.id ?? '', quantity: 1, unit: inventory[0]?.unit ?? 'pcs', name: inventory[0]?.name ?? '' });
   };

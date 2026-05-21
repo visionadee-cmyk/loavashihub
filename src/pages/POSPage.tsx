@@ -6,9 +6,29 @@ import { formatMVR } from '../lib/mvr';
 import { hasFirebaseConfig } from '../lib/firebase';
 import { deleteDocument, loadCollection, saveDocument } from '../lib/firestore';
 import type { Bill, MenuItem, OrderItem, TableItem } from '../types';
+import beveragesDataRaw from '../data/beverages.json?raw';
+import chickenRecipesDataRaw from '../data/chickenrecipes.json?raw';
+import foniHedhikaaDataRaw from '../data/fonihedhikaa.json?raw';
+import hedhikaaDataRaw from '../data/hedhikaa.json?raw';
+import maldiviaCurriesDataRaw from '../data/maldiviacurries.json?raw';
 
 const orderTypes = ['Dine-in', 'Takeaway', 'Delivery'] as const;
 const paymentMethods = ['Cash', 'Card', 'Bank transfer'] as const;
+const placeholderImage = 'https://via.placeholder.com/400x300?text=Menu+Item';
+const APP_NAME = 'Loavashi Hub';
+const CAFE_DETAILS = 'Loavashi Hub Café · Malé, Maldives · +960 1234 5678';
+
+function generateBillNumber(tableName: string) {
+  const date = new Date();
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  const hour = String(date.getHours()).padStart(2, '0');
+  const minute = String(date.getMinutes()).padStart(2, '0');
+  const second = String(date.getSeconds()).padStart(2, '0');
+  const prefix = tableName.trim() || 'Table';
+  return `${prefix} ${year}${month}${day}${hour}${minute}${second}`;
+}
 
 function buildItem(product: MenuItem): OrderItem {
   return {
@@ -22,9 +42,11 @@ function buildItem(product: MenuItem): OrderItem {
 }
 
 function createEmptyBill(tableName: string): Bill {
+  const billNumber = generateBillNumber(tableName);
   return {
     id: `bill-${Date.now()}`,
-    title: 'New bill',
+    billNumber,
+    title: billNumber,
     table: tableName,
     items: [],
     orderType: 'Dine-in',
@@ -36,6 +58,39 @@ function createEmptyBill(tableName: string): Bill {
     paymentStatus: 'Unpaid',
     createdAt: new Date().toISOString(),
   };
+}
+
+function parseFallbackMenuItems(): MenuItem[] {
+  const fallbackSources = [
+    { raw: beveragesDataRaw, category: 'Beverages' },
+    { raw: chickenRecipesDataRaw, category: 'Chicken' },
+    { raw: foniHedhikaaDataRaw, category: 'Foni Heddikaa' },
+    { raw: hedhikaaDataRaw, category: 'Hedhikaa' },
+    { raw: maldiviaCurriesDataRaw, category: 'Maldivian Curries' },
+  ];
+
+  return fallbackSources.flatMap(({ raw, category }) => {
+    const items = JSON.parse(raw) as Array<Record<string, unknown>>;
+    return items.map((item) => {
+      const name = String(item.title ?? item.name ?? 'Menu item');
+      const ingredients = Array.isArray(item.ingredients) ? item.ingredients : [];
+      const description = ingredients
+        .slice(0, 3)
+        .map((ingredient) => (typeof ingredient === 'object' && ingredient !== null ? String((ingredient as any).name ?? '') : String(ingredient)))
+        .filter(Boolean)
+        .join(', ');
+
+      return {
+        id: `fallback-${category.toLowerCase().replace(/[^a-z0-9]+/g, '-')}-${name.toLowerCase().replace(/[^a-z0-9]+/g, '-')}`,
+        name,
+        category,
+        price: 0,
+        costPrice: 0,
+        description: description || `Imported ${category} item`,
+        image: placeholderImage,
+      };
+    });
+  });
 }
 
 export default function POSPage() {
@@ -57,7 +112,19 @@ export default function POSPage() {
   };
 
   useEffect(() => {
-    if (!hasFirebaseConfig) return;
+    const fallbackProducts = parseFallbackMenuItems();
+    const fallbackTables: TableItem[] = [
+      { id: 'table-1', name: 'Table 1', seats: 4, section: 'Indoor' },
+    ];
+
+    if (!hasFirebaseConfig) {
+      setProducts(fallbackProducts);
+      setTables(fallbackTables);
+      const newBill = createEmptyBill(fallbackTables[0].name);
+      setBills([newBill]);
+      setActiveBillId(newBill.id);
+      return;
+    }
 
     const loadData = async () => {
       try {
@@ -67,8 +134,8 @@ export default function POSPage() {
           loadCollection<Bill>('bills', []),
         ]);
 
-        setProducts(loadedProducts);
-        setTables(loadedTables);
+        setProducts(loadedProducts.length ? loadedProducts : fallbackProducts);
+        setTables(loadedTables.length ? loadedTables : fallbackTables);
 
         if (loadedBills.length) {
           setBills(loadedBills);
@@ -76,12 +143,17 @@ export default function POSPage() {
           return;
         }
 
-        const defaultTable = loadedTables[0]?.name ?? 'Table 1';
+        const defaultTable = (loadedTables[0]?.name ?? fallbackTables[0].name) as string;
         const newBill = createEmptyBill(defaultTable);
         setBills([newBill]);
         setActiveBillId(newBill.id);
       } catch (error) {
         console.error('Failed to load POS data from Firestore:', error);
+        setProducts(fallbackProducts);
+        setTables(fallbackTables);
+        const newBill = createEmptyBill(fallbackTables[0].name);
+        setBills([newBill]);
+        setActiveBillId(newBill.id);
       }
     };
 
@@ -95,11 +167,30 @@ export default function POSPage() {
     persistBill(updatedBill);
   };
 
-  const occupiedTableCount = useMemo(() => new Set(bills.map((bill) => bill.table)).size, [bills]);
-  const completedTableCount = useMemo(
-    () => new Set(bills.filter((bill) => bill.status === 'Served').map((bill) => bill.table)).size,
-    [bills],
-  );
+  const saveCurrentBill = () => {
+    if (activeBill.items.length === 0) {
+      window.alert('Add at least one item before saving the bill.');
+      return;
+    }
+    if (activeBill.status === 'Pending') {
+      updateBill({ ...activeBill, status: 'Pending' });
+    } else {
+      persistBill(activeBill);
+    }
+    window.alert('Bill saved successfully. It is now active.');
+  };
+
+  const payCurrentBill = () => {
+    if (activeBill.items.length === 0) {
+      window.alert('Add items before completing the bill.');
+      return;
+    }
+    updateBill({ ...activeBill, status: 'Served', paymentStatus: 'Paid' });
+  };
+
+  const activeBills = bills.filter((bill) => bill.status !== 'Served');
+  const completedBills = bills.filter((bill) => bill.status === 'Served');
+  const occupiedTableCount = useMemo(() => new Set(activeBills.map((bill) => bill.table)).size, [activeBills]);
   const selectedBills = bills.filter((bill) => selectedBillIds.includes(bill.id));
   const canMergeSelected = selectedBills.length === 2;
 
@@ -107,12 +198,6 @@ export default function POSPage() {
     setSelectedBillIds((current) =>
       current.includes(billId) ? current.filter((id) => id !== billId) : [...current, billId],
     );
-  };
-
-  const markBillServed = (billId: string) => {
-    const bill = bills.find((entry) => entry.id === billId);
-    if (!bill) return;
-    updateBill({ ...bill, status: 'Served', paymentStatus: 'Paid' });
   };
 
   const filteredProducts = products.filter((product) => {
@@ -154,15 +239,10 @@ export default function POSPage() {
   };
 
   const createBill = () => {
-    const nextId = `bill-${Date.now()}`;
-    const newBill: Bill = {
-      ...createEmptyBill(tables[0]?.name ?? 'Table 1'),
-      id: nextId,
-      title: `Bill ${String.fromCharCode(65 + bills.length)}`,
-    };
-    setBills((current) => [...current, newBill]);
-    setActiveBillId(nextId);
-    persistBill(newBill);
+    const nextBill = createEmptyBill(tables[0]?.name ?? 'Table 1');
+    setBills((current) => [...current, nextBill]);
+    setActiveBillId(nextBill.id);
+    persistBill(nextBill);
   };
 
   const mergeSelectedBills = async () => {
@@ -239,8 +319,11 @@ export default function POSPage() {
         </style>
       </head>
       <body>
-        <h1>Loavashi Hub</h1>
-        <p>${activeBill.title} • ${activeBill.table}</p>
+        <h1>${APP_NAME}</h1>
+        <p>${CAFE_DETAILS}</p>
+        <p>Invoice: ${activeBill.billNumber ?? activeBill.title}</p>
+        <p>Table: ${activeBill.table} · ${activeBill.orderType}</p>
+        <p>${new Date(activeBill.createdAt).toLocaleString()}</p>
         <div class="line"></div>
         ${activeBill.items
           .map(
@@ -305,15 +388,15 @@ export default function POSPage() {
             <div className="mt-5 grid gap-3 sm:grid-cols-3">
               <div className="rounded-3xl border border-slate-800 bg-slate-900 px-4 py-4 text-sm text-slate-300">
                 <p className="text-xs uppercase tracking-[0.24em] text-slate-500">Active bills</p>
-                <p className="mt-3 text-2xl font-semibold text-white">{bills.length}</p>
+                <p className="mt-3 text-2xl font-semibold text-white">{activeBills.length}</p>
               </div>
               <div className="rounded-3xl border border-slate-800 bg-slate-900 px-4 py-4 text-sm text-slate-300">
                 <p className="text-xs uppercase tracking-[0.24em] text-slate-500">Tables occupied</p>
                 <p className="mt-3 text-2xl font-semibold text-white">{occupiedTableCount}</p>
               </div>
               <div className="rounded-3xl border border-slate-800 bg-slate-900 px-4 py-4 text-sm text-slate-300">
-                <p className="text-xs uppercase tracking-[0.24em] text-slate-500">Completed tables</p>
-                <p className="mt-3 text-2xl font-semibold text-white">{completedTableCount}</p>
+                <p className="text-xs uppercase tracking-[0.24em] text-slate-500">Completed bills</p>
+                <p className="mt-3 text-2xl font-semibold text-white">{completedBills.length}</p>
               </div>
             </div>
 
@@ -387,22 +470,25 @@ export default function POSPage() {
               <div>
                 <p className="text-sm text-slate-400">Active bill</p>
                 <h3 className="text-2xl font-semibold text-white">{activeBill.title}</h3>
-                <p className="text-sm text-slate-400">{activeBill.table} · {activeBill.orderType}</p>
+                <p className="text-sm text-slate-400">
+                  {activeBill.billNumber ?? activeBill.title} · {activeBill.table} · {activeBill.orderType}
+                </p>
+                <p className="text-sm text-slate-400">Created {new Date(activeBill.createdAt).toLocaleString()}</p>
               </div>
               <div className="grid gap-2 sm:grid-cols-2">
                 <button
                   type="button"
-                  onClick={mergeSelectedBills}
+                  onClick={saveCurrentBill}
                   className="rounded-3xl border border-slate-700 bg-slate-900 px-4 py-3 text-sm text-slate-200 hover:bg-slate-800"
                 >
-                  Merge bills
+                  Save bill
                 </button>
                 <button
                   type="button"
-                  onClick={() => markBillServed(activeBill.id)}
+                  onClick={payCurrentBill}
                   className="rounded-3xl border border-emerald-600 bg-emerald-700 px-4 py-3 text-sm font-semibold text-white hover:bg-emerald-600"
                 >
-                  Mark served
+                  Pay & complete
                 </button>
                 <button
                   type="button"

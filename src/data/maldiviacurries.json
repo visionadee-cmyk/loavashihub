@@ -1,0 +1,283 @@
+[
+  {
+    "title": "Mas Riha",
+    "ingredients": [
+      { "name": "Fresh skipjack tuna cubes", "quantity": 500.0, "unit": "g" },
+      { "name": "Maldivian curry powder", "quantity": 2.5, "unit": "tbsp" },
+      { "name": "Red onion", "quantity": 1.0, "unit": "large" },
+      { "name": "Garlic cloves", "quantity": 3.0, "unit": "pieces" },
+      { "name": "Curry leaves", "quantity": 15.0, "unit": "pieces" },
+      { "name": "Thin coconut milk", "quantity": 1.5, "unit": "cups" },
+      { "name": "Thick coconut milk", "quantity": 1.0, "unit": "cup" },
+      { "name": "Vegetable oil", "quantity": 1.5, "unit": "tbsp" }
+    ]
+  },
+  {
+    "title": "Kandu Kukulhu",
+    "ingredients": [
+      { "name": "Fresh skipjack tuna fillet loins", "quantity": 600.0, "unit": "g" },
+      { "name": "Maldivian roast spice paste", "quantity": 4.0, "unit": "tbsp" },
+      { "name": "Thick coconut milk", "quantity": 2.0, "unit": "cups" },
+      { "name": "Red onion", "quantity": 1.0, "unit": "medium" },
+      { "name": "Curry leaves", "quantity": 12.0, "unit": "pieces" }
+    ]
+  },
+  {
+    "title": "Kulhi Riha",
+    "ingredients": [
+      { "name": "Tuna cubes", "quantity": 500.0, "unit": "g" },
+      { "name": "Chilli powder", "quantity": 1.5, "unit": "tbsp" },
+      { "name": "Red onion", "quantity": 2.0, "unit": "medium" },
+      { "name": "Fresh bilimbi (Bilamagu)", "quantity": 6.0, "unit": "pieces" },
+      { "name": "Thick coconut milk", "quantity": 1.5, "unit": "cups" }
+    ]
+  },
+  {
+    "title": "Dhon Riha",
+    "ingredients": [
+      { "name": "Tuna pieces", "quantity": 400.0, "unit": "g" },
+      { "name": "Turmeric powder", "quantity": 1.0, "unit": "tsp" },
+      { "name": "Cumin powder", "quantity": 1.0, "unit": "tsp" },
+      { "name": "Red onion", "quantity": 1.0, "unit": "medium" },
+      { "name": "Coconut milk", "quantity": 2.0, "unit": "cups" }
+    ]
+  },
+  {
+    "title": "Tharukaaree Riha",
+    "ingredients": [
+      { "name": "Mixed chopped vegetables", "quantity": 3.5, "unit": "cups" },
+      { "name": "Curry powder", "quantity": 1.5, "unit": "tbsp" },
+      { "name": "Red onion", "quantity": 1.0, "unit": "medium" },
+      { "name": "Coconut milk", "quantity": 2.0, "unit": "cups" },
+      { "name": "Vegetable oil", "quantity": 2.0, "unit": "tbsp" }
+    ]
+  },
+  {
+    "title": "Muguriha",
+    "ingredients": [
+      { "name": "Red lentils (Dhal)", "quantity": 1.0, "unit": "cup" },
+      { "name": "Red onion", "quantity": 1.0, "unit": "small" },
+      { "name": "Turmeric powder", "quantity": 0.5, "unit": "tsp" },
+      { "name": "Thick coconut milk", "quantity": 1.0, "unit": "cup" },
+      { "name": "Water", "quantity": 2.5, "unit": "cups" }
+    ]
+  },
+  {
+    "title": "Muranga Fathu Riha",
+    "ingredients": [
+      { "name": "Moringa leaves (Muranga faiy)", "quantity": 2.0, "unit": "cups" },
+      { "name": "Smoked tuna slices", "quantity": 50.0, "unit": "g" },
+      { "name": "Red onion", "quantity": 1.0, "unit": "small" },
+      { "name": "Coconut milk", "quantity": 1.5, "unit": "cups" }
+    ]
+  },
+  {
+    "title": "Miruhulee Kukulhu",
+    "ingredients": [
+      { "name": "Chicken curry cuts", "quantity": 1.0, "unit": "kg" },
+      { "name": "Dry red chillies", "quantity": 10.0, "unit": "pieces" },
+      { "name": "Grated coconut", "quantity": 0.5, "unit": "cup" },
+      { "name": "Red onions", "quantity": 2.0, "unit": "large" },
+      { "name": "Vegetable oil", "quantity": 3.0, "unit": "tbsp" }
+    ]
+  },
+  {
+    "title": "Tomato Chicken Curry",
+    "ingredients": [
+      { "name": "Chicken pieces", "quantity": 800.0, "unit": "g" },
+      { "name": "Chopped tomatoes", "quantity": 4.0, "unit": "large" },
+      { "name": "Tomato paste", "quantity": 2.0, "unit": "tbsp" },
+      { "name": "Red onions", "quantity": 2.0, "unit": "medium" },
+      { "name": "Vegetable oil", "quantity": 2.0, "unit": "tbsp" }
+    ]
+  },
+  {
+    "title": "Hanaakuri Mas",
+    "ingredients": [
+      { "name": "Tuna cubes", "quantity": 500.0, "unit": "g" },
+      { "name": "Roasted coconut & spice paste", "quantity": 4.0, "unit": "tbsp" },
+      { "name": "Red onion", "quantity": 1.5, "unit": "medium" },
+      { "name": "Curry leaves", "quantity": 15.0, "unit": "pieces" },
+      { "name": "Vegetable oil", "quantity": 2.0, "unit": "tbsp" }
+    ]
+  },
+  {
+    "title": "Fasjehi Riha",
+    "ingredients": [
+      { "name": "Tuna pieces", "quantity": 500.0, "unit": "g" },
+      { "name": "Maldivian curry powder", "quantity": 2.0, "unit": "tbsp" },
+      { "name": "Red onions", "quantity": 3.0, "unit": "medium" },
+      { "name": "Coconut milk", "quantity": 2.5, "unit": "cups" }
+    ]
+  },
+  {
+    "title": "Baraboa Riha",
+    "ingredients": [
+      { "name": "Pumpkin cubes", "quantity": 3.0, "unit": "cups" },
+      { "name": "Smoked tuna slices", "quantity": 75.0, "unit": "g" },
+      { "name": "Curry powder", "quantity": 1.0, "unit": "tbsp" },
+      { "name": "Coconut milk", "quantity": 2.0, "unit": "cups" }
+    ]
+  },
+  {
+    "title": "Bambukeyo Riha",
+    "ingredients": [
+      { "name": "Breadfruit pieces", "quantity": 3.0, "unit": "cups" },
+      { "name": "Thick coconut milk", "quantity": 2.0, "unit": "cups" },
+      { "name": "Red onion", "quantity": 1.0, "unit": "medium" },
+      { "name": "Curry powder", "quantity": 1.5, "unit": "tbsp" }
+    ]
+  },
+  {
+    "title": "Chana Riha",
+    "ingredients": [
+      { "name": "Canned chickpeas", "quantity": 400.0, "unit": "g" },
+      { "name": "Curry powder", "quantity": 1.0, "unit": "tbsp" },
+      { "name": "Red onion", "quantity": 1.0, "unit": "medium" },
+      { "name": "Coconut milk", "quantity": 1.5, "unit": "cups" }
+    ]
+  },
+  {
+    "title": "Kattala Riha",
+    "ingredients": [
+      { "name": "Sweet potato cubes", "quantity": 3.0, "unit": "cups" },
+      { "name": "Maldivian curry paste", "quantity": 2.0, "unit": "tbsp" },
+      { "name": "Coconut milk", "quantity": 2.0, "unit": "cups" },
+      { "name": "Red onion", "quantity": 1.0, "unit": "medium" }
+    ]
+  },
+  {
+    "title": "Dhandi Aluvi Riha",
+    "ingredients": [
+      { "name": "Cassava cubes", "quantity": 3.0, "unit": "cups" },
+      { "name": "Curry powder", "quantity": 1.0, "unit": "tbsp" },
+      { "name": "Coconut milk", "quantity": 2.0, "unit": "cups" },
+      { "name": "Smoked tuna slices", "quantity": 50.0, "unit": "g" }
+    ]
+  },
+  {
+    "title": "Bis Riha",
+    "ingredients": [
+      { "name": "Hard-boiled eggs", "quantity": 4.0, "unit": "pieces" },
+      { "name": "Potato cubes", "quantity": 2.0, "unit": "medium" },
+      { "name": "Curry powder", "quantity": 1.0, "unit": "tbsp" },
+      { "name": "Coconut milk", "quantity": 1.5, "unit": "cups" }
+    ]
+  },
+  {
+    "title": "Boava Riha",
+    "ingredients": [
+      { "name": "Cleaned octopus pieces", "quantity": 500.0, "unit": "g" },
+      { "name": "Roasted curry powder mix", "quantity": 2.5, "unit": "tbsp" },
+      { "name": "Red onion", "quantity": 2.0, "unit": "medium" },
+      { "name": "Vegetable oil", "quantity": 2.0, "unit": "tbsp" }
+    ]
+  },
+  {
+    "title": "Fofu Riha",
+    "ingredients": [
+      { "name": "Wax gourd pieces", "quantity": 3.0, "unit": "cups" },
+      { "name": "Curry powder", "quantity": 1.0, "unit": "tbsp" },
+      { "name": "Coconut milk", "quantity": 2.0, "unit": "cups" },
+      { "name": "Smoked tuna", "quantity": 50.0, "unit": "g" }
+    ]
+  },
+  {
+    "title": "Podhi Riha",
+    "ingredients": [
+      { "name": "Powdered dried fish", "quantity": 4.0, "unit": "tbsp" },
+      { "name": "Red onion", "quantity": 1.0, "unit": "medium" },
+      { "name": "Curry powder", "quantity": 1.0, "unit": "tbsp" },
+      { "name": "Coconut milk", "quantity": 1.5, "unit": "cups" }
+    ]
+  },
+  {
+    "title": "Fathu Riha",
+    "ingredients": [
+      { "name": "Mixed green leaves", "quantity": 3.0, "unit": "cups" },
+      { "name": "Smoked tuna", "quantity": 50.0, "unit": "g" },
+      { "name": "Coconut milk", "quantity": 1.5, "unit": "cups" },
+      { "name": "Red onion", "quantity": 1.0, "unit": "small" }
+    ]
+  },
+  {
+    "title": "Kuhlhavah Riha",
+    "ingredients": [
+      { "name": "Mangrove apple pieces", "quantity": 2.0, "unit": "cups" },
+      { "name": "Tuna pieces", "quantity": 300.0, "unit": "g" },
+      { "name": "Curry powder", "quantity": 1.5, "unit": "tbsp" },
+      { "name": "Coconut milk", "quantity": 2.0, "unit": "cups" }
+    ]
+  },
+  {
+    "title": "Hithi Riha",
+    "ingredients": [
+      { "name": "Traditional medicinal herbs", "quantity": 1.0, "unit": "cup" },
+      { "name": "Tuna pieces", "quantity": 300.0, "unit": "g" },
+      { "name": "Coconut milk", "quantity": 2.0, "unit": "cups" }
+    ]
+  },
+  {
+    "title": "Lonumirus Riha",
+    "ingredients": [
+      { "name": "Fresh tuna cuts", "quantity": 500.0, "unit": "g" },
+      { "name": "Local red chilli paste", "quantity": 3.0, "unit": "tbsp" },
+      { "name": "Red onion", "quantity": 1.0, "unit": "medium" },
+      { "name": "Water", "quantity": 2.0, "unit": "cups" }
+    ]
+  },
+  {
+    "title": "Maskotaa Riha",
+    "ingredients": [
+      { "name": "Dried fish bone/skin pieces", "quantity": 1.5, "unit": "cups" },
+      { "name": "Curry powder", "quantity": 1.5, "unit": "tbsp" },
+      { "name": "Red onion", "quantity": 1.0, "unit": "medium" },
+      { "name": "Coconut milk", "quantity": 2.0, "unit": "cups" }
+    ]
+  },
+  {
+    "title": "Kirugarudhiya",
+    "ingredients": [
+      { "name": "Coconut milk", "quantity": 2.5, "unit": "cups" },
+      { "name": "Turmeric powder", "quantity": 0.5, "unit": "tsp" },
+      { "name": "Red onion", "quantity": 1.0, "unit": "medium" },
+      { "name": "Pandan leaf", "quantity": 1.0, "unit": "piece" }
+    ]
+  },
+  {
+    "title": "Garudhiya",
+    "ingredients": [
+      { "name": "Fresh skipjack tuna chunks", "quantity": 500.0, "unit": "g" },
+      { "name": "Water", "quantity": 4.0, "unit": "cups" },
+      { "name": "Salt", "quantity": 1.5, "unit": "tsp" }
+    ]
+  },
+  {
+    "title": "Theluli Riha",
+    "ingredients": [
+      { "name": "Tuna pieces", "quantity": 400.0, "unit": "g" },
+      { "name": "Red onions (for frying)", "quantity": 3.0, "unit": "medium" },
+      { "name": "Curry powder", "quantity": 1.0, "unit": "tbsp" },
+      { "name": "Vegetable oil", "quantity": 4.0, "unit": "tbsp" }
+    ]
+  },
+  {
+    "title": "Mugu Tuna Riha",
+    "ingredients": [
+      { "name": "Red lentils", "quantity": 0.5, "unit": "cup" },
+      { "name": "Tuna cubes", "quantity": 300.0, "unit": "g" },
+      { "name": "Curry powder", "quantity": 1.0, "unit": "tbsp" },
+      { "name": "Coconut milk", "quantity": 1.5, "unit": "cups" }
+    ]
+  },
+  {
+    "title": "Kukulhu Riha (Classic)",
+    "ingredients": [
+      { "name": "Chicken cuts", "quantity": 1.0, "unit": "kg" },
+      { "name": "Chicken curry powder", "quantity": 2.5, "unit": "tbsp" },
+      { "name": "Red onions", "quantity": 2.0, "unit": "medium" },
+      { "name": "Coconut milk", "quantity": 2.5, "unit": "cups" },
+      { "name": "Vegetable oil", "quantity": 2.0, "unit": "tbsp" }
+    ]
+  }
+]

@@ -1,0 +1,278 @@
+[
+  {
+    "title": "Gabulhi Boakibaa",
+    "ingredients": [
+      { "name": "Young coconut meat (Gabulhi)", "quantity": 2.0, "unit": "cups" },
+      { "name": "All-purpose flour", "quantity": 1.0, "unit": "cup" },
+      { "name": "Granulated sugar", "quantity": 0.75, "unit": "cup" },
+      { "name": "Rosewater", "quantity": 1.0, "unit": "tbsp" }
+    ]
+  },
+  {
+    "title": "Githeyo Boakibaa",
+    "ingredients": [
+      { "name": "Ground rice", "quantity": 1.5, "unit": "cups" },
+      { "name": "Thick coconut milk", "quantity": 1.5, "unit": "cups" },
+      { "name": "Granulated sugar", "quantity": 1.0, "unit": "cup" },
+      { "name": "Ghee (Githeyo)", "quantity": 0.5, "unit": "cup" },
+      { "name": "Red onion", "quantity": 0.5, "unit": "piece" }
+    ]
+  },
+  {
+    "title": "Fehi Boakibaa",
+    "ingredients": [
+      { "name": "Eggs", "quantity": 4.0, "unit": "pieces" },
+      { "name": "All-purpose flour", "quantity": 1.0, "unit": "cup" },
+      { "name": "Thick coconut milk", "quantity": 1.0, "unit": "cup" },
+      { "name": "Granulated sugar", "quantity": 0.75, "unit": "cup" },
+      { "name": "Green food coloring", "quantity": 3.0, "unit": "drops" }
+    ]
+  },
+  {
+    "title": "Dhandi Aluvi Boakibaa",
+    "ingredients": [
+      { "name": "Grated cassava (Dhandi aluvi)", "quantity": 2.0, "unit": "cups" },
+      { "name": "Young grated coconut", "quantity": 1.0, "unit": "cup" },
+      { "name": "Granulated sugar", "quantity": 1.0, "unit": "cup" },
+      { "name": "Rosewater", "quantity": 1.0, "unit": "tbsp" }
+    ]
+  },
+  {
+    "title": "Dhonkeyo Kaju",
+    "ingredients": [
+      { "name": "Ripe bananas", "quantity": 4.0, "unit": "pieces" },
+      { "name": "Grated coconut", "quantity": 1.0, "unit": "cup" },
+      { "name": "All-purpose flour", "quantity": 1.0, "unit": "cup" },
+      { "name": "Granulated sugar", "quantity": 4.0, "unit": "tbsp" },
+      { "name": "Rosewater", "quantity": 1.0, "unit": "tbsp" },
+      { "name": "Frying oil", "quantity": 500.0, "unit": "ml" }
+    ]
+  },
+  {
+    "title": "Gerikiru Boakibaa",
+    "ingredients": [
+      { "name": "Sweetened condensed milk", "quantity": 397.0, "unit": "g" },
+      { "name": "All-purpose flour", "quantity": 1.0, "unit": "cup" },
+      { "name": "Eggs", "quantity": 4.0, "unit": "pieces" },
+      { "name": "Ghee", "quantity": 0.25, "unit": "cup" },
+      { "name": "Cardamom powder", "quantity": 1.0, "unit": "tsp" }
+    ]
+  },
+  {
+    "title": "Cream Jehi Banas",
+    "ingredients": [
+      { "name": "Bakery buns", "quantity": 6.0, "unit": "pieces" },
+      { "name": "Butter", "quantity": 100.0, "unit": "g" },
+      { "name": "Icing sugar", "quantity": 1.5, "unit": "cups" },
+      { "name": "Pink food coloring", "quantity": 2.0, "unit": "drops" }
+    ]
+  },
+  {
+    "title": "Roast Paan",
+    "ingredients": [
+      { "name": "Sandwich bread slices", "quantity": 6.0, "unit": "pieces" },
+      { "name": "Sweetened condensed milk", "quantity": 0.5, "unit": "can" },
+      { "name": "Eggs", "quantity": 2.0, "unit": "pieces" },
+      { "name": "Butter", "quantity": 2.0, "unit": "tbsp" }
+    ]
+  },
+  {
+    "title": "Caramel Pudding",
+    "ingredients": [
+      { "name": "Eggs", "quantity": 4.0, "unit": "pieces" },
+      { "name": "Sweetened condensed milk", "quantity": 397.0, "unit": "g" },
+      { "name": "Whole milk", "quantity": 1.0, "unit": "cup" },
+      { "name": "Granulated sugar", "quantity": 0.5, "unit": "cup" },
+      { "name": "Vanilla essence", "quantity": 1.0, "unit": "tsp" }
+    ]
+  },
+  {
+    "title": "Kaamaranga",
+    "ingredients": [
+      { "name": "All-purpose flour", "quantity": 2.0, "unit": "cups" },
+      { "name": "Granulated sugar", "quantity": 1.5, "unit": "cups" },
+      { "name": "Cardamom powder", "quantity": 0.5, "unit": "tsp" },
+      { "name": "Water", "quantity": 0.75, "unit": "cup" },
+      { "name": "Frying oil", "quantity": 500.0, "unit": "ml" }
+    ]
+  },
+  {
+    "title": "Handulu Bondibaiy",
+    "ingredients": [
+      { "name": "Basmati rice", "quantity": 1.0, "unit": "cup" },
+      { "name": "Granulated sugar", "quantity": 1.0, "unit": "cup" },
+      { "name": "Thick coconut milk", "quantity": 1.5, "unit": "cups" },
+      { "name": "Rosewater", "quantity": 1.0, "unit": "tbsp" },
+      { "name": "Cardamom pods", "quantity": 5.0, "unit": "pieces" }
+    ]
+  },
+  {
+    "title": "Bambukeyo Bondibaiy",
+    "ingredients": [
+      { "name": "Diced breadfruit", "quantity": 2.0, "unit": "cups" },
+      { "name": "Granulated sugar", "quantity": 1.0, "unit": "cup" },
+      { "name": "Thick coconut milk", "quantity": 1.5, "unit": "cups" },
+      { "name": "Pandan leaf", "quantity": 1.0, "unit": "piece" }
+    ]
+  },
+  {
+    "title": "Saagu Bondibaiy",
+    "ingredients": [
+      { "name": "Sago pearls", "quantity": 1.0, "unit": "cup" },
+      { "name": "Granulated sugar", "quantity": 0.75, "unit": "cup" },
+      { "name": "Thick coconut milk", "quantity": 1.5, "unit": "cups" },
+      { "name": "Rosewater", "quantity": 1.0, "unit": "tbsp" }
+    ]
+  },
+  {
+    "title": "Mugu Bondibaiy",
+    "ingredients": [
+      { "name": "Yellow lentils (Mugu)", "quantity": 1.0, "unit": "cup" },
+      { "name": "Granulated sugar", "quantity": 1.0, "unit": "cup" },
+      { "name": "Thick coconut milk", "quantity": 1.5, "unit": "cups" },
+      { "name": "Pandan leaf", "quantity": 1.0, "unit": "piece" }
+    ]
+  },
+  {
+    "title": "Fufoo Kandhi",
+    "ingredients": [
+      { "name": "Grated wax gourd (Fufoo)", "quantity": 2.0, "unit": "cups" },
+      { "name": "Ground rice", "quantity": 2.0, "unit": "tbsp" },
+      { "name": "Granulated sugar", "quantity": 0.75, "unit": "cup" },
+      { "name": "Thick coconut milk", "quantity": 2.0, "unit": "cups" }
+    ]
+  },
+  {
+    "title": "Kashikeyo Kandhi",
+    "ingredients": [
+      { "name": "Screwpine fruit pulp (Kashikeyo)", "quantity": 1.0, "unit": "cup" },
+      { "name": "Ground rice", "quantity": 2.0, "unit": "tbsp" },
+      { "name": "Granulated sugar", "quantity": 1.0, "unit": "cup" },
+      { "name": "Thick coconut milk", "quantity": 2.0, "unit": "cups" }
+    ]
+  },
+  {
+    "title": "Pirini",
+    "ingredients": [
+      { "name": "Ground rice", "quantity": 0.5, "unit": "cup" },
+      { "name": "Whole milk", "quantity": 3.0, "unit": "cups" },
+      { "name": "Sweetened condensed milk", "quantity": 0.5, "unit": "can" },
+      { "name": "Rosewater", "quantity": 1.0, "unit": "tbsp" },
+      { "name": "Cinnamon powder", "quantity": 0.5, "unit": "tsp" }
+    ]
+  },
+  {
+    "title": "Ravaa Pirini",
+    "ingredients": [
+      { "name": "Semolina (Ravaa)", "quantity": 0.5, "unit": "cup" },
+      { "name": "Whole milk", "quantity": 3.0, "unit": "cups" },
+      { "name": "Sweetened condensed milk", "quantity": 0.5, "unit": "can" },
+      { "name": "Cinnamon powder", "quantity": 0.5, "unit": "tsp" }
+    ]
+  },
+  {
+    "title": "Haluvidhaa",
+    "ingredients": [
+      { "name": "Agar-agar strands", "quantity": 10.0, "unit": "g" },
+      { "name": "Water", "quantity": 3.0, "unit": "cups" },
+      { "name": "Sweetened condensed milk", "quantity": 1.0, "unit": "can" },
+      { "name": "Cardamom powder", "quantity": 0.5, "unit": "tsp" }
+    ]
+  },
+  {
+    "title": "Boakuri Falho",
+    "ingredients": [
+      { "name": "Firm-ripe papaya pieces", "quantity": 3.0, "unit": "cups" },
+      { "name": "Granulated sugar", "quantity": 1.5, "unit": "cups" },
+      { "name": "Pandan leaf", "quantity": 1.0, "unit": "piece" },
+      { "name": "Water", "quantity": 0.5, "unit": "cup" }
+    ]
+  },
+  {
+    "title": "Aveli",
+    "ingredients": [
+      { "name": "Flattened rice flakes (Aveli)", "quantity": 1.5, "unit": "cups" },
+      { "name": "Grated coconut", "quantity": 1.0, "unit": "cup" },
+      { "name": "Granulated sugar", "quantity": 0.5, "unit": "cup" },
+      { "name": "Ripe bananas", "quantity": 3.0, "unit": "pieces" }
+    ]
+  },
+  {
+    "title": "Maafuh",
+    "ingredients": [
+      { "name": "Roasted finger millet flour", "quantity": 1.0, "unit": "cup" },
+      { "name": "Ripe bananas", "quantity": 4.0, "unit": "pieces" },
+      { "name": "Grated coconut", "quantity": 0.5, "unit": "cup" },
+      { "name": "Granulated sugar", "quantity": 4.0, "unit": "tbsp" }
+    ]
+  },
+  {
+    "title": "Foni Faaroshi",
+    "ingredients": [
+      { "name": "Crushed bread rusks (Faaroshi)", "quantity": 2.0, "unit": "cups" },
+      { "name": "Grated coconut", "quantity": 1.0, "unit": "cup" },
+      { "name": "Granulated sugar", "quantity": 0.5, "unit": "cup" },
+      { "name": "Ripe bananas", "quantity": 2.0, "unit": "pieces" }
+    ]
+  },
+  {
+    "title": "Kiru",
+    "ingredients": [
+      { "name": "Thick coconut milk", "quantity": 3.0, "unit": "cups" },
+      { "name": "Ground rice", "quantity": 0.25, "unit": "cup" },
+      { "name": "Granulated sugar", "quantity": 0.5, "unit": "cup" },
+      { "name": "Rosewater", "quantity": 1.0, "unit": "tbsp" }
+    ]
+  },
+  {
+    "title": "Fen Folhi",
+    "ingredients": [
+      { "name": "All-purpose flour", "quantity": 1.0, "unit": "cup" },
+      { "name": "Water", "quantity": 1.25, "unit": "cups" },
+      { "name": "Salt", "quantity": 0.25, "unit": "tsp" },
+      { "name": "Butter", "quantity": 1.0, "unit": "tbsp" }
+    ]
+  },
+  {
+    "title": "Kirukeyo",
+    "ingredients": [
+      { "name": "Green plantains", "quantity": 3.0, "unit": "pieces" },
+      { "name": "Whole milk", "quantity": 2.0, "unit": "cups" },
+      { "name": "Granulated sugar", "quantity": 0.5, "unit": "cup" },
+      { "name": "Cinnamon stick", "quantity": 1.0, "unit": "piece" }
+    ]
+  },
+  {
+    "title": "Baraboa Halwa",
+    "ingredients": [
+      { "name": "Mashed pumpkin", "quantity": 2.0, "unit": "cups" },
+      { "name": "Ghee", "quantity": 4.0, "unit": "tbsp" },
+      { "name": "Sweetened condensed milk", "quantity": 0.5, "unit": "can" },
+      { "name": "Cardamom powder", "quantity": 0.5, "unit": "tsp" }
+    ]
+  },
+  {
+    "title": "Foni Bisgandu",
+    "ingredients": [
+      { "name": "Eggs", "quantity": 3.0, "unit": "pieces" },
+      { "name": "Granulated sugar", "quantity": 3.0, "unit": "tbsp" },
+      { "name": "Butter", "quantity": 1.0, "unit": "tbsp" }
+    ]
+  },
+  {
+    "title": "Coconut Balls",
+    "ingredients": [
+      { "name": "Grated coconut", "quantity": 2.0, "unit": "cups" },
+      { "name": "Palm sugar (Dhiyaa hakuru)", "quantity": 0.75, "unit": "cup" }
+    ]
+  },
+  {
+    "title": "Rose Haluvidhaa",
+    "ingredients": [
+      { "name": "Agar-agar strands", "quantity": 10.0, "unit": "g" },
+      { "name": "Water", "quantity": 3.0, "unit": "cups" },
+      { "name": "Rose syrup", "quantity": 0.25, "unit": "cup" },
+      { "name": "Sweetened condensed milk", "quantity": 0.5, "unit": "can" }
+    ]
+  }
+]

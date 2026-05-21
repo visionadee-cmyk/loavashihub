@@ -1,27 +1,65 @@
 import { motion } from 'framer-motion';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar, Legend, PieChart, Pie, Cell } from 'recharts';
 import AppShell from '../components/AppShell';
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { demoDailySales, demoMonthlySales, demoPaymentTypeBreakdown } from '../data/demo';
 import { loadCollection } from '../lib/firestore';
 import { formatMVR } from '../lib/mvr';
+import type { Bill, MenuItem, InventoryItem, PurchaseOrder } from '../types';
 
 const paymentColors = ['#8b5cf6', '#38bdf8', '#f97316'];
 
 export default function AdminDashboard() {
-  const [products, setProducts] = useState([] as any[]);
-  const [inventory, setInventory] = useState([] as any[]);
+  const [products, setProducts] = useState<MenuItem[]>([]);
+  const [inventory, setInventory] = useState<InventoryItem[]>([]);
+  const [bills, setBills] = useState<Bill[]>([]);
+  const [purchaseOrders, setPurchaseOrders] = useState<PurchaseOrder[]>([]);
 
   useEffect(() => {
-    loadCollection('menuItems', []).then((items) => { if (items.length) setProducts(items); }).catch(() => undefined);
-    loadCollection('inventory', []).then((items) => { if (items.length) setInventory(items); }).catch(() => undefined);
+    loadCollection<MenuItem>('menuItems', [])
+      .then((items) => { if (items.length) setProducts(items); })
+      .catch(() => undefined);
+    loadCollection<InventoryItem>('inventory', [])
+      .then((items) => { if (items.length) setInventory(items); })
+      .catch(() => undefined);
+    loadCollection<Bill>('bills', [])
+      .then((items) => { if (items.length) setBills(items); })
+      .catch(() => undefined);
+    loadCollection<PurchaseOrder>('purchaseOrders', [])
+      .then((items) => { if (items.length) setPurchaseOrders(items); })
+      .catch(() => undefined);
   }, []);
 
-  const todaySales = 18800;
-  const monthlySales = 169200;
-  const monthlyExpenses = 35000 + 92000 + 13200 + 8000;
-  const profit = monthlySales - monthlyExpenses;
-  const topItems = products.slice(0, 5).length ? products.slice(0, 5) : [];
+  const todaySales = useMemo(() => {
+    const todayKey = new Date().toDateString();
+    return bills.reduce((sum, bill) => {
+      if (new Date(bill.createdAt).toDateString() !== todayKey) return sum;
+      return sum + bill.items.reduce((itemSum, item) => itemSum + item.price * item.quantity, 0);
+    }, 0);
+  }, [bills]);
+
+  const openBills = bills.filter((bill) => bill.status !== 'Served').length;
+  const receivedOrders = purchaseOrders.filter((order) => order.status === 'Received').length;
+
+  const topItems = useMemo(() => {
+    if (!bills.length) return products.slice(0, 5);
+    const productCount = bills.reduce<Record<string, { quantity: number; price: number }>>((acc, bill) => {
+      bill.items.forEach((item) => {
+        if (acc[item.name]) {
+          acc[item.name].quantity += item.quantity;
+        } else {
+          acc[item.name] = { quantity: item.quantity, price: item.price };
+        }
+      });
+      return acc;
+    }, {});
+
+    return Object.entries(productCount)
+      .sort(([, a], [, b]) => b.quantity - a.quantity)
+      .slice(0, 5)
+      .map(([name, details]) => ({ id: name, name, category: 'POS Product', price: details.price }));
+  }, [bills, products]);
+
   const lowStockAlerts = inventory.filter((item) => item.quantity <= item.lowStock);
 
   return (
@@ -30,9 +68,9 @@ export default function AdminDashboard() {
         <div className="grid gap-5 xl:grid-cols-4">
           {[
             { label: "Today's sales", value: formatMVR(todaySales) },
-            { label: 'Monthly sales', value: formatMVR(monthlySales) },
-            { label: 'Monthly expenses', value: formatMVR(monthlyExpenses) },
-            { label: 'Profit / loss', value: formatMVR(profit) },
+            { label: 'Open bills', value: openBills },
+            { label: 'Received purchase orders', value: receivedOrders },
+            { label: 'Low stock items', value: lowStockAlerts.length },
           ].map((metric) => (
             <motion.div
               key={metric.label}

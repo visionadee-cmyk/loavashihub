@@ -8,8 +8,8 @@ const logo = '/logo.jpeg';
 import type { UserRole } from '../types';
 
 const defaultCredentials = {
-  admin: { email: 'loavashihub@gmail.com', password: 'Loavashi123' },
-  cashier: { email: 'cashier@loavashi.com', password: 'cashier123' },
+  admin: { email: '', password: '' },
+  cashier: { email: '', password: '' },
 };
 
 export default function LoginPage() {
@@ -123,14 +123,9 @@ export default function LoginPage() {
               </div>
             </div>
 
-            <div className="grid gap-3 rounded-3xl border border-slate-800 bg-slate-950 p-5 text-sm text-slate-300">
-              <p className="font-semibold text-slate-100">Demo credentials</p>
-              <p>Admin: admin@loavashi.com / admin123</p>
-              <p>Cashier: cashier@loavashi.com / cashier123</p>
-            </div>
-            <div className="rounded-3xl border border-slate-800 bg-slate-950/70 p-5 text-center text-slate-400">
-              <p className="text-sm">Use the email and password shown for admin or cashier access.</p>
-              <p className="text-xs text-slate-500">Real Firebase auth is enabled when configured.</p>
+            <div className="rounded-3xl border border-slate-800 bg-slate-950/70 p-5 text-sm text-slate-300">
+              <p className="font-semibold text-white">Firebase login required</p>
+              <p className="mt-2 text-sm text-slate-400">Enter the Firebase account credentials configured for your app.</p>
             </div>
           </div>
         </div>

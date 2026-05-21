@@ -1,7 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Plus, DollarSign, CheckCircle2 } from 'lucide-react';
 import AppShell from '../components/AppShell';
-import { demoPurchases } from '../data/demo';
 import { useInventory } from '../context/InventoryContext';
 import { hasFirebaseConfig } from '../lib/firebase';
 import { loadCollection, saveDocument } from '../lib/firestore';
@@ -19,7 +18,7 @@ const defaultPurchase: Partial<PurchaseOrder> = {
 
 export default function PurchaseProductsPage() {
   const { inventory, addInventoryItem, updateInventoryItem } = useInventory();
-  const [orders, setOrders] = useState<PurchaseOrder[]>(demoPurchases);
+  const [orders, setOrders] = useState<PurchaseOrder[]>([]);
   const [form, setForm] = useState<Partial<PurchaseOrder>>(defaultPurchase);
 
   useEffect(() => {

@@ -23,6 +23,8 @@ export default function MenuManagement() {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [uploadError, setUploadError] = useState<string | null>(null);
+  const [saveError, setSaveError] = useState<string | null>(null);
+  const firebaseMissing = !hasFirebaseConfig;
 
   const recentItems = useMemo(() => products.slice(0, 6), [products]);
   const categoryOptions = useMemo(
@@ -49,6 +51,11 @@ export default function MenuManagement() {
   }, []);
 
   const handleImageUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    if (!isCloudinaryEnabled) {
+      setUploadError('Cloudinary upload preset is not configured. Set VITE_CLOUDINARY_UPLOAD_PRESET in your .env or Vercel environment variables.');
+      return;
+    }
+
     const file = event.target.files?.[0];
     if (!file) {
       return;
@@ -86,7 +93,10 @@ export default function MenuManagement() {
         await saveDocument('menuItems', payload.id, payload);
       } catch (error) {
         console.error('Failed to save menu item to Firestore:', error);
+        setSaveError('Failed to save menu item to Firestore. Check deployment logs.');
       }
+    } else {
+      setSaveError('Firebase is not configured for this deployment. Menu items will not persist to Firestore.');
     }
 
     setForm(initialForm);
@@ -112,11 +122,31 @@ export default function MenuManagement() {
     <AppShell title="Menu management">
       <div className="grid gap-6 xl:grid-cols-[0.85fr_0.95fr]">
         <section className="rounded-3xl border border-slate-800 bg-slate-950/70 p-6 shadow-2xl shadow-slate-950/20">
-          <div className="mb-5 flex items-center justify-between gap-3">
-            <div>
-              <h3 className="text-xl font-semibold text-white">Add or edit menu items</h3>
-              <p className="text-sm text-slate-400">Configure categories, prices in MVR and item descriptions.</p>
+          <div className="mb-5 flex flex-col gap-3">
+            <div className="flex items-center justify-between gap-3">
+              <div>
+                <h3 className="text-xl font-semibold text-white">Add or edit menu items</h3>
+                <p className="text-sm text-slate-400">Configure categories, prices in MVR and item descriptions.</p>
+              </div>
+              <button
+                onClick={handleSave}
+                disabled={loading}
+                className="inline-flex items-center gap-2 rounded-3xl bg-violet-600 px-4 py-3 text-sm font-semibold text-white hover:bg-violet-500 disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                <Check className="h-4 w-4" />
+                {editingId ? 'Save item' : 'Add item'}
+              </button>
             </div>
+            {firebaseMissing ? (
+              <div className="rounded-3xl border border-amber-400 bg-amber-500/10 px-4 py-3 text-sm text-amber-200">
+                Firestore is not configured in this deployment. New menu items will only be stored locally in the browser.
+              </div>
+            ) : null}
+            {saveError ? (
+              <div className="rounded-3xl border border-rose-500 bg-rose-500/10 px-4 py-3 text-sm text-rose-200">
+                {saveError}
+              </div>
+            ) : null}
             <button
               onClick={handleSave}
               disabled={loading}
@@ -186,14 +216,15 @@ export default function MenuManagement() {
                 accept="image/*"
                 capture="environment"
                 onChange={handleImageUpload}
-                className="mt-2 w-full rounded-3xl border border-slate-700 bg-slate-950 px-4 py-3 text-slate-100 outline-none"
+                disabled={!isCloudinaryEnabled}
+                className="mt-2 w-full rounded-3xl border border-slate-700 bg-slate-950 px-4 py-3 text-slate-100 outline-none disabled:cursor-not-allowed disabled:opacity-50"
               />
             </label>
             {uploadError ? <p className="text-sm text-rose-400">Upload error: {uploadError}</p> : null}
             {isCloudinaryEnabled ? (
               <p className="text-sm text-slate-500">Images upload directly to Cloudinary using the configured unsigned preset.</p>
             ) : (
-              <p className="text-sm text-amber-400">Set `VITE_CLOUDINARY_UPLOAD_PRESET` to enable camera/file upload directly to Cloudinary.</p>
+              <p className="text-sm text-amber-400">Cloudinary upload preset is not configured. Set <code>VITE_CLOUDINARY_UPLOAD_PRESET</code> in your local .env or in Vercel environment variables.</p>
             )}
             {form.image ? (
               <div className="mt-4 max-w-md overflow-hidden rounded-3xl border border-slate-700 bg-slate-900">

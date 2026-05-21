@@ -1,7 +1,6 @@
 import { createContext, useContext, useEffect, useState, type ReactNode } from 'react';
 import { signInWithEmailAndPassword, signOut } from 'firebase/auth';
 import { auth, hasFirebaseConfig } from '../lib/firebase';
-import { demoUsers } from '../data/demo';
 import type { AppUser, UserRole } from '../types';
 
 interface AuthContextState {
@@ -30,39 +29,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   async function login(email: string, password: string, role: UserRole) {
+    if (!hasFirebaseConfig || !auth) {
+      throw new Error('Firebase is not configured. Configure Firebase to sign in.');
+    }
+
     setLoading(true);
     try {
-      if (hasFirebaseConfig && auth) {
-        try {
-          await signInWithEmailAndPassword(auth, email, password);
-          const userData: AppUser = {
-            id: email,
-            name: role === 'admin' ? 'Loavashi Admin' : 'Cashier User',
-            role,
-            email,
-          };
-          setUser(userData);
-          localStorage.setItem(STORAGE_KEY, JSON.stringify(userData));
-          return;
-        } catch (error) {
-          // If Firebase login fails, fall back to demo credentials for local testing.
-          console.warn('Firebase login failed, falling back to demo users.', error);
-        }
-      }
-
-      const demoUser = demoUsers.find(
-        (record) => record.email === email && record.password === password && record.role === role,
-      );
-
-      if (!demoUser) {
-        throw new Error('Invalid credentials. Use admin@loavashi.com/admin123 or cashier@loavashi.com/cashier123.');
-      }
-
+      await signInWithEmailAndPassword(auth, email, password);
       const userData: AppUser = {
-        id: demoUser.email,
-        name: demoUser.name,
-        role: demoUser.role,
-        email: demoUser.email,
+        id: email,
+        name: role === 'admin' ? 'Loavashi Admin' : 'Cashier User',
+        role,
+        email,
       };
       setUser(userData);
       localStorage.setItem(STORAGE_KEY, JSON.stringify(userData));

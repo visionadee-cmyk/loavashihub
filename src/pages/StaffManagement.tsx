@@ -3,7 +3,6 @@ import { Plus, Trash2, Pen } from 'lucide-react';
 import AppShell from '../components/AppShell';
 import { hasFirebaseConfig } from '../lib/firebase';
 import { loadCollection, saveDocument, deleteDocument } from '../lib/firestore';
-import { demoStaff } from '../data/demo';
 import type { StaffMember } from '../types';
 
 const defaultStaff: Partial<StaffMember> = {
@@ -21,7 +20,7 @@ export default function StaffManagement() {
   const [staffList, setStaffList] = useState<StaffMember[]>([]);
   useEffect(() => {
     if (!hasFirebaseConfig) {
-      setStaffList(demoStaff);
+      setStaffList([]);
       return;
     }
 

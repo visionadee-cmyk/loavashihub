@@ -3,7 +3,6 @@ import { Plus, Trash2, Edit3 } from 'lucide-react';
 import AppShell from '../components/AppShell';
 import { hasFirebaseConfig } from '../lib/firebase';
 import { loadCollection, saveDocument, deleteDocument } from '../lib/firestore';
-import { demoAssets } from '../data/demo';
 import type { Asset } from '../types';
 
 const defaultAsset: Partial<Asset> = {
@@ -19,7 +18,7 @@ export default function AssetManagement() {
   const [assets, setAssets] = useState<Asset[]>([]);
   useEffect(() => {
     if (!hasFirebaseConfig) {
-      setAssets(demoAssets);
+      setAssets([]);
       return;
     }
 

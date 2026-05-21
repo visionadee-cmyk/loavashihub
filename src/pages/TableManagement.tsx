@@ -3,7 +3,6 @@ import { Plus, Trash2, Edit3 } from 'lucide-react';
 import AppShell from '../components/AppShell';
 import { hasFirebaseConfig } from '../lib/firebase';
 import { loadCollection, saveDocument, deleteDocument } from '../lib/firestore';
-import { demoTables } from '../data/demo';
 import type { TableItem } from '../types';
 
 const defaultTable: Partial<TableItem> = {
@@ -16,7 +15,7 @@ export default function TableManagement() {
   const [tables, setTables] = useState<TableItem[]>([]);
   useEffect(() => {
     if (!hasFirebaseConfig) {
-      setTables(demoTables);
+      setTables([]);
       return;
     }
 

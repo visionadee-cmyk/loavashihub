@@ -1,16 +1,16 @@
-import { getApps, initializeApp } from 'firebase/app';
+﻿import { getApps, initializeApp } from 'firebase/app';
 import { getAnalytics } from 'firebase/analytics';
 import { getAuth } from 'firebase/auth';
 import { getFirestore } from 'firebase/firestore';
 
 const firebaseConfig = {
-  apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
-  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
-  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID,
-  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET,
-  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
-  appId: import.meta.env.VITE_FIREBASE_APP_ID,
-  measurementId: import.meta.env.VITE_FIREBASE_MEASUREMENT_ID,
+  apiKey: 'AIzaSyDxAQ1cQD7mxyQ_4qBb04mJZNeNXhD_6Ec',
+  authDomain: 'loavashihubcafe.firebaseapp.com',
+  projectId: 'loavashihubcafe',
+  storageBucket: 'loavashihubcafe.firebasestorage.app',
+  messagingSenderId: '997803453794',
+  appId: '1:997803453794:web:5ab8b39c7e17917929d03b',
+  measurementId: 'G-GTFWHSZ9PX',
 };
 
 export const hasFirebaseConfig = Boolean(

@@ -1,19 +1,17 @@
-const CLOUDINARY_CLOUD_NAME = import.meta.env.VITE_CLOUDINARY_CLOUD_NAME || 'dpfynnzbw';
+const CLOUDINARY_CLOUD_NAME = import.meta.env.VITE_CLOUDINARY_CLOUD_NAME || '';
 const CLOUDINARY_UPLOAD_PRESET = import.meta.env.VITE_CLOUDINARY_UPLOAD_PRESET || '';
 const CLOUDINARY_UPLOAD_FOLDER = import.meta.env.VITE_CLOUDINARY_FOLDER || '';
 
 export async function uploadImageToCloudinary(file: File): Promise<string> {
-  if (!CLOUDINARY_UPLOAD_PRESET) {
-    throw new Error('Cloudinary upload preset is not configured. Set VITE_CLOUDINARY_UPLOAD_PRESET in your .env.');
+  if (!CLOUDINARY_CLOUD_NAME || !CLOUDINARY_UPLOAD_PRESET) {
+    throw new Error(
+      'Cloudinary upload is not configured. Set VITE_CLOUDINARY_CLOUD_NAME and VITE_CLOUDINARY_UPLOAD_PRESET in your .env or Vercel environment variables.',
+    );
   }
 
   const formData = new FormData();
   formData.append('file', file);
   formData.append('upload_preset', CLOUDINARY_UPLOAD_PRESET);
-  formData.append('overwrite', 'false');
-  formData.append('use_filename', 'false');
-  formData.append('unique_filename', 'false');
-  formData.append('use_filename_as_display_name', 'true');
 
   if (CLOUDINARY_UPLOAD_FOLDER) {
     formData.append('folder', CLOUDINARY_UPLOAD_FOLDER);
@@ -32,4 +30,4 @@ export async function uploadImageToCloudinary(file: File): Promise<string> {
   return data.secure_url as string;
 }
 
-export const isCloudinaryEnabled = Boolean(CLOUDINARY_UPLOAD_PRESET);
+export const isCloudinaryEnabled = Boolean(CLOUDINARY_UPLOAD_PRESET && CLOUDINARY_CLOUD_NAME);

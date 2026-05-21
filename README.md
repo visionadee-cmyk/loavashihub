@@ -49,6 +49,25 @@ If Firebase is configured, the app uses Firebase Authentication, Firestore for i
 - Set `VITE_CLOUDINARY_UPLOAD_PRESET` to your unsigned upload preset
 - Optionally set `VITE_CLOUDINARY_FOLDER` to organize uploaded item images
 
+### Firestore security rules
+
+This app expects authenticated Firestore access. If you see `Missing or insufficient permissions`, update your Firestore rules to allow authenticated reads and writes.
+
+Example rule:
+
+```text
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    match /{document=**} {
+      allow read, write: if request.auth != null;
+    }
+  }
+}
+```
+
+The repository includes `firebase.json` and `firestore.rules` for deployable Firestore rule configuration.
+
 If Firebase is not configured, the application falls back to demo mode for local testing only.
 
 ## PWA support

@@ -10,8 +10,14 @@ export async function loadCollection<T>(collectionName: string, fallback: T[] = 
     return fallback;
   }
 
-  const snapshot = await getDocs(collection(db, collectionName));
-  return snapshot.docs.map((record) => ({ id: record.id, ...(record.data() as DocumentData) } as T));
+  try {
+    const snapshot = await getDocs(collection(db, collectionName));
+    return snapshot.docs.map((record) => ({ id: record.id, ...(record.data() as DocumentData) } as T));
+  } catch (error) {
+    throw new Error(
+      `Failed to load Firestore collection "${collectionName}". Check Firebase authentication and Firestore security rules. ${error instanceof Error ? error.message : String(error)}`,
+    );
+  }
 }
 
 export async function saveDocument(collectionName: string, id: string, data: unknown): Promise<void> {
@@ -23,7 +29,13 @@ export async function saveDocument(collectionName: string, id: string, data: unk
     return;
   }
 
-  await setDoc(doc(db, collectionName, id), data);
+  try {
+    await setDoc(doc(db, collectionName, id), data);
+  } catch (error) {
+    throw new Error(
+      `Failed to save Firestore document "${id}". Check Firebase authentication and Firestore security rules. ${error instanceof Error ? error.message : String(error)}`,
+    );
+  }
 }
 
 export async function deleteDocument(collectionName: string, id: string): Promise<void> {
@@ -35,5 +47,11 @@ export async function deleteDocument(collectionName: string, id: string): Promis
     return;
   }
 
-  await firestoreDeleteDoc(doc(db, collectionName, id));
+  try {
+    await firestoreDeleteDoc(doc(db, collectionName, id));
+  } catch (error) {
+    throw new Error(
+      `Failed to delete Firestore document "${id}". Check Firebase authentication and Firestore security rules. ${error instanceof Error ? error.message : String(error)}`,
+    );
+  }
 }

@@ -62,6 +62,15 @@ export interface PurchaseOrder {
   date: string;
 }
 
+export interface RFQItem {
+  id: string;
+  productName: string;
+  quantity: number;
+  unit: string;
+  vendor?: string;
+  unitCost?: number;
+}
+
 export interface RecipeIngredient {
   inventoryId: string;
   name: string;
@@ -120,6 +129,8 @@ export interface Bill {
   title: string;
   table: string;
   items: OrderItem[];
+  customerId?: string;
+  customerName?: string;
   orderType: 'Dine-in' | 'Takeaway' | 'Delivery';
   discount: number;
   tax: number;
@@ -128,6 +139,23 @@ export interface Bill {
   paymentMethod: 'Cash' | 'Card' | 'Bank transfer';
   paymentStatus: 'Unpaid' | 'Partial' | 'Paid';
   createdAt: string;
+}
+
+export interface Customer {
+  id: string;
+  name: string;
+  phone: string;
+  email: string;
+  notes: string;
+}
+
+export interface AppSettings {
+  id: string;
+  restaurantName: string;
+  currency: string;
+  taxRate: number;
+  receiptFooter: string;
+  supportEmail: string;
 }
 
 export interface SalesSeries {

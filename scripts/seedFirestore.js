@@ -12,6 +12,7 @@ const dataFiles = [
   'fonihedhikaa.json',
   'hedhikaa.json',
   'maldiviacurries.json',
+  'productslist.json',
 ];
 
 const categoryMap = {
@@ -215,38 +216,65 @@ async function seedFile(projectId, accessToken, filename) {
 
   console.log(`Seeding ${items.length} items from ${filename} into Firestore...`);
 
-  for (const item of items) {
-    const name = item.title || item.name;
-    if (!name) {
-      console.warn(`Skipping item without title/name in ${filename}`);
-      continue;
+    // If this file is a plain list of product names (strings), seed into inventory
+    if (filename === 'productslist.json' || items.every((it) => typeof it === 'string')) {
+      const seen = new Set();
+      for (const rawName of items) {
+        let name = String(rawName || '').trim();
+        if (!name) continue;
+
+        // normalize for dedupe (remove extra spaces, lowercase)
+        const norm = name.replace(/\s+/g, ' ').toLowerCase();
+        if (seen.has(norm)) continue;
+        seen.add(norm);
+
+        const slug = slugify(name);
+        const docId = `stock-${slug}`;
+        const inventoryItem = {
+          id: docId,
+          name,
+          quantity: 0,
+          unit: 'pcs',
+          lowStock: 5,
+        };
+        await writeFirestoreDocument(projectId, accessToken, 'inventory', docId, inventoryItem);
+        console.log(`  • Created inventory item: ${name}`);
+      }
+      return;
     }
 
-    const slug = slugify(name);
-    const menuItemId = `menu-${slug}`;
-    const recipeId = `recipe-${slug}`;
+    for (const item of items) {
+      const name = item.title || item.name;
+      if (!name) {
+        console.warn(`Skipping item without title/name in ${filename}`);
+        continue;
+      }
 
-    const menuItem = {
-      id: menuItemId,
-      name,
-      category,
-      price: 0,
-      costPrice: 0,
-      description: `Imported from ${category}`,
-      image: placeholderImage,
-    };
-    const recipe = {
-      id: recipeId,
-      name,
-      ingredients: Array.isArray(item.ingredients) ? item.ingredients : [],
-      salePrice: 0,
-      status: 'Active',
-    };
+      const slug = slugify(name);
+      const menuItemId = `menu-${slug}`;
+      const recipeId = `recipe-${slug}`;
 
-    await writeFirestoreDocument(projectId, accessToken, 'menuItems', menuItemId, menuItem);
-    await writeFirestoreDocument(projectId, accessToken, 'recipes', recipeId, recipe);
-    console.log(`  • Saved ${name}`);
-  }
+      const menuItem = {
+        id: menuItemId,
+        name,
+        category,
+        price: 0,
+        costPrice: 0,
+        description: `Imported from ${category}`,
+        image: placeholderImage,
+      };
+      const recipe = {
+        id: recipeId,
+        name,
+        ingredients: Array.isArray(item.ingredients) ? item.ingredients : [],
+        salePrice: 0,
+        status: 'Active',
+      };
+
+      await writeFirestoreDocument(projectId, accessToken, 'menuItems', menuItemId, menuItem);
+      await writeFirestoreDocument(projectId, accessToken, 'recipes', recipeId, recipe);
+      console.log(`  • Saved ${name}`);
+    }
 }
 
 async function main() {
@@ -258,7 +286,10 @@ async function main() {
     throw new Error('Project ID is missing from service account credentials.');
   }
 
-  for (const filename of dataFiles) {
+  const args = process.argv.slice(2);
+  const filenames = args.length ? args : dataFiles;
+
+  for (const filename of filenames) {
     await seedFile(projectId, accessToken, filename);
   }
 

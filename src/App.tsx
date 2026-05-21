@@ -16,6 +16,9 @@ import AssetManagement from './pages/AssetManagement';
 import BillManagement from './pages/BillManagement';
 import PendingBillsPage from './pages/PendingBillsPage';
 import CompletedBillsPage from './pages/CompletedBillsPage';
+import BillDetailsPage from './pages/BillDetailsPage';
+import CustomersPage from './pages/CustomersPage';
+import SettingsPage from './pages/SettingsPage';
 import ProtectedRoute from './components/ProtectedRoute';
 
 function App() {
@@ -90,6 +93,14 @@ function App() {
               }
             />
             <Route
+              path="/bills/:billId"
+              element={
+                <ProtectedRoute allowedRoles={['admin', 'cashier']}>
+                  <BillDetailsPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
               path="/admin/expenses"
               element={
                 <ProtectedRoute allowedRoles={['admin']}>
@@ -134,6 +145,22 @@ function App() {
               element={
                 <ProtectedRoute allowedRoles={['admin', 'cashier']}>
                   <POSPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/customers"
+              element={
+                <ProtectedRoute allowedRoles={['admin', 'cashier']}>
+                  <CustomersPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/settings"
+              element={
+                <ProtectedRoute allowedRoles={['admin', 'cashier']}>
+                  <SettingsPage />
                 </ProtectedRoute>
               }
             />

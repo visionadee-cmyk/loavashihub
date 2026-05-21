@@ -2,8 +2,7 @@ import { motion } from 'framer-motion';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar, Legend, PieChart, Pie, Cell } from 'recharts';
 import AppShell from '../components/AppShell';
 import { useEffect, useMemo, useState } from 'react';
-import { demoDailySales, demoMonthlySales, demoPaymentTypeBreakdown } from '../data/demo';
-import { loadCollection } from '../lib/firestore';
+import { loadCollection, saveDocument } from '../lib/firestore';
 import { formatMVR } from '../lib/mvr';
 import type { Bill, MenuItem, InventoryItem, PurchaseOrder } from '../types';
 
@@ -21,6 +20,38 @@ export default function AdminDashboard() {
       .catch(() => undefined);
     loadCollection<InventoryItem>('inventory', [])
       .then((items) => { if (items.length) setInventory(items); })
+      .catch(() => undefined);
+    // Also ensure recipe ingredients are present in inventory (create missing consumables)
+    loadCollection<any>('recipes', [])
+      .then(async (recipes) => {
+        if (!recipes.length) return;
+        const existing = await loadCollection<InventoryItem>('inventory', []);
+        const existingNames = new Set(existing.map((i) => i.name.toLowerCase().trim()));
+
+        for (const r of recipes) {
+          for (const ing of r.ingredients || []) {
+            const name = (ing.name || '').trim();
+            if (!name) continue;
+            if (!existingNames.has(name.toLowerCase())) {
+              const payload: InventoryItem = {
+                id: ing.inventoryId || `stock-${Date.now()}-${Math.floor(Math.random()*1000)}`,
+                name,
+                quantity: 0,
+                unit: ing.unit || 'pcs',
+                lowStock: 5,
+              };
+              try {
+                await saveDocument('inventory', payload.id, payload);
+                existingNames.add(name.toLowerCase());
+                setInventory((cur) => [payload, ...cur]);
+                console.log('Created inventory item from recipe ingredient:', payload.name);
+              } catch (error) {
+                console.error('Failed to create inventory item for ingredient', name, error);
+              }
+            }
+          }
+        }
+      })
       .catch(() => undefined);
     loadCollection<Bill>('bills', [])
       .then((items) => { if (items.length) setBills(items); })
@@ -59,6 +90,46 @@ export default function AdminDashboard() {
       .slice(0, 5)
       .map(([name, details]) => ({ id: name, name, category: 'POS Product', price: details.price }));
   }, [bills, products]);
+
+  const paymentBreakdown = useMemo(() => {
+    const breakdown = bills.reduce<Record<string, number>>((acc, bill) => {
+      const total = bill.items.reduce((sum, item) => sum + item.price * item.quantity, 0);
+      acc[bill.paymentMethod] = (acc[bill.paymentMethod] || 0) + total;
+      return acc;
+    }, {});
+
+    return Object.entries(breakdown).map(([method, value]) => ({ method, value }));
+  }, [bills]);
+
+  const dailySales = useMemo(() => {
+    const today = new Date();
+    const days = Array.from({ length: 7 }, (_, index) => {
+      const day = new Date(today);
+      day.setDate(today.getDate() - (6 - index));
+      return day.toDateString();
+    });
+
+    const totals = bills.reduce<Record<string, number>>((acc, bill) => {
+      const day = new Date(bill.createdAt).toDateString();
+      acc[day] = (acc[day] || 0) + bill.items.reduce((sum, item) => sum + item.price * item.quantity, 0);
+      return acc;
+    }, {});
+
+    return days.map((day) => ({ day: day.slice(0, 3), amount: totals[day] ?? 0 }));
+  }, [bills]);
+
+  const monthlySales = useMemo(() => {
+    const totals = bills.reduce<Record<string, number>>((acc, bill) => {
+      const date = new Date(bill.createdAt);
+      const label = date.toLocaleString('default', { month: 'short', year: 'numeric' });
+      acc[label] = (acc[label] || 0) + bill.items.reduce((sum, item) => sum + item.price * item.quantity, 0);
+      return acc;
+    }, {});
+
+    return Object.entries(totals)
+      .sort(([a], [b]) => new Date(a).getTime() - new Date(b).getTime())
+      .map(([month, amount]) => ({ day: month, amount }));
+  }, [bills]);
 
   const lowStockAlerts = inventory.filter((item) => item.quantity <= item.lowStock);
 
@@ -99,7 +170,7 @@ export default function AdminDashboard() {
 
             <div className="h-72">
               <ResponsiveContainer width="100%" height="100%">
-                <LineChart data={demoDailySales} margin={{ top: 10, right: 0, left: -20, bottom: 0 }}>
+                <LineChart data={dailySales} margin={{ top: 10, right: 0, left: -20, bottom: 0 }}>
                   <CartesianGrid stroke="#334155" strokeDasharray="3 3" />
                   <XAxis dataKey="day" tick={{ fill: '#94a3b8' }} />
                   <YAxis tick={{ fill: '#94a3b8' }} />
@@ -122,8 +193,8 @@ export default function AdminDashboard() {
             <div className="h-72">
               <ResponsiveContainer width="100%" height="100%">
                 <PieChart>
-                  <Pie data={demoPaymentTypeBreakdown} dataKey="value" nameKey="method" innerRadius={52} outerRadius={88} paddingAngle={4}>
-                    {demoPaymentTypeBreakdown.map((entry, index) => (
+                  <Pie data={paymentBreakdown} dataKey="value" nameKey="method" innerRadius={52} outerRadius={88} paddingAngle={4}>
+                    {paymentBreakdown.map((entry, index) => (
                       <Cell key={entry.method} fill={paymentColors[index % paymentColors.length]} />
                     ))}
                   </Pie>
@@ -192,13 +263,42 @@ export default function AdminDashboard() {
         >
           <div className="mb-4 flex items-center justify-between">
             <div>
+              <h3 className="text-lg font-semibold text-white">Menu items</h3>
+              <p className="text-sm text-slate-400">All products currently available in the menu.</p>
+            </div>
+            <span className="rounded-full bg-slate-800 px-3 py-1 text-xs uppercase tracking-[0.24em] text-slate-300">{products.length} items</span>
+          </div>
+          <div className="grid gap-3">
+            {products.length > 0 ? (
+              products.map((product) => (
+                <div key={product.id} className="flex items-center justify-between rounded-3xl border border-slate-800 bg-slate-950 px-4 py-4">
+                  <div>
+                    <p className="font-medium text-white">{product.name}</p>
+                    <p className="text-sm text-slate-400">{product.category}</p>
+                  </div>
+                  <p className="text-sm font-semibold text-violet-300">{formatMVR(product.price)}</p>
+                </div>
+              ))
+            ) : (
+              <p className="text-sm text-slate-400">No menu items available yet.</p>
+            )}
+          </div>
+        </motion.section>
+
+        <motion.section
+          initial={{ opacity: 0, y: 16 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="rounded-3xl border border-slate-800 bg-slate-900/80 p-6 shadow-2xl shadow-slate-950/20"
+        >
+          <div className="mb-4 flex items-center justify-between">
+            <div>
               <h3 className="text-lg font-semibold text-white">Monthly sales comparison</h3>
               <p className="text-sm text-slate-400">Performance for the last five months.</p>
             </div>
           </div>
           <div className="h-72">
             <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={demoMonthlySales} margin={{ top: 10, right: 0, left: -20, bottom: 0 }}>
+              <BarChart data={monthlySales} margin={{ top: 10, right: 0, left: -20, bottom: 0 }}>
                 <CartesianGrid stroke="#334155" strokeDasharray="3 3" />
                 <XAxis dataKey="day" tick={{ fill: '#94a3b8' }} />
                 <YAxis tick={{ fill: '#94a3b8' }} />

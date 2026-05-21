@@ -120,19 +120,19 @@ export default function ReportsPage() {
             { label: 'Total expense', value: formatMVR(totalExpenses || demoExpenses.reduce((total, item) => total + item.amount, 0)) },
             { label: 'Profit', value: formatMVR((totalSales || demoMonthlySales.reduce((total, item) => total + item.amount, 0)) - (totalExpenses || demoExpenses.reduce((sum, item) => sum + item.amount, 0))) },
           ].map((card) => (
-            <div key={card.label} className="rounded-3xl border border-slate-800 bg-slate-950/80 p-6 shadow-2xl shadow-slate-950/20">
-              <p className="text-sm uppercase tracking-[0.24em] text-slate-400">{card.label}</p>
-              <p className="mt-4 text-3xl font-semibold text-white">{card.value}</p>
+            <div key={card.label} className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm shadow-slate-300/20">
+              <p className="text-sm uppercase tracking-[0.24em] text-slate-500">{card.label}</p>
+              <p className="mt-4 text-3xl font-semibold text-slate-900">{card.value}</p>
             </div>
           ))}
         </div>
 
         <div className="grid gap-5 xl:grid-cols-[1.2fr_0.8fr]">
-          <div className="rounded-3xl border border-slate-800 bg-slate-950/80 p-6 shadow-2xl shadow-slate-950/20">
+          <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm shadow-slate-300/20">
             <div className="mb-4 flex items-center justify-between gap-3">
               <div>
-                <h3 className="text-lg font-semibold text-white">Monthly revenue</h3>
-                <p className="text-sm text-slate-400">Comparison of sales across months.</p>
+                <h3 className="text-lg font-semibold text-slate-900">Monthly revenue</h3>
+                <p className="text-sm text-slate-600">Comparison of sales across months.</p>
               </div>
               <button
                 type="button"
@@ -145,19 +145,19 @@ export default function ReportsPage() {
             <div className="h-72">
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart data={revenueByMonth} margin={{ top: 8, right: 0, left: -20, bottom: 0 }}>
-                  <CartesianGrid stroke="#334155" strokeDasharray="3 3" />
-                  <XAxis dataKey="name" tick={{ fill: '#94a3b8' }} />
-                  <YAxis tick={{ fill: '#94a3b8' }} />
-                  <Tooltip contentStyle={{ backgroundColor: '#0f172a', borderRadius: 16, border: '1px solid #334155' }} />
-                  <Bar dataKey="revenue" fill="#a78bfa" radius={[12, 12, 0, 0]} />
+                  <CartesianGrid stroke="#cbd5e1" strokeDasharray="3 3" />
+                  <XAxis dataKey="name" tick={{ fill: '#475569' }} />
+                  <YAxis tick={{ fill: '#475569' }} />
+                  <Tooltip contentStyle={{ backgroundColor: '#ffffff', borderRadius: 16, border: '1px solid #cbd5e1', color: '#0f172a' }} />
+                  <Bar dataKey="revenue" fill="#8b5cf6" radius={[12, 12, 0, 0]} />
                 </BarChart>
               </ResponsiveContainer>
             </div>
           </div>
 
-          <div className="rounded-3xl border border-slate-800 bg-slate-950/80 p-6 shadow-2xl shadow-slate-950/20">
-            <h3 className="text-lg font-semibold text-white">Payment types</h3>
-            <p className="text-sm text-slate-400">Revenue distribution by method.</p>
+          <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm shadow-slate-300/20">
+            <h3 className="text-lg font-semibold text-slate-900">Payment types</h3>
+            <p className="text-sm text-slate-600">Revenue distribution by method.</p>
             <div className="mt-8 h-72">
               <ResponsiveContainer width="100%" height="100%">
                 <PieChart>
@@ -173,43 +173,43 @@ export default function ReportsPage() {
         </div>
 
         <div className="grid gap-5 xl:grid-cols-[0.95fr_0.8fr]">
-          <div className="rounded-3xl border border-slate-800 bg-slate-950/80 p-6 shadow-2xl shadow-slate-950/20">
-            <h3 className="text-lg font-semibold text-white">Top selling products</h3>
+          <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm shadow-slate-300/20">
+            <h3 className="text-lg font-semibold text-slate-900">Top selling products</h3>
             <div className="mt-6 grid gap-4">
               {topProducts.map((product) => (
-                <div key={product.id} className="rounded-3xl border border-slate-800 bg-slate-900 p-4">
+                <div key={product.id} className="rounded-3xl border border-slate-200 bg-slate-50 p-4">
                   <div className="flex items-center justify-between gap-4">
                     <div>
-                      <p className="font-medium text-white">{product.name}</p>
-                      <p className="text-sm text-slate-400">{product.category || 'POS item'}</p>
+                      <p className="font-medium text-slate-900">{product.name}</p>
+                      <p className="text-sm text-slate-500">{product.category || 'POS item'}</p>
                     </div>
-                    <p className="text-sm font-semibold text-violet-300">{formatMVR(product.price)}</p>
+                    <p className="text-sm font-semibold text-violet-600">{formatMVR(product.price)}</p>
                   </div>
                 </div>
               ))}
             </div>
           </div>
 
-          <div className="rounded-3xl border border-slate-800 bg-slate-950/80 p-6 shadow-2xl shadow-slate-950/20">
-            <h3 className="text-lg font-semibold text-white">Expense summary</h3>
-            <p className="text-sm text-slate-400">Daily and monthly costs broken down.</p>
+          <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm shadow-slate-300/20">
+            <h3 className="text-lg font-semibold text-slate-900">Expense summary</h3>
+            <p className="text-sm text-slate-600">Daily and monthly costs broken down.</p>
             <div className="mt-6 space-y-4">
-              <div className="rounded-3xl border border-slate-800 bg-slate-900 p-4">
+              <div className="rounded-3xl border border-slate-200 bg-slate-50 p-4">
                 <div className="flex items-center justify-between">
-                  <span className="text-sm text-slate-400">Daily expense</span>
-                  <span className="font-semibold text-white">{formatMVR(weeklyExpenses.reduce((sum, item) => sum + item.amount, 0))}</span>
+                  <span className="text-sm text-slate-500">Daily expense</span>
+                  <span className="font-semibold text-slate-900">{formatMVR(weeklyExpenses.reduce((sum, item) => sum + item.amount, 0))}</span>
                 </div>
               </div>
-              <div className="rounded-3xl border border-slate-800 bg-slate-900 p-4">
+              <div className="rounded-3xl border border-slate-200 bg-slate-50 p-4">
                 <div className="flex items-center justify-between">
-                  <span className="text-sm text-slate-400">Monthly expense</span>
-                  <span className="font-semibold text-white">{formatMVR(weeklyExpenses.reduce((sum, item) => sum + item.amount, 0))}</span>
+                  <span className="text-sm text-slate-500">Monthly expense</span>
+                  <span className="font-semibold text-slate-900">{formatMVR(weeklyExpenses.reduce((sum, item) => sum + item.amount, 0))}</span>
                 </div>
               </div>
-              <div className="rounded-3xl border border-slate-800 bg-slate-900 p-4">
+              <div className="rounded-3xl border border-slate-200 bg-slate-50 p-4">
                 <div className="flex items-center justify-between">
-                  <span className="text-sm text-slate-400">Profit</span>
-                  <span className="font-semibold text-violet-300">{formatMVR(profit)}</span>
+                  <span className="text-sm text-slate-500">Profit</span>
+                  <span className="font-semibold text-violet-600">{formatMVR(profit)}</span>
                 </div>
               </div>
             </div>

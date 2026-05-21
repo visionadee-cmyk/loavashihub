@@ -1,41 +1,66 @@
-import { useEffect, useMemo, useState } from 'react';
-import { motion } from 'framer-motion';
-import { Search, Plus, Minus, Printer } from 'lucide-react';
+﻿import { useEffect, useMemo, useRef, useState } from 'react';
+import {
+  Search,
+  RotateCcw,
+  Wifi,
+  Grid as GridIcon,
+  Home,
+  Users2,
+  Table,
+  CreditCard,
+  ShoppingCart,
+  BarChart3,
+  Settings,
+  LogOut,
+  Plus,
+  X,
+  ArrowRight,
+  Pause,
+} from 'lucide-react';
+import { NavLink, useNavigate } from 'react-router-dom';
 import AppShell from '../components/AppShell';
 import { formatMVR } from '../lib/mvr';
 import { hasFirebaseConfig } from '../lib/firebase';
-import { deleteDocument, loadCollection, saveDocument } from '../lib/firestore';
-import type { Bill, MenuItem, OrderItem, TableItem } from '../types';
-import beveragesDataRaw from '../data/beverages.json?raw';
-import chickenRecipesDataRaw from '../data/chickenrecipes.json?raw';
-import foniHedhikaaDataRaw from '../data/fonihedhikaa.json?raw';
-import hedhikaaDataRaw from '../data/hedhikaa.json?raw';
-import maldiviaCurriesDataRaw from '../data/maldiviacurries.json?raw';
+import { loadCollection, saveDocument } from '../lib/firestore';
+import type { Bill, Customer, MenuItem, OrderItem, TableItem } from '../types';
 
-const orderTypes = ['Dine-in', 'Takeaway', 'Delivery'] as const;
-const paymentMethods = ['Cash', 'Card', 'Bank transfer'] as const;
-const placeholderImage = 'https://via.placeholder.com/400x300?text=Menu+Item';
-const APP_NAME = 'Loavashi Hub';
-const CAFE_DETAILS = 'Loavashi Hub Café · Malé, Maldives · +960 1234 5678';
+const defaultCustomer: Partial<Customer> = {
+  name: '',
+  phone: '',
+  email: '',
+  notes: '',
+};
+
+const defaultCustomItem = { name: '', price: 0 };
+
+const internalNav = [
+  { path: '/pos', label: 'Home', icon: Home },
+  { path: '/customers', label: 'Customers', icon: Users2 },
+  { path: '/admin/tables', label: 'Tables', icon: Table },
+  { path: '/pos', label: 'Cashier', icon: CreditCard },
+  { path: '/bills/pending', label: 'Orders', icon: ShoppingCart },
+  { path: '/admin/reports', label: 'Reports', icon: BarChart3 },
+  { path: '/settings', label: 'Settings', icon: Settings },
+];
 
 function generateBillNumber(tableName: string) {
-  const date = new Date();
-  const year = date.getFullYear();
-  const month = String(date.getMonth() + 1).padStart(2, '0');
-  const day = String(date.getDate()).padStart(2, '0');
-  const hour = String(date.getHours()).padStart(2, '0');
-  const minute = String(date.getMinutes()).padStart(2, '0');
-  const second = String(date.getSeconds()).padStart(2, '0');
+  const now = new Date();
+  const year = now.getFullYear();
+  const month = String(now.getMonth() + 1).padStart(2, '0');
+  const day = String(now.getDate()).padStart(2, '0');
+  const hour = String(now.getHours()).padStart(2, '0');
+  const minute = String(now.getMinutes()).padStart(2, '0');
+  const second = String(now.getSeconds()).padStart(2, '0');
   const prefix = tableName.trim() || 'Table';
-  return `${prefix} ${year}${month}${day}${hour}${minute}${second}`;
+  return `${prefix}-${year}${month}${day}-${hour}${minute}${second}`;
 }
 
-function buildItem(product: MenuItem): OrderItem {
+function buildOrderItem(item: MenuItem | { name: string; price: number }): OrderItem {
   return {
-    id: `${product.id}-${Date.now()}`,
-    productId: product.id,
-    name: product.name,
-    price: product.price,
+    id: `item-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
+    productId: 'id' in item ? item.id : `custom-${Date.now()}`,
+    name: item.name,
+    price: item.price,
     quantity: 1,
     notes: '',
   };
@@ -60,624 +85,679 @@ function createEmptyBill(tableName: string): Bill {
   };
 }
 
-function parseFallbackMenuItems(): MenuItem[] {
-  const fallbackSources = [
-    { raw: beveragesDataRaw, category: 'Beverages' },
-    { raw: chickenRecipesDataRaw, category: 'Chicken' },
-    { raw: foniHedhikaaDataRaw, category: 'Foni Heddikaa' },
-    { raw: hedhikaaDataRaw, category: 'Hedhikaa' },
-    { raw: maldiviaCurriesDataRaw, category: 'Maldivian Curries' },
-  ];
-
-  return fallbackSources.flatMap(({ raw, category }) => {
-    const items = JSON.parse(raw) as Array<Record<string, unknown>>;
-    return items.map((item) => {
-      const name = String(item.title ?? item.name ?? 'Menu item');
-      const ingredients = Array.isArray(item.ingredients) ? item.ingredients : [];
-      const description = ingredients
-        .slice(0, 3)
-        .map((ingredient) => (typeof ingredient === 'object' && ingredient !== null ? String((ingredient as any).name ?? '') : String(ingredient)))
-        .filter(Boolean)
-        .join(', ');
-
-      return {
-        id: `fallback-${category.toLowerCase().replace(/[^a-z0-9]+/g, '-')}-${name.toLowerCase().replace(/[^a-z0-9]+/g, '-')}`,
-        name,
-        category,
-        price: 0,
-        costPrice: 0,
-        description: description || `Imported ${category} item`,
-        image: placeholderImage,
-      };
-    });
-  });
-}
-
 export default function POSPage() {
-  const [search, setSearch] = useState('');
-  const [activeCategory, setActiveCategory] = useState('All');
   const [products, setProducts] = useState<MenuItem[]>([]);
   const [tables, setTables] = useState<TableItem[]>([]);
+  const [customers, setCustomers] = useState<Customer[]>([]);
   const [bills, setBills] = useState<Bill[]>([]);
   const [activeBillId, setActiveBillId] = useState<string>('');
-  const [selectedBillIds, setSelectedBillIds] = useState<string[]>([]);
+  const [search, setSearch] = useState('');
+  const [activeCategory, setActiveCategory] = useState('All');
+  const [discountPercent] = useState(0);
+  const [customerPanelOpen, setCustomerPanelOpen] = useState(false);
+  const [tableMenuOpen, setTableMenuOpen] = useState(false);
+  const [showCustomItemForm, setShowCustomItemForm] = useState(false);
+  const [customItem, setCustomItem] = useState(defaultCustomItem);
+  const [newCustomer, setNewCustomer] = useState<Partial<Customer>>(defaultCustomer);
+  const [statusMessage, setStatusMessage] = useState<string | null>(null);
+  const [isOnline, setIsOnline] = useState(typeof navigator !== 'undefined' ? navigator.onLine : true);
+  const searchInputRef = useRef<HTMLInputElement>(null);
+  const navigate = useNavigate();
 
-  const persistBill = async (bill: Bill) => {
-    if (!hasFirebaseConfig) return;
+  const categories = useMemo(
+    () => ['All', ...Array.from(new Set(products.map((product) => product.category)))],
+    [products],
+  );
+
+  const activeBill = useMemo(
+    () => bills.find((bill) => bill.id === activeBillId) ?? bills[0] ?? null,
+    [bills, activeBillId],
+  );
+
+  const loadData = async () => {
+    if (!hasFirebaseConfig) {
+      setStatusMessage('Firebase is not configured. POS cannot load real menu, tables, or bills.');
+      return;
+    }
+
+    setStatusMessage(null);
+
     try {
-      await saveDocument('bills', bill.id, bill);
+      const [loadedProducts, loadedTables, loadedBills, loadedCustomers] = await Promise.all([
+        loadCollection<MenuItem>('menuItems', []),
+        loadCollection<TableItem>('tables', []),
+        loadCollection<Bill>('bills', []),
+        loadCollection<Customer>('customers', []),
+      ]);
+
+      setProducts(loadedProducts);
+      setTables(loadedTables);
+      setCustomers(loadedCustomers);
+
+      let initialBill = loadedBills.find((bill) => bill.status !== 'Served') ?? null;
+      let allBills = loadedBills;
+
+      if (!initialBill && loadedTables.length) {
+        initialBill = createEmptyBill(loadedTables[0].name);
+        allBills = [...loadedBills, initialBill];
+        await saveDocument('bills', initialBill.id, initialBill);
+      }
+
+      if (allBills.length) {
+        setBills(allBills);
+        setActiveBillId(initialBill?.id ?? allBills[0].id);
+      } else {
+        setBills([]);
+        setActiveBillId('');
+      }
+
+      if (!loadedTables.length) {
+        setStatusMessage('Add your tables first in Table Management before taking POS orders.');
+      }
     } catch (error) {
-      console.error('Failed to persist bill:', error);
+      console.error('Failed to load POS data from Firestore:', error);
+      setStatusMessage('Unable to load POS data from Firestore. Verify your Firebase connection.');
     }
   };
 
   useEffect(() => {
-    const fallbackProducts = parseFallbackMenuItems();
-    const fallbackTables: TableItem[] = [
-      { id: 'table-1', name: 'Table 1', seats: 4, section: 'Indoor' },
-    ];
-
-    if (!hasFirebaseConfig) {
-      setProducts(fallbackProducts);
-      setTables(fallbackTables);
-      const newBill = createEmptyBill(fallbackTables[0].name);
-      setBills([newBill]);
-      setActiveBillId(newBill.id);
-      return;
-    }
-
-    const loadData = async () => {
-      try {
-        const [loadedProducts, loadedTables, loadedBills] = await Promise.all([
-          loadCollection<MenuItem>('menuItems', []),
-          loadCollection<TableItem>('tables', []),
-          loadCollection<Bill>('bills', []),
-        ]);
-
-        setProducts(loadedProducts.length ? loadedProducts : fallbackProducts);
-        setTables(loadedTables.length ? loadedTables : fallbackTables);
-
-        if (loadedBills.length) {
-          setBills(loadedBills);
-          setActiveBillId(loadedBills[0].id);
-          return;
-        }
-
-        const defaultTable = (loadedTables[0]?.name ?? fallbackTables[0].name) as string;
-        const newBill = createEmptyBill(defaultTable);
-        setBills([newBill]);
-        setActiveBillId(newBill.id);
-      } catch (error) {
-        console.error('Failed to load POS data from Firestore:', error);
-        setProducts(fallbackProducts);
-        setTables(fallbackTables);
-        const newBill = createEmptyBill(fallbackTables[0].name);
-        setBills([newBill]);
-        setActiveBillId(newBill.id);
-      }
-    };
-
     loadData();
   }, []);
 
-  const activeBill = bills.find((bill) => bill.id === activeBillId) ?? bills[0] ?? createEmptyBill(tables[0]?.name ?? 'Table 1');
+  useEffect(() => {
+    const handleOnline = () => setIsOnline(true);
+    const handleOffline = () => setIsOnline(false);
+    window.addEventListener('online', handleOnline);
+    window.addEventListener('offline', handleOffline);
+    return () => {
+      window.removeEventListener('online', handleOnline);
+      window.removeEventListener('offline', handleOffline);
+    };
+  }, []);
 
   const updateBill = (updatedBill: Bill) => {
     setBills((current) => current.map((bill) => (bill.id === updatedBill.id ? updatedBill : bill)));
-    persistBill(updatedBill);
-  };
-
-  const saveCurrentBill = () => {
-    if (activeBill.items.length === 0) {
-      window.alert('Add at least one item before saving the bill.');
-      return;
+    if (hasFirebaseConfig) {
+      saveDocument('bills', updatedBill.id, updatedBill).catch((error) => {
+        console.error('Failed to persist bill:', error);
+        setStatusMessage('Unable to save bill to Firestore. Check your connection.');
+      });
     }
-    if (activeBill.status === 'Pending') {
-      updateBill({ ...activeBill, status: 'Pending' });
-    } else {
-      persistBill(activeBill);
-    }
-    window.alert('Bill saved successfully. It is now active.');
   };
-
-  const payCurrentBill = () => {
-    if (activeBill.items.length === 0) {
-      window.alert('Add items before completing the bill.');
-      return;
-    }
-    updateBill({ ...activeBill, status: 'Served', paymentStatus: 'Paid' });
-  };
-
-  const activeBills = bills.filter((bill) => bill.status !== 'Served');
-  const completedBills = bills.filter((bill) => bill.status === 'Served');
-  const occupiedTableCount = useMemo(() => new Set(activeBills.map((bill) => bill.table)).size, [activeBills]);
-  const selectedBills = bills.filter((bill) => selectedBillIds.includes(bill.id));
-  const canMergeSelected = selectedBills.length === 2;
-
-  const toggleBillSelection = (billId: string) => {
-    setSelectedBillIds((current) =>
-      current.includes(billId) ? current.filter((id) => id !== billId) : [...current, billId],
-    );
-  };
-
-  const filteredProducts = products.filter((product) => {
-    const matchesCategory = activeCategory === 'All' || product.category === activeCategory;
-    const matchesSearch = product.name.toLowerCase().includes(search.toLowerCase());
-    return matchesCategory && matchesSearch;
-  });
-
-  const subtotal = useMemo(
-    () => activeBill.items.reduce((sum, item) => sum + item.price * item.quantity, 0),
-    [activeBill.items],
-  );
-  const taxAmount = Math.round((subtotal * activeBill.tax) / 100);
-  const total = subtotal + taxAmount - activeBill.discount;
 
   const handleAddItem = (product: MenuItem) => {
-    const updatedBill = {
+    if (!activeBill) return;
+    const updatedBill: Bill = {
       ...activeBill,
       items: activeBill.items.some((item) => item.productId === product.id)
         ? activeBill.items.map((item) =>
             item.productId === product.id ? { ...item, quantity: item.quantity + 1 } : item,
           )
-        : [...activeBill.items, buildItem(product)],
+        : [...activeBill.items, buildOrderItem(product)],
     };
-
     updateBill(updatedBill);
   };
 
-  const updateQuantity = (itemId: string, amount: number) => {
-    const updatedBill = {
+  const updateQuantity = (itemId: string, nextQuantity: number) => {
+    if (!activeBill) return;
+    const updatedBill: Bill = {
       ...activeBill,
       items: activeBill.items
-        .map((item) =>
-          item.id === itemId ? { ...item, quantity: Math.max(1, item.quantity + amount) } : item,
-        )
+        .map((item) => (item.id === itemId ? { ...item, quantity: Math.max(1, nextQuantity) } : item))
         .filter((item) => item.quantity > 0),
     };
     updateBill(updatedBill);
   };
 
-  const createBill = () => {
-    const nextBill = createEmptyBill(tables[0]?.name ?? 'Table 1');
-    setBills((current) => [...current, nextBill]);
-    setActiveBillId(nextBill.id);
-    persistBill(nextBill);
+  const removeItem = (itemId: string) => {
+    if (!activeBill) return;
+    const updatedBill: Bill = {
+      ...activeBill,
+      items: activeBill.items.filter((item) => item.id !== itemId),
+    };
+    updateBill(updatedBill);
   };
 
-  const mergeSelectedBills = async () => {
-    if (!canMergeSelected) {
-      window.alert('Select exactly two bills to merge.');
+  const assignCustomer = (customerId: string) => {
+    if (!activeBill) return;
+    const customer = customers.find((entry) => entry.id === customerId);
+    if (!customer) return;
+    updateBill({ ...activeBill, customerId: customer.id, customerName: customer.name });
+    setCustomerPanelOpen(false);
+  };
+
+  const addCustomer = async () => {
+    if (!newCustomer.name?.trim()) {
+      setStatusMessage('Customer name is required.');
       return;
     }
 
-    const [target, source] = selectedBills;
-    const mergedItems = [...target.items, ...source.items].reduce<OrderItem[]>((acc, item) => {
-      const existing = acc.find((entry) => entry.productId === item.productId && entry.notes === item.notes);
-      if (existing) {
-        existing.quantity += item.quantity;
-      } else {
-        acc.push({ ...item });
-      }
-      return acc;
-    }, []);
-
-    const updatedTarget = { ...target, items: mergedItems };
-    setBills((current) =>
-      current
-        .filter((bill) => bill.id !== source.id)
-        .map((bill) => (bill.id === target.id ? updatedTarget : bill)),
-    );
-    setActiveBillId(target.id);
-    setSelectedBillIds([]);
-    updateBill(updatedTarget);
-    await deleteDocument('bills', source.id);
-  };
-
-  const splitBill = (itemId: string) => {
-    const itemToSplit = activeBill.items.find((item) => item.id === itemId);
-    if (!itemToSplit || itemToSplit.quantity < 2) return;
-      const updatedOriginal = {
-        ...activeBill,
-        items: activeBill.items.map((item) =>
-          item.id === itemId ? { ...item, quantity: item.quantity - 1 } : item,
-        ),
-      };
-      const splitBillId = `bill-${Date.now()}`;
-      const splitItem = { ...itemToSplit, id: `${itemToSplit.id}-split`, quantity: 1 };
-      const splitBill: Bill = {
-        id: splitBillId,
-        title: `Bill ${String.fromCharCode(65 + bills.length)}`,
-        table: activeBill.table,
-        items: [splitItem],
-        orderType: activeBill.orderType,
-        discount: 0,
-        tax: activeBill.tax,
-        status: 'Pending',
-        notes: activeBill.notes,
-        paymentMethod: activeBill.paymentMethod,
-        paymentStatus: 'Unpaid',
-        createdAt: new Date().toISOString(),
-      };
-
-      setBills((current) => [...current.map((bill) => (bill.id === activeBill.id ? updatedOriginal : bill)), splitBill]);
-      updateBill(updatedOriginal);
-      persistBill(splitBill);
+    const payload: Customer = {
+      id: `customer-${Date.now()}`,
+      name: newCustomer.name.trim(),
+      phone: newCustomer.phone?.trim() || 'N/A',
+      email: newCustomer.email?.trim() || 'N/A',
+      notes: newCustomer.notes?.trim() || '',
     };
 
-  const printReceipt = () => {
-    const receiptContent = `
-      <html>
-      <head>
-        <title>Receipt</title>
-        <style>
-          body { font-family: Arial, sans-serif; color: #111; padding: 24px; }
-          h1 { margin: 0 0 8px; }
-          .line { border-bottom: 1px dashed #ccc; margin: 12px 0; }
-          .item { display: flex; justify-content: space-between; margin: 6px 0; }
-          .footer { margin-top: 24px; }
-        </style>
-      </head>
-      <body>
-        <h1>${APP_NAME}</h1>
-        <p>${CAFE_DETAILS}</p>
-        <p>Invoice: ${activeBill.billNumber ?? activeBill.title}</p>
-        <p>Table: ${activeBill.table} · ${activeBill.orderType}</p>
-        <p>${new Date(activeBill.createdAt).toLocaleString()}</p>
-        <div class="line"></div>
-        ${activeBill.items
-          .map(
-            (item) =>
-              `<div class="item"><span>${item.quantity} x ${item.name}</span><span>${formatMVR(item.price * item.quantity)}</span></div>`,
-          )
-          .join('')}
-        <div class="line"></div>
-        <div class="item"><strong>Subtotal</strong><strong>${formatMVR(subtotal)}</strong></div>
-        <div class="item"><span>Tax ${activeBill.tax}%</span><span>${formatMVR(taxAmount)}</span></div>
-        <div class="item"><span>Discount</span><span>${formatMVR(activeBill.discount)}</span></div>
-        <div class="item"><strong>Total</strong><strong>${formatMVR(total)}</strong></div>
-        <div class="footer"><p>Thank you for dining with us.</p></div>
-      </body>
-      </html>`;
-    const printWindow = window.open('', '_blank', 'width=600,height=800');
-    if (printWindow) {
-      printWindow.document.write(receiptContent);
-      printWindow.document.close();
-      printWindow.focus();
-      printWindow.print();
+    setCustomers((current) => [payload, ...current]);
+    setNewCustomer(defaultCustomer);
+    setStatusMessage('Customer created. Select them for the bill in the panel.');
+    if (hasFirebaseConfig) {
+      await saveDocument('customers', payload.id, payload).catch((error) => {
+        console.error('Failed to save customer in Firestore:', error);
+        setStatusMessage('Customer was created locally but did not persist.');
+      });
     }
   };
 
+  const addCustomItem = () => {
+    if (!activeBill) return;
+    if (!customItem.name.trim() || customItem.price <= 0) {
+      setStatusMessage('Enter a valid custom item name and price.');
+      return;
+    }
+
+    const updatedBill: Bill = {
+      ...activeBill,
+      items: [...activeBill.items, buildOrderItem(customItem)],
+    };
+    updateBill(updatedBill);
+    setCustomItem(defaultCustomItem);
+    setShowCustomItemForm(false);
+    setStatusMessage('Custom item added to the bill.');
+  };
+
+  const togglePaymentStatus = () => {
+    if (!activeBill) return;
+    const paid = activeBill.paymentStatus === 'Paid';
+    updateBill({
+      ...activeBill,
+      paymentStatus: paid ? 'Unpaid' : 'Paid',
+      status: paid ? 'Pending' : 'Served',
+    });
+  };
+
+  const holdOrder = () => {
+    if (!activeBill) return;
+    updateBill({ ...activeBill, status: 'Pending' });
+    setStatusMessage('Order is placed on hold.');
+  };
+
+  const saveCurrentBill = async () => {
+    if (!activeBill) return;
+    if (!activeBill.items.length) {
+      setStatusMessage('Add at least one item before saving this order.');
+      return;
+    }
+
+    const savedBill: Bill = {
+      ...activeBill,
+      status: 'Pending',
+      paymentStatus: 'Unpaid',
+      paymentMethod: activeBill.paymentMethod ?? 'Cash',
+    };
+
+    updateBill(savedBill);
+
+    const newBill = createEmptyBill(activeBill.table || tables[0]?.name || 'Table 1');
+    setBills((current) => [...current, newBill]);
+    setActiveBillId(newBill.id);
+
+    if (hasFirebaseConfig) {
+      try {
+        await saveDocument('bills', newBill.id, newBill);
+      } catch (error) {
+        console.error('Failed to create new bill after saving order:', error);
+        setStatusMessage('Order saved, but failed to create the next bill in Firestore.');
+      }
+    }
+
+    setStatusMessage('Order saved as an open bill. New POS bill is ready.');
+    navigate('/bills/pending');
+  };
+
+  const payable = useMemo(() => {
+    if (!activeBill) return 0;
+    const subtotal = activeBill.items.reduce((sum, item) => sum + item.price * item.quantity, 0);
+    const taxAmount = Math.round((subtotal * (activeBill.tax ?? 5)) / 100);
+    const discountValue = Math.round((subtotal * discountPercent) / 100);
+    return Math.max(0, subtotal + taxAmount - discountValue);
+  }, [activeBill, discountPercent]);
+
+  const selectTable = (tableId: string) => {
+    if (!activeBill) return;
+    const table = tables.find((entry) => entry.id === tableId);
+    if (!table) return;
+    updateBill({ ...activeBill, table: table.name });
+    setTableMenuOpen(false);
+  };
+
+  const refreshData = () => {
+    loadData();
+    setStatusMessage('Refreshing POS data from Firestore...');
+  };
+
+  const focusSearch = () => {
+    searchInputRef.current?.focus();
+  };
+
+  const subtotal = useMemo(
+    () => activeBill?.items.reduce((sum, item) => sum + item.price * item.quantity, 0) ?? 0,
+    [activeBill],
+  );
+
+  const taxAmount = Math.round((subtotal * (activeBill?.tax ?? 5)) / 100);
+
+  const filteredProducts = useMemo(
+    () =>
+      products
+        .filter((product) => (activeCategory === 'All' ? true : product.category === activeCategory))
+        .filter((product) => product.name.toLowerCase().includes(search.toLowerCase())),
+    [activeCategory, products, search],
+  );
+
   return (
-    <AppShell title="POS Billing">
-      <div className="grid gap-6 xl:grid-cols-[0.95fr_0.9fr]">
-        <section className="space-y-6">
-          <div className="rounded-3xl border border-slate-800 bg-slate-950/70 p-5">
-            <div className="flex flex-wrap items-center justify-between gap-4">
-              <div className="flex-1 min-w-0">
-                <div className="relative rounded-3xl border border-slate-800 bg-slate-900 px-4 py-3 text-slate-300">
-                  <Search className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-500" />
-                  <input
-                    value={search}
-                    onChange={(event) => setSearch(event.target.value)}
-                    placeholder="Search menu items"
-                    className="w-full bg-transparent pl-10 text-sm text-white outline-none"
-                  />
-                </div>
-              </div>
-              <div className="flex flex-wrap items-center gap-3">
-                <button
-                  type="button"
-                  onClick={createBill}
-                  className="inline-flex items-center gap-2 rounded-3xl bg-violet-600 px-4 py-3 text-sm font-semibold text-white transition hover:bg-violet-500"
-                >
-                  <Plus className="h-4 w-4" />
-                  New bill
-                </button>
-                <button
-                  type="button"
-                  onClick={mergeSelectedBills}
-                  disabled={!canMergeSelected}
-                  className="inline-flex items-center gap-2 rounded-3xl border border-slate-700 bg-slate-900 px-4 py-3 text-sm font-semibold text-slate-200 transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-50"
-                >
-                  Merge bills
-                </button>
-              </div>
-            </div>
+    <AppShell title="Restro POS">
 
-            <div className="mt-5 grid gap-3 sm:grid-cols-3">
-              <div className="rounded-3xl border border-slate-800 bg-slate-900 px-4 py-4 text-sm text-slate-300">
-                <p className="text-xs uppercase tracking-[0.24em] text-slate-500">Active bills</p>
-                <p className="mt-3 text-2xl font-semibold text-white">{activeBills.length}</p>
+      <div className="mx-auto min-w-[1024px] max-w-[1700px] px-4 py-5 sm:px-6 lg:px-8">
+        <div className="grid min-h-[calc(100vh-160px)] grid-cols-[96px_minmax(0,1fr)_420px] gap-6 bg-[#F8F9FA] px-4 py-4 rounded-[32px] shadow-[0_20px_80px_rgba(31,41,55,0.08)]">
+          <aside className="flex h-full flex-col justify-between rounded-[32px] border border-slate-200 bg-white px-4 py-6 shadow-sm">
+            <div className="space-y-10">
+              <div>
+                <p className="text-sm font-semibold uppercase tracking-[0.24em] text-slate-400">Restro</p>
+                <h1 className="mt-3 text-lg font-extrabold tracking-tight text-slate-900">POS control</h1>
               </div>
-              <div className="rounded-3xl border border-slate-800 bg-slate-900 px-4 py-4 text-sm text-slate-300">
-                <p className="text-xs uppercase tracking-[0.24em] text-slate-500">Tables occupied</p>
-                <p className="mt-3 text-2xl font-semibold text-white">{occupiedTableCount}</p>
-              </div>
-              <div className="rounded-3xl border border-slate-800 bg-slate-900 px-4 py-4 text-sm text-slate-300">
-                <p className="text-xs uppercase tracking-[0.24em] text-slate-500">Completed bills</p>
-                <p className="mt-3 text-2xl font-semibold text-white">{completedBills.length}</p>
-              </div>
+              <nav className="space-y-4">
+                {internalNav.map((item) => {
+                  const Icon = item.icon;
+                  return (
+                    <NavLink
+                      key={item.label}
+                      to={item.path}
+                      className={({ isActive }) =>
+                        `group flex w-full flex-col items-center gap-2 rounded-[24px] px-3 py-4 text-center transition ${
+                          isActive
+                            ? 'border border-[#F27420]/20 bg-[#FFF2EB] text-[#F27420] shadow-sm'
+                            : 'text-slate-500 hover:bg-slate-100 hover:text-slate-900'
+                        }`
+                      }
+                    >
+                      <Icon className="h-5 w-5" />
+                      <span className="text-[11px] uppercase tracking-[0.32em] text-slate-500">{item.label}</span>
+                    </NavLink>
+                  );
+                })}
+              </nav>
             </div>
+            <button type="button" className="flex items-center gap-3 rounded-[24px] border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-700 transition hover:bg-slate-100">
+              <LogOut className="h-4 w-4" />
+              Logout
+            </button>
+          </aside>
 
-            <div className="mt-5 flex flex-wrap items-center gap-3 text-sm text-slate-400">
-              <span className="rounded-full bg-slate-800 px-3 py-2">Select two bills to merge</span>
-              <span className="rounded-full bg-slate-800 px-3 py-2">Marked served bills are counted as completed</span>
-            </div>
-
-            <div className="mt-5 flex flex-wrap gap-2">
-              {bills.map((bill) => (
-                <button
-                  key={bill.id}
-                  type="button"
-                  onClick={() => setActiveBillId(bill.id)}
-                  className={`rounded-3xl px-4 py-2 text-sm ${bill.id === activeBill.id ? 'bg-violet-600 text-white' : 'bg-slate-800 text-slate-300 hover:bg-slate-700'}`}
-                >
-                  {bill.title}
-                </button>
-              ))}
-            </div>
-          </div>
-
-          <div className="grid gap-4 md:grid-cols-2">
-              {['All', ...Array.from(new Set(products.map((product) => product.category)))].map((category) => (
-                <button
-                  key={category}
-                  type="button"
-                  onClick={() => setActiveCategory(category)}
-                  className={`rounded-3xl px-4 py-2 text-sm font-medium transition ${
-                    activeCategory === category ? 'bg-violet-500 text-white' : 'bg-slate-900 text-slate-300 hover:bg-slate-800'
-                  }`}
-                >
-                  {category}
-                </button>
-              ))}
-            </div>
-
-          <div className="grid gap-4 md:grid-cols-2">
-            {filteredProducts.map((product) => (
-              <motion.article
-                key={product.id}
-                initial={{ opacity: 0, y: 16 }}
-                animate={{ opacity: 1, y: 0 }}
-                className="rounded-3xl border border-slate-800 bg-slate-900/70 p-4 shadow-xl shadow-slate-950/20"
-              >
-                <div className="flex items-start gap-4">
-                  <img src={product.image} alt={product.name} className="h-20 w-20 rounded-3xl object-cover" />
-                  <div className="flex-1">
-                    <div className="flex items-center justify-between gap-3">
-                      <h3 className="text-base font-semibold text-white">{product.name}</h3>
-                      <span className="text-sm text-violet-300">{formatMVR(product.price)}</span>
-                    </div>
-                    <p className="mt-2 text-sm text-slate-400">{product.description}</p>
+          <main className="flex flex-col gap-6">
+            <section className="rounded-[32px] bg-white p-5 shadow-sm">
+              <div className="flex flex-wrap items-center gap-4">
+                <div className="flex-1 min-w-[320px]">
+                  <div className="relative rounded-[28px] border border-slate-200 bg-slate-50 px-4 py-3">
+                    <Search className="absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-slate-400" />
+                    <input
+                      ref={searchInputRef}
+                      value={search}
+                      onChange={(event) => setSearch(event.target.value)}
+                      placeholder="Search products..."
+                      className="w-full bg-transparent pl-12 text-sm font-medium text-slate-900 outline-none placeholder:text-slate-400"
+                    />
                   </div>
                 </div>
-                <button
-                  type="button"
-                  onClick={() => handleAddItem(product)}
-                  className="mt-4 inline-flex w-full items-center justify-center gap-2 rounded-3xl bg-slate-800 px-4 py-3 text-sm font-semibold text-white transition hover:bg-slate-700"
-                >
-                  Add to bill
-                </button>
-              </motion.article>
-            ))}
-          </div>
-        </section>
 
-        <section className="space-y-6">
-          <div className="rounded-3xl border border-slate-800 bg-slate-950/80 p-5">
-            <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
-              <div>
-                <p className="text-sm text-slate-400">Active bill</p>
-                <h3 className="text-2xl font-semibold text-white">{activeBill.title}</h3>
-                <p className="text-sm text-slate-400">
-                  {activeBill.billNumber ?? activeBill.title} · {activeBill.table} · {activeBill.orderType}
-                </p>
-                <p className="text-sm text-slate-400">Created {new Date(activeBill.createdAt).toLocaleString()}</p>
-              </div>
-              <div className="grid gap-2 sm:grid-cols-2">
-                <button
-                  type="button"
-                  onClick={saveCurrentBill}
-                  className="rounded-3xl border border-slate-700 bg-slate-900 px-4 py-3 text-sm text-slate-200 hover:bg-slate-800"
-                >
-                  Save bill
-                </button>
-                <button
-                  type="button"
-                  onClick={payCurrentBill}
-                  className="rounded-3xl border border-emerald-600 bg-emerald-700 px-4 py-3 text-sm font-semibold text-white hover:bg-emerald-600"
-                >
-                  Pay & complete
-                </button>
-                <button
-                  type="button"
-                  onClick={printReceipt}
-                  className="rounded-3xl bg-violet-600 px-4 py-3 text-sm font-semibold text-white hover:bg-violet-500"
-                >
-                  <Printer className="mr-2 inline-block h-4 w-4" />
-                  Print receipt
-                </button>
-              </div>
-            </div>
-
-            <div className="space-y-4 rounded-3xl border border-slate-800 bg-slate-900/70 p-4">
-              <div className="grid gap-3 sm:grid-cols-2">
-                <label className="block text-sm text-slate-300">
-                  Table selection
-                  <select
-                    value={activeBill.table}
-                    onChange={(event) => {
-                      const table = event.target.value;
-                      updateBill({ ...activeBill, table });
-                    }}
-                    className="mt-2 w-full rounded-3xl border border-slate-700 bg-slate-950 px-4 py-3 text-slate-100 outline-none"
+                <div className="flex flex-wrap items-center gap-3">
+                  <button
+                    type="button"
+                    onClick={refreshData}
+                    className="inline-flex h-11 w-11 items-center justify-center rounded-2xl border border-slate-200 bg-white text-slate-600 shadow-sm transition hover:bg-slate-50"
                   >
-                    {tables.map((table) => (
-                      <option key={table.id} value={table.name}>{table.name}</option>
-                    ))}
-                  </select>
-                </label>
-
-                <label className="block text-sm text-slate-300">
-                  Order type
-                  <select
-                    value={activeBill.orderType}
-                    onChange={(event) => {
-                      const orderType = event.target.value as typeof orderTypes[number];
-                      updateBill({ ...activeBill, orderType });
-                    }}
-                    className="mt-2 w-full rounded-3xl border border-slate-700 bg-slate-950 px-4 py-3 text-slate-100 outline-none"
+                    <RotateCcw className="h-5 w-5" />
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setStatusMessage(isOnline ? 'Online and ready to sync with Firestore.' : 'Offline mode: local changes only.')}
+                    className="inline-flex h-11 w-11 items-center justify-center rounded-2xl border border-slate-200 bg-white text-slate-600 shadow-sm transition hover:bg-slate-50"
                   >
-                    {orderTypes.map((type) => (
-                      <option key={type} value={type}>{type}</option>
-                    ))}
-                  </select>
-                </label>
+                    <Wifi className="h-5 w-5" />
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setTableMenuOpen((current) => !current)}
+                    className="inline-flex items-center gap-2 rounded-[28px] bg-[#F27420] px-4 py-3 text-sm font-semibold text-white shadow-lg shadow-[#F27420]/20 transition hover:bg-[#db6c1b]"
+                  >
+                    <GridIcon className="h-4 w-4" />
+                    Select Table
+                  </button>
+                </div>
               </div>
 
-              <label className="block text-sm text-slate-300">
-                Notes for kitchen
-                <textarea
-                  value={activeBill.notes}
-                  onChange={(event) => updateBill({ ...activeBill, notes: event.target.value })}
-                  className="mt-2 h-24 w-full rounded-3xl border border-slate-700 bg-slate-950 px-4 py-3 text-slate-100 outline-none"
-                  placeholder="Add order instructions"
-                />
-              </label>
-            </div>
-          </div>
+              {statusMessage ? (
+                <div className="mt-4 rounded-3xl border border-orange-200 bg-orange-50 px-4 py-3 text-sm text-orange-700">
+                  {statusMessage}
+                </div>
+              ) : null}
 
-          <div className="rounded-3xl border border-slate-800 bg-slate-900/80 p-5 shadow-xl shadow-slate-950/20">
-            <div className="flex items-center justify-between gap-3">
-              <div>
-                <p className="text-sm text-slate-400">Bills</p>
-                <p className="text-lg font-semibold text-white">{bills.length} active bill{bills.length > 1 ? 's' : ''}</p>
-              </div>
-              <div className="flex flex-wrap gap-2">
-                {bills.map((bill) => (
-                  <label
-                    key={bill.id}
-                    className={`flex cursor-pointer items-center gap-3 rounded-3xl border px-4 py-3 text-sm transition ${selectedBillIds.includes(bill.id) ? 'border-violet-500 bg-slate-800 text-white' : 'border-slate-700 bg-slate-950 text-slate-300 hover:border-slate-600 hover:bg-slate-900'}`}
+              {tableMenuOpen ? (
+                <div className="mt-4 grid gap-3 rounded-[28px] border border-slate-200 bg-slate-50 p-4">
+                  <div className="grid gap-3 sm:grid-cols-2">
+                    <label className="block text-sm text-slate-600">
+                      Assign table
+                      <select
+                        value={tables.find((table) => table.name === activeBill?.table)?.id ?? ''}
+                        onChange={(event) => selectTable(event.target.value)}
+                        className="mt-2 w-full rounded-[20px] border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 outline-none"
+                      >
+                        <option value="">Select a table</option>
+                        {tables.map((table) => (
+                          <option key={table.id} value={table.id}>
+                            {table.name} • {table.section}
+                          </option>
+                        ))}
+                      </select>
+                    </label>
+                    <div className="rounded-[24px] border border-slate-300 bg-white p-4 text-sm text-slate-600">
+                      <p className="font-semibold text-slate-900">Current table</p>
+                      <p className="mt-2">{activeBill?.table || 'Not assigned'}</p>
+                    </div>
+                  </div>
+                </div>
+              ) : null}
+            </section>
+
+            <section className="grid gap-4 xl:grid-cols-4">
+              {categories.map((tab) => {
+                const isActive = tab === activeCategory;
+                return (
+                  <button
+                    key={tab}
+                    type="button"
+                    onClick={() => setActiveCategory(tab)}
+                    className={`rounded-full border px-4 py-2 text-sm font-semibold transition ${
+                      isActive
+                        ? 'border-[#F27420] bg-[#FFF2EB] text-[#F27420] shadow-sm'
+                        : 'border-transparent bg-slate-100 text-slate-600 hover:bg-slate-200'
+                    }`}
                   >
+                    {tab}
+                  </button>
+                );
+              })}
+            </section>
+
+            <section className="grid gap-4 xl:grid-cols-4">
+              {filteredProducts.length ? (
+                filteredProducts.slice(0, 12).map((product) => (
+                  <article key={product.id} className="rounded-[32px] border border-slate-200 bg-white p-5 text-center shadow-sm transition hover:-translate-y-1 hover:shadow-lg">
+                    <button type="button" onClick={() => handleAddItem(product)} className="flex h-full w-full flex-col items-center gap-4 text-left">
+                      <div className="flex h-28 w-28 items-center justify-center rounded-full bg-slate-100 shadow-sm">
+                        <img src={product.image} alt={product.name} className="h-24 w-24 rounded-full object-cover" />
+                      </div>
+                      <div className="space-y-2">
+                        <p className="text-sm font-semibold text-slate-900">{product.name}</p>
+                        <p className="text-sm text-slate-500">{product.category}</p>
+                      </div>
+                      <p className="mt-auto text-lg font-bold text-slate-900">{formatMVR(product.price)}</p>
+                    </button>
+                  </article>
+                ))
+              ) : (
+                <div className="col-span-4 rounded-[32px] border border-slate-200 bg-white p-10 text-center text-slate-500 shadow-sm">
+                  No menu items found. Add items in Menu Management to start taking orders.
+                </div>
+              )}
+            </section>
+          </main>
+
+          <aside className="flex flex-col gap-6 rounded-[32px] border border-slate-200 bg-white p-5 shadow-sm">
+            <div className="rounded-[32px] border border-slate-200 bg-[#F8F9FA] p-4">
+              <div className="flex flex-wrap items-center justify-between gap-3">
+                <button
+                  type="button"
+                  onClick={() => setCustomerPanelOpen((current) => !current)}
+                  className="inline-flex items-center gap-2 rounded-[24px] border border-slate-200 bg-white px-4 py-3 text-sm font-semibold text-slate-700 shadow-sm hover:bg-slate-50"
+                >
+                  <Plus className="h-4 w-4 text-[#F27420]" />
+                  Add Customer
+                </button>
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setShowCustomItemForm((current) => !current)}
+                    className="inline-flex h-11 w-11 items-center justify-center rounded-2xl border border-slate-200 bg-white text-slate-700 shadow-sm hover:bg-slate-50"
+                  >
+                    +
+                  </button>
+                  <button
+                    type="button"
+                    onClick={togglePaymentStatus}
+                    className="inline-flex h-11 w-11 items-center justify-center rounded-2xl border border-slate-200 bg-white text-slate-700 shadow-sm hover:bg-slate-50"
+                  >
+                    <span className="h-2.5 w-2.5 rounded-full bg-[#10B981]" />
+                  </button>
+                  <button
+                    type="button"
+                    onClick={focusSearch}
+                    className="inline-flex h-11 w-11 items-center justify-center rounded-2xl border border-slate-200 bg-white text-slate-700 shadow-sm hover:bg-slate-50"
+                  >
+                    <Search className="h-4 w-4" />
+                  </button>
+                </div>
+              </div>
+
+              {customerPanelOpen ? (
+                <div className="mt-4 space-y-4 rounded-[28px] border border-slate-200 bg-white p-4 shadow-sm">
+                  <div className="grid gap-3">
+                    <label className="block text-sm text-slate-500">
+                      Search customer
+                      <select
+                        value={activeBill?.customerId ?? ''}
+                        onChange={(event) => assignCustomer(event.target.value)}
+                        className="mt-2 w-full rounded-[20px] border border-slate-200 bg-slate-50 px-4 py-3 text-slate-900 outline-none"
+                      >
+                        <option value="">Select or create customer</option>
+                        {customers.map((customer) => (
+                          <option key={customer.id} value={customer.id}>
+                            {customer.name} • {customer.phone}
+                          </option>
+                        ))}
+                      </select>
+                    </label>
+                    <div className="grid gap-3 sm:grid-cols-2">
+                      <label className="block text-sm text-slate-500">
+                        Name
+                        <input
+                          value={newCustomer.name}
+                          onChange={(event) => setNewCustomer((current) => ({ ...current, name: event.target.value }))}
+                          className="mt-2 w-full rounded-[20px] border border-slate-200 bg-slate-50 px-4 py-3 text-slate-900 outline-none"
+                          placeholder="Customer name"
+                        />
+                      </label>
+                      <label className="block text-sm text-slate-500">
+                        Phone
+                        <input
+                          value={newCustomer.phone}
+                          onChange={(event) => setNewCustomer((current) => ({ ...current, phone: event.target.value }))}
+                          className="mt-2 w-full rounded-[20px] border border-slate-200 bg-slate-50 px-4 py-3 text-slate-900 outline-none"
+                          placeholder="+960 7XXXXXXX"
+                        />
+                      </label>
+                    </div>
+                    <label className="block text-sm text-slate-500">
+                      Email
+                      <input
+                        value={newCustomer.email}
+                        onChange={(event) => setNewCustomer((current) => ({ ...current, email: event.target.value }))}
+                        className="mt-2 w-full rounded-[20px] border border-slate-200 bg-slate-50 px-4 py-3 text-slate-900 outline-none"
+                        placeholder="customer@example.com"
+                      />
+                    </label>
+                    <label className="block text-sm text-slate-500">
+                      Notes
+                      <input
+                        value={newCustomer.notes}
+                        onChange={(event) => setNewCustomer((current) => ({ ...current, notes: event.target.value }))}
+                        className="mt-2 w-full rounded-[20px] border border-slate-200 bg-slate-50 px-4 py-3 text-slate-900 outline-none"
+                        placeholder="Allergies or preferences"
+                      />
+                    </label>
+                    <button
+                      type="button"
+                      onClick={addCustomer}
+                      className="inline-flex w-full items-center justify-center gap-2 rounded-[28px] bg-[#F27420] px-4 py-3 text-sm font-semibold text-white shadow-lg shadow-[#F27420]/20 hover:bg-[#db6c1b]"
+                    >
+                      Add customer
+                    </button>
+                  </div>
+                </div>
+              ) : null}
+
+              {showCustomItemForm ? (
+                <div className="mt-4 space-y-4 rounded-[28px] border border-slate-200 bg-white p-4 shadow-sm">
+                  <h3 className="text-sm font-semibold text-slate-900">Add custom item</h3>
+                  <div className="grid gap-3">
                     <input
-                      type="checkbox"
-                      checked={selectedBillIds.includes(bill.id)}
-                      onChange={() => toggleBillSelection(bill.id)}
-                      className="h-4 w-4 rounded border-slate-600 bg-slate-900 text-violet-500 focus:ring-violet-500"
+                      value={customItem.name}
+                      onChange={(event) => setCustomItem((current) => ({ ...current, name: event.target.value }))}
+                      placeholder="Item name"
+                      className="w-full rounded-[20px] border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-900 outline-none"
                     />
-                    <span>{bill.title}</span>
-                  </label>
-                ))}
+                    <input
+                      type="number"
+                      min={0}
+                      value={customItem.price}
+                      onChange={(event) => setCustomItem((current) => ({ ...current, price: Number(event.target.value) }))}
+                      placeholder="Price"
+                      className="w-full rounded-[20px] border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-900 outline-none"
+                    />
+                    <button
+                      type="button"
+                      onClick={addCustomItem}
+                      className="inline-flex w-full items-center justify-center gap-2 rounded-[28px] bg-[#10B981] px-4 py-3 text-sm font-semibold text-white shadow-lg shadow-[#10B981]/20 hover:bg-[#0f9b71]"
+                    >
+                      Add custom item
+                    </button>
+                  </div>
+                </div>
+              ) : null}
+            </div>
+
+            <div className="space-y-4 overflow-hidden rounded-[32px] border border-slate-200 bg-white p-4 shadow-sm">
+              <div className="flex items-center justify-between gap-3">
+                <div>
+                  <p className="text-sm font-semibold text-slate-900">Order summary</p>
+                  <p className="text-sm text-slate-500">Review and manage items</p>
+                </div>
+                <span className="rounded-full bg-[#F8F9FA] px-3 py-2 text-xs font-semibold uppercase tracking-[0.24em] text-slate-500">{activeBill?.items.length ?? 0} items</span>
               </div>
-            </div>
-          </div>
 
-          <div className="space-y-4 rounded-3xl border border-slate-800 bg-slate-950/80 p-4">
-            <div className="flex items-center justify-between gap-3">
-              <h3 className="text-lg font-semibold text-white">Order items</h3>
-              <span className="rounded-full bg-slate-800 px-3 py-1 text-xs uppercase tracking-[0.24em] text-slate-300">{activeBill.status}</span>
-            </div>
-
-            {activeBill.items.length === 0 ? (
-              <div className="rounded-3xl border border-dashed border-slate-700 p-8 text-center text-slate-400">No items added yet.</div>
-            ) : (
-              <div className="space-y-3">
-                {activeBill.items.map((item) => (
-                  <div key={item.id} className="grid gap-3 rounded-3xl border border-slate-800 bg-slate-900 px-4 py-4 md:grid-cols-[1fr_auto]">
-                    <div>
+              <div className="space-y-3 overflow-y-auto max-h-[320px] pr-1">
+                {activeBill?.items.map((item, index) => {
+                  const isActive = item.productId === activeBill.items[0]?.productId && item.id === activeBill.items[0]?.id;
+                  return (
+                    <div
+                      key={item.id}
+                      onClick={() => setActiveBillId(activeBill.id)}
+                      className={`cursor-pointer rounded-[28px] border p-4 ${isActive ? 'border-[#10B981] bg-[#F0FDF4]' : 'border-slate-200 bg-white'}`}
+                    >
                       <div className="flex items-center justify-between gap-3">
-                        <p className="font-semibold text-white">{item.name}</p>
-                        <button
-                          type="button"
-                          onClick={() => splitBill(item.id)}
-                          className="rounded-2xl bg-slate-800 px-3 py-1 text-xs text-slate-300 hover:bg-slate-700"
-                        >
-                          Split
+                        <div className="flex items-center gap-3">
+                          <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-slate-100 text-sm font-semibold text-slate-700">{index + 1}</div>
+                          <div>
+                            <p className="font-semibold text-slate-900">{item.name}</p>
+                            <p className="text-sm text-slate-500">{formatMVR(item.price * item.quantity)}</p>
+                          </div>
+                        </div>
+                        <button type="button" onClick={() => removeItem(item.id)} className="rounded-full bg-slate-100 p-2 text-slate-600 hover:bg-slate-200">
+                          <X className="h-4 w-4" />
                         </button>
                       </div>
-                      <p className="mt-1 text-sm text-slate-400">{formatMVR(item.price)} each</p>
+
+                      {isActive ? (
+                        <div className="mt-4 grid gap-3 sm:grid-cols-2">
+                          <label className="rounded-[24px] border border-slate-200 bg-white p-3 text-sm text-slate-500">
+                            Quantity
+                            <input
+                              type="number"
+                              min={1}
+                              value={item.quantity}
+                              onChange={(event) => updateQuantity(item.id, Number(event.target.value))}
+                              className="mt-2 w-full rounded-[20px] border border-slate-200 bg-slate-50 px-3 py-3 text-slate-900 outline-none"
+                            />
+                          </label>
+                          <label className="rounded-[24px] border border-slate-200 bg-white p-3 text-sm text-slate-500">
+                            Notes
+                            <input
+                              value={item.notes}
+                              onChange={(event) => {
+                                if (!activeBill) return;
+                                updateBill({
+                                  ...activeBill,
+                                  items: activeBill.items.map((entry) =>
+                                    entry.id === item.id ? { ...entry, notes: event.target.value } : entry,
+                                  ),
+                                });
+                              }}
+                              className="mt-2 w-full rounded-[20px] border border-slate-200 bg-slate-50 px-3 py-3 text-slate-900 outline-none"
+                              placeholder="Item notes"
+                            />
+                          </label>
+                        </div>
+                      ) : null}
                     </div>
-                    <div className="flex items-center justify-between gap-2">
-                      <div className="flex items-center gap-2 rounded-3xl border border-slate-700 bg-slate-950 px-3 py-2">
-                        <button type="button" onClick={() => updateQuantity(item.id, -1)} className="rounded-full bg-slate-800 p-2 text-slate-300 hover:bg-slate-700"><Minus className="h-3 w-3" /></button>
-                        <span className="text-sm text-white">{item.quantity}</span>
-                        <button type="button" onClick={() => updateQuantity(item.id, 1)} className="rounded-full bg-slate-800 p-2 text-slate-300 hover:bg-slate-700"><Plus className="h-3 w-3" /></button>
-                      </div>
-                      <div className="text-right">
-                        <p className="text-sm text-slate-400">Total</p>
-                        <p className="font-semibold text-white">{formatMVR(item.price * item.quantity)}</p>
-                      </div>
-                    </div>
-                  </div>
+                  );
+                })}
+                {!activeBill?.items.length ? (
+                  <p className="text-sm text-slate-500">No items in this bill yet. Tap a menu item to add it to the order.</p>
+                ) : null}
+              </div>
+            </div>
+
+            <div className="rounded-[32px] border border-slate-200 bg-[#F8F9FA] p-4 shadow-sm">
+              <div className="flex flex-wrap items-center gap-3">
+                {['Add', 'Discount', 'Coupon Code', 'Note'].map((action) => (
+                  <button key={action} type="button" className="rounded-3xl border border-slate-200 bg-white px-4 py-3 text-sm font-semibold text-slate-700 shadow-sm hover:bg-slate-100">
+                    {action}
+                  </button>
                 ))}
               </div>
-            )}
-          </div>
+            </div>
 
-          <div className="rounded-3xl border border-slate-800 bg-slate-900/80 p-5">
-            <div className="grid gap-4">
-              <div className="grid gap-3 sm:grid-cols-2">
-                <label className="block text-sm text-slate-300">
-                  Discount
-                  <input
-                    type="number"
-                    min={0}
-                    value={activeBill.discount}
-                    onChange={(event) => {
-                      const discount = Number(event.target.value);
-                      setBills((current) =>
-                        current.map((bill) => (bill.id === activeBill.id ? { ...bill, discount } : bill)),
-                      );
-                    }}
-                    className="mt-2 w-full rounded-3xl border border-slate-700 bg-slate-950 px-4 py-3 text-slate-100 outline-none"
-                  />
-                </label>
-                <label className="block text-sm text-slate-300">
-                  Payment type
-                  <select
-                    value={activeBill.paymentMethod}
-                    onChange={(event) => {
-                      const paymentMethod = event.target.value as typeof paymentMethods[number];
-                      setBills((current) =>
-                        current.map((bill) => (bill.id === activeBill.id ? { ...bill, paymentMethod } : bill)),
-                      );
-                    }}
-                    className="mt-2 w-full rounded-3xl border border-slate-700 bg-slate-950 px-4 py-3 text-slate-100 outline-none"
-                  >
-                    {paymentMethods.map((method) => (
-                      <option key={method} value={method}>{method}</option>
-                    ))}
-                  </select>
-                </label>
-              </div>
-              <div className="rounded-3xl border border-slate-800 bg-slate-950/70 p-4">
-                <div className="grid gap-3">
-                  <div className="flex items-center justify-between text-sm text-slate-400">
-                    <span>Subtotal</span>
-                    <span>{formatMVR(subtotal)}</span>
-                  </div>
-                  <div className="flex items-center justify-between text-sm text-slate-400">
-                    <span>Tax</span>
-                    <span>{formatMVR(taxAmount)}</span>
-                  </div>
-                  <div className="flex items-center justify-between text-sm text-slate-400">
-                    <span>Discount</span>
-                    <span>{formatMVR(activeBill.discount)}</span>
-                  </div>
-                  <div className="flex items-center justify-between border-t border-slate-800 pt-4 text-xl font-semibold text-white">
-                    <span>Total</span>
-                    <span>{formatMVR(total)}</span>
-                  </div>
+            <div className="rounded-[32px] border border-slate-200 bg-white p-5 shadow-sm">
+              <div className="grid gap-3">
+                <div className="flex items-center justify-between text-sm text-slate-500">
+                  <span>Subtotal</span>
+                  <span>{formatMVR(subtotal)}</span>
+                </div>
+                <div className="flex items-center justify-between text-sm text-slate-500">
+                  <span>Tax</span>
+                  <span>{formatMVR(taxAmount)}</span>
+                </div>
+                <div className="flex items-center justify-between border-t border-slate-200 pt-4 text-xl font-semibold text-slate-900">
+                  <span>Payable Amount</span>
+                  <span>{formatMVR(payable)}</span>
                 </div>
               </div>
-              <button type="button" onClick={printReceipt} className="inline-flex w-full items-center justify-center gap-2 rounded-3xl bg-violet-600 px-4 py-4 text-sm font-semibold text-white hover:bg-violet-500">
-                <Printer className="h-4 w-4" />
-                Print thermal receipt
+            </div>
+
+            <div className="grid gap-3 sm:grid-cols-2">
+              <button type="button" onClick={holdOrder} className="inline-flex items-center justify-center gap-2 rounded-[28px] bg-[#F27420]/10 px-5 py-4 text-sm font-semibold text-[#F27420] shadow-sm hover:bg-[#F27420]/15">
+                <Pause className="h-4 w-4" />
+                Hold Order
+              </button>
+              <button type="button" onClick={saveCurrentBill} className="inline-flex items-center justify-center gap-2 rounded-[28px] bg-[#10B981] px-5 py-4 text-sm font-semibold text-white shadow-lg hover:bg-[#0f9b71]">
+                Save order
+                <ArrowRight className="h-4 w-4" />
               </button>
             </div>
-          </div>
-        </section>
+          </aside>
+        </div>
       </div>
     </AppShell>
   );

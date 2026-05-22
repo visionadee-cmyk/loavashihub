@@ -13,6 +13,7 @@ const adminNav = [
   { path: '/admin/staff', label: 'Staff', icon: Users2 },
   { path: '/admin/inventory', label: 'Consumables', icon: Box },
   { path: '/admin/purchases', label: 'RFQ & Purchase', icon: ShoppingBag },
+  { path: '/admin/suppliers', label: 'Suppliers', icon: Users2 },
   { path: '/admin/direct-purchase', label: 'Direct Purchase', icon: ShoppingCart },
   { path: '/admin/daily-direct-revenue', label: 'Daily direct revenue', icon: DollarSign },
   { path: '/admin/inventory-update', label: 'Inventory Count', icon: ListChecks },

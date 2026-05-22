@@ -75,6 +75,16 @@ export interface PurchaseOrder {
   date: string;
 }
 
+export interface Supplier {
+  id: string;
+  name: string;
+  contact?: string;
+  phone?: string;
+  email?: string;
+  notes?: string;
+  createdAt: string;
+}
+
 export interface RFQItem {
   id: string;
   productName: string;

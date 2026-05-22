@@ -1,6 +1,8 @@
 const CACHE_NAME = 'loavashi-hub-cache-v1';
 const ASSETS = ['/', '/index.html', '/manifest.json', '/logo.jpeg', '/icon.svg', '/favicon.svg'];
 
+console.log('🔧 Service Worker Loading...');
+
 async function safeOpenCache(name) {
   try {
     return await caches.open(name);
@@ -23,6 +25,7 @@ async function safeCachePut(cache, request, response) {
 }
 
 self.addEventListener('install', (event) => {
+  console.log('⚙️ Service Worker Installing...');
   event.waitUntil(
     (async () => {
       const cache = await safeOpenCache(CACHE_NAME);
@@ -39,6 +42,7 @@ self.addEventListener('install', (event) => {
 
             if (response.ok) {
               await safeCachePut(cache, request, response.clone());
+              console.log('✅ Cached:', asset);
             } else {
               console.warn('Service worker cache skipped non-ok asset:', asset, response.status);
             }
@@ -49,16 +53,19 @@ self.addEventListener('install', (event) => {
       );
 
       await self.skipWaiting();
+      console.log('✅ Service Worker Installed');
     })(),
   );
 });
 
 self.addEventListener('activate', (event) => {
+  console.log('🚀 Service Worker Activating...');
   event.waitUntil(
     caches.keys().then((keys) =>
       Promise.all(
         keys.map((key) => {
           if (key !== CACHE_NAME) {
+            console.log('🗑️ Deleting old cache:', key);
             return caches.delete(key);
           }
           return null;
@@ -67,12 +74,34 @@ self.addEventListener('activate', (event) => {
     ),
   );
   self.clients.claim();
+  console.log('✅ Service Worker Activated');
 });
 
 self.addEventListener('fetch', (event) => {
   event.respondWith(
     (async () => {
       try {
+        // Try network first for API calls and dynamic content
+        if (event.request.url.includes('/api') || event.request.method !== 'GET') {
+          try {
+            const response = await fetch(event.request);
+            if (response && response.status === 200) {
+              const cache = await safeOpenCache(CACHE_NAME);
+              await safeCachePut(cache, event.request, response.clone());
+            }
+            return response;
+          } catch (error) {
+            // Network failed, try cache
+            const cached = await caches.match(event.request);
+            if (cached) {
+              console.log('📦 Using cached response for:', event.request.url);
+              return cached;
+            }
+            throw error;
+          }
+        }
+
+        // Cache first for static assets
         const cached = await caches.match(event.request);
         if (cached) {
           return cached;
@@ -90,8 +119,10 @@ self.addEventListener('fetch', (event) => {
         return response;
       } catch (error) {
         console.warn('Service worker fetch failed:', error);
-        return caches.match('/');
+        const cached = await caches.match('/');
+        return cached || new Response('Offline - App not available', { status: 503 });
       }
     })(),
   );
 });
+

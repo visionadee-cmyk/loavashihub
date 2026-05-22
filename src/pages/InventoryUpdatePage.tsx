@@ -80,19 +80,19 @@ export default function InventoryUpdatePage() {
   return (
     <AppShell title="Inventory Update">
       <div className="grid gap-6 xl:grid-cols-[1fr_0.85fr]">
-        <section className="rounded-3xl border border-slate-800 bg-slate-950/70 p-6 shadow-2xl shadow-slate-950/20">
+        <section className="rounded-3xl border border-slate-200 bg-slate-50/70 p-6 shadow-2xl shadow-slate-300/20">
           <div className="mb-6">
-            <h3 className="text-xl font-semibold text-white">Update Inventory</h3>
-            <p className="text-sm text-slate-400">Track daily, month-end, and physical count adjustments.</p>
+            <h3 className="text-xl font-semibold text-slate-900">Update Inventory</h3>
+            <p className="text-sm text-slate-600">Track daily, month-end, and physical count adjustments.</p>
           </div>
 
           <div className="grid gap-4 mb-6">
-            <label className="block text-sm text-slate-300">
+            <label className="block text-sm text-slate-600">
               Reason for adjustment
               <select
                 value={selectedReason}
                 onChange={(e) => setSelectedReason(e.target.value as typeof selectedReason)}
-                className="mt-2 w-full rounded-3xl border border-slate-700 bg-slate-950 px-4 py-3 text-slate-100 outline-none"
+                className="mt-2 w-full rounded-3xl border border-slate-300 bg-white px-4 py-3 text-slate-900 outline-none"
               >
                 <option value="daily-count">Daily Count</option>
                 <option value="month-end">Month End</option>
@@ -102,13 +102,13 @@ export default function InventoryUpdatePage() {
               </select>
             </label>
 
-            <label className="block text-sm text-slate-300">
+            <label className="block text-sm text-slate-600">
               Notes (optional)
               <textarea
                 value={notes}
                 onChange={(e) => setNotes(e.target.value)}
                 placeholder="Add any notes about this adjustment..."
-                className="mt-2 w-full rounded-3xl border border-slate-700 bg-slate-950 px-4 py-3 text-slate-100 outline-none min-h-24"
+                className="mt-2 w-full rounded-3xl border border-slate-300 bg-white px-4 py-3 text-slate-900 outline-none min-h-24"
               />
             </label>
           </div>
@@ -124,13 +124,13 @@ export default function InventoryUpdatePage() {
                   key={item.id}
                   className={`rounded-3xl border p-4 ${
                     hasChange
-                      ? 'border-amber-600 bg-amber-950/30'
-                      : 'border-slate-800 bg-slate-900'
+                      ? 'border-amber-600 bg-amber-50'
+                      : 'border-slate-200 bg-slate-100'
                   }`}
                 >
                   <div className="flex items-center justify-between gap-3 mb-2">
                     <div>
-                      <p className="font-semibold text-white">{item.name}</p>
+                      <p className="font-semibold text-slate-900">{item.name}</p>
                       <p className="text-xs text-slate-400">Current: {item.quantity} {item.unit}</p>
                     </div>
                     <input
@@ -138,7 +138,7 @@ export default function InventoryUpdatePage() {
                       min={0}
                       value={displayQty}
                       onChange={(e) => updateQuantity(item.id, Number(e.target.value))}
-                      className="w-20 rounded-2xl border border-slate-700 bg-slate-950 px-3 py-2 text-right text-slate-100 font-semibold outline-none"
+                      className="w-20 rounded-2xl border border-slate-300 bg-white px-3 py-2 text-right text-slate-900 font-semibold outline-none"
                       placeholder="New qty"
                     />
                   </div>
@@ -161,14 +161,14 @@ export default function InventoryUpdatePage() {
           </button>
         </section>
 
-        <section className="rounded-3xl border border-slate-800 bg-slate-950/70 p-6 shadow-2xl shadow-slate-950/20">
-          <h3 className="text-xl font-semibold text-white mb-4">Recent Adjustments</h3>
+        <section className="rounded-3xl border border-slate-200 bg-slate-50/70 p-6 shadow-2xl shadow-slate-300/20">
+          <h3 className="text-xl font-semibold text-slate-900 mb-4">Recent Adjustments</h3>
           <div className="space-y-3 max-h-screen overflow-y-auto">
             {adjustments.map((adj) => (
-              <div key={adj.id} className="rounded-3xl border border-slate-800 bg-slate-900 p-3">
+              <div key={adj.id} className="rounded-3xl border border-slate-200 bg-slate-100 p-3">
                 <div className="flex items-start justify-between mb-2">
                   <div>
-                    <p className="font-semibold text-white text-sm">{adj.productName}</p>
+                      <p className="font-semibold text-slate-900 text-sm">{adj.productName}</p>
                     <p className="text-xs text-slate-400">{adj.date}</p>
                   </div>
                   <span className={`text-xs px-2 py-1 rounded-full ${

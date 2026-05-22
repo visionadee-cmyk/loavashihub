@@ -52,17 +52,20 @@ export default function RecipeManagement() {
     };
     setRecipes((current) => [payload, ...current]);
 
+    const existingMenuItem = menuItems.find((item) => item.name.toLowerCase() === payload.name.toLowerCase());
+    const newMenuItemId = existingMenuItem?.id ?? generateMenuItemId();
+
     const menuItemPayload: MenuItem = {
-      id: menuItems.find((item) => item.name.toLowerCase() === payload.name.toLowerCase())?.id ?? `product-${Date.now()}`,
+      id: newMenuItemId,
+      menuItemId: existingMenuItem?.menuItemId ?? newMenuItemId,
       name: payload.name,
-      category: menuItems.find((item) => item.name.toLowerCase() === payload.name.toLowerCase())?.category ?? 'Others',
+      category: existingMenuItem?.category ?? 'Others',
       price: payload.salePrice,
       description:
-        menuItems.find((item) => item.name.toLowerCase() === payload.name.toLowerCase())?.description ||
+        existingMenuItem?.description ||
         payload.ingredients.map((ingredient) => `${ingredient.quantity} ${ingredient.unit} ${ingredient.name}`).join(', ') ||
         'Menu item generated from recipe.',
-      image: menuItems.find((item) => item.name.toLowerCase() === payload.name.toLowerCase())?.image ??
-        'https://images.unsplash.com/photo-1509042239860-f550ce710b93?auto=format&fit=crop&w=700&q=80',
+      image: existingMenuItem?.image ?? 'https://images.unsplash.com/photo-1509042239860-f550ce710b93?auto=format&fit=crop&w=700&q=80',
     };
 
     setMenuItems((current) => [menuItemPayload, ...current.filter((item) => item.id !== menuItemPayload.id)]);
@@ -118,11 +121,11 @@ export default function RecipeManagement() {
   return (
     <AppShell title="Recipe management">
       <div className="grid gap-6 xl:grid-cols-[0.85fr_1fr]">
-        <section className="rounded-3xl border border-slate-800 bg-slate-950/70 p-6 shadow-2xl shadow-slate-950/20">
+        <section className="rounded-3xl border border-slate-200 bg-slate-50/70 p-6 shadow-2xl shadow-slate-300/20">
           <div className="mb-6 flex items-center justify-between gap-3">
             <div>
-              <h3 className="text-xl font-semibold text-white">Menu recipes</h3>
-              <p className="text-sm text-slate-400">Create recipes and simulate inventory deduction in real time.</p>
+              <h3 className="text-xl font-semibold text-slate-900">Menu recipes</h3>
+              <p className="text-sm text-slate-600">Create recipes and simulate inventory deduction in real time.</p>
             </div>
             <button
               onClick={saveRecipe}
@@ -133,33 +136,33 @@ export default function RecipeManagement() {
           </div>
 
           <div className="grid gap-4">
-            <label className="block text-sm text-slate-300">
+            <label className="block text-sm text-slate-600">
               Recipe name
               <input
                 value={form.name}
                 onChange={(event) => setForm((current) => ({ ...current, name: event.target.value }))}
-                className="mt-2 w-full rounded-3xl border border-slate-700 bg-slate-950 px-4 py-3 text-slate-100 outline-none"
+                className="mt-2 w-full rounded-3xl border border-slate-300 bg-white px-4 py-3 text-slate-900 outline-none"
                 placeholder="Café Latte"
               />
             </label>
 
             <div className="grid gap-4 sm:grid-cols-2">
-              <label className="block text-sm text-slate-300">
+              <label className="block text-sm text-slate-600">
                 Sale price
                 <input
                   type="number"
                   min={0}
                   value={form.salePrice}
                   onChange={(event) => setForm((current) => ({ ...current, salePrice: Number(event.target.value) }))}
-                  className="mt-2 w-full rounded-3xl border border-slate-700 bg-slate-950 px-4 py-3 text-slate-100 outline-none"
+                  className="mt-2 w-full rounded-3xl border border-slate-300 bg-white px-4 py-3 text-slate-900 outline-none"
                 />
               </label>
-              <label className="block text-sm text-slate-300">
+              <label className="block text-sm text-slate-600">
                 Status
                 <select
                   value={form.status}
                   onChange={(event) => setForm((current) => ({ ...current, status: event.target.value as Recipe['status'] }))}
-                  className="mt-2 w-full rounded-3xl border border-slate-700 bg-slate-950 px-4 py-3 text-slate-100 outline-none"
+                  className="mt-2 w-full rounded-3xl border border-slate-300 bg-white px-4 py-3 text-slate-900 outline-none"
                 >
                   <option value="Active">Active</option>
                   <option value="Inactive">Inactive</option>
@@ -167,9 +170,9 @@ export default function RecipeManagement() {
               </label>
             </div>
 
-            <div className="grid gap-4 rounded-3xl border border-slate-800 bg-slate-900/70 p-4">
+            <div className="grid gap-4 rounded-3xl border border-slate-200 bg-slate-100/70 p-4">
               <div className="flex flex-wrap items-center gap-3">
-                <label className="block text-sm text-slate-300">
+                <label className="block text-sm text-slate-600">
                   Ingredient
                   <select
                     value={ingredient.inventoryId}
@@ -183,7 +186,7 @@ export default function RecipeManagement() {
                         unit: item?.unit ?? current.unit ?? 'pcs',
                       }));
                     }}
-                    className="mt-2 w-full rounded-3xl border border-slate-700 bg-slate-950 px-4 py-3 text-slate-100 outline-none"
+                    className="mt-2 w-full rounded-3xl border border-slate-300 bg-white px-4 py-3 text-slate-900 outline-none"
                   >
                     {inventory.map((item) => (
                       <option key={item.id} value={item.id}>
@@ -192,7 +195,7 @@ export default function RecipeManagement() {
                     ))}
                   </select>
                 </label>
-                <label className="block text-sm text-slate-300">
+                <label className="block text-sm text-slate-600">
                   Quantity
                   <input
                     type="number"
@@ -200,31 +203,31 @@ export default function RecipeManagement() {
                     step={0.1}
                     value={ingredient.quantity}
                     onChange={(event) => setIngredient((current) => ({ ...current, quantity: Number(event.target.value) }))}
-                    className="mt-2 w-full rounded-3xl border border-slate-700 bg-slate-950 px-4 py-3 text-slate-100 outline-none"
+                    className="mt-2 w-full rounded-3xl border border-slate-300 bg-white px-4 py-3 text-slate-900 outline-none"
                   />
                 </label>
-                <label className="block text-sm text-slate-300">
+                <label className="block text-sm text-slate-600">
                   Unit
                   <input
                     value={ingredient.unit}
                     onChange={(event) => setIngredient((current) => ({ ...current, unit: event.target.value }))}
-                    className="mt-2 w-full rounded-3xl border border-slate-700 bg-slate-950 px-4 py-3 text-slate-100 outline-none"
+                    className="mt-2 w-full rounded-3xl border border-slate-300 bg-white px-4 py-3 text-slate-900 outline-none"
                   />
                 </label>
               </div>
               <button
                 type="button"
                 onClick={addIngredient}
-                className="inline-flex items-center gap-2 rounded-3xl bg-slate-800 px-4 py-3 text-sm font-semibold text-slate-100 hover:bg-slate-700"
+                className="inline-flex items-center gap-2 rounded-3xl bg-slate-800 px-4 py-3 text-sm font-semibold text-white hover:bg-slate-700"
               >
                 <Plus className="h-4 w-4" /> Add ingredient
               </button>
             </div>
 
             {form.ingredients?.length ? (
-              <div className="rounded-3xl border border-slate-800 bg-slate-900/70 p-4">
-                <h4 className="text-sm font-semibold text-white">Recipe ingredients</h4>
-                <ul className="mt-3 space-y-2 text-slate-300">
+              <div className="rounded-3xl border border-slate-200 bg-slate-50/70 p-4">
+                <h4 className="text-sm font-semibold text-slate-900">Recipe ingredients</h4>
+                <ul className="mt-3 space-y-2 text-slate-700">
                   {form.ingredients.map((ingredient, index) => (
                     <li key={`${ingredient.inventoryId}-${index}`}>
                       {ingredient.name}: {ingredient.quantity} {ingredient.unit}
@@ -237,21 +240,21 @@ export default function RecipeManagement() {
         </section>
 
         <section className="space-y-6">
-          <div className="rounded-3xl border border-slate-800 bg-slate-950/70 p-6 shadow-2xl shadow-slate-950/20">
+          <div className="rounded-3xl border border-slate-200 bg-slate-50/70 p-6 shadow-2xl shadow-slate-300/20">
             <div className="mb-4 flex items-center justify-between gap-3">
               <div>
-                <h3 className="text-xl font-semibold text-white">Inventory status</h3>
-                <p className="text-sm text-slate-400">Watch consumables change when recipes are used.</p>
+                <h3 className="text-xl font-semibold text-slate-900">Inventory status</h3>
+                <p className="text-sm text-slate-600">Watch consumables change when recipes are used.</p>
               </div>
               <span className="rounded-full bg-slate-800 px-3 py-1 text-xs uppercase tracking-[0.24em] text-slate-300">{stockWarning} low-stock items</span>
             </div>
             <div className="grid gap-3">
               {inventory.map((item) => (
-                <div key={item.id} className="rounded-3xl border border-slate-800 bg-slate-900 p-4">
+                <div key={item.id} className="rounded-3xl border border-slate-200 bg-slate-100 p-4">
                   <div className="flex items-center justify-between gap-3">
                     <div>
-                      <p className="font-semibold text-white">{item.name}</p>
-                      <p className="text-sm text-slate-400">{item.quantity} {item.unit}</p>
+                      <p className="font-semibold text-slate-900">{item.name}</p>
+                      <p className="text-sm text-slate-600">{item.quantity} {item.unit}</p>
                     </div>
                     <span className={`rounded-full px-3 py-1 text-xs uppercase tracking-[0.24em] ${item.quantity <= item.lowStock ? 'bg-rose-600 text-white' : 'bg-slate-800 text-slate-300'}`}>
                       {item.quantity <= item.lowStock ? 'Low stock' : 'In stock'}
@@ -262,22 +265,22 @@ export default function RecipeManagement() {
             </div>
           </div>
 
-          <div className="rounded-3xl border border-slate-800 bg-slate-900/80 p-5 shadow-xl shadow-slate-950/20">
+          <div className="rounded-3xl border border-slate-200 bg-slate-100/80 p-5 shadow-xl shadow-slate-300/20">
             <div className="mb-4 flex items-center justify-between gap-3">
               <div>
-                <h3 className="text-xl font-semibold text-white">Recipe list</h3>
-                <p className="text-sm text-slate-400">Use recipes to deduct consumables automatically.</p>
+                <h3 className="text-xl font-semibold text-slate-900">Recipe list</h3>
+                <p className="text-sm text-slate-600">Use recipes to deduct consumables automatically.</p>
               </div>
               <span className="rounded-full bg-slate-800 px-3 py-1 text-xs uppercase tracking-[0.24em] text-slate-300">{recipes.length} recipes</span>
             </div>
 
             <div className="space-y-4">
               {recipes.map((recipe) => (
-                <div key={recipe.id} className="rounded-3xl border border-slate-800 bg-slate-950 p-4">
+                <div key={recipe.id} className="rounded-3xl border border-slate-200 bg-white p-4">
                   <div className="flex flex-wrap items-center justify-between gap-3">
                     <div>
-                      <p className="text-lg font-semibold text-white">{recipe.name}</p>
-                      <p className="text-sm text-slate-400">Sale price: {recipe.salePrice} MVR</p>
+                      <p className="text-lg font-semibold text-slate-900">{recipe.name}</p>
+                      <p className="text-sm text-slate-600">Sale price: {recipe.salePrice} MVR</p>
                     </div>
                     <div className="flex items-center gap-2">
                       <button
@@ -296,9 +299,9 @@ export default function RecipeManagement() {
                       </button>
                     </div>
                   </div>
-                  <div className="mt-4 grid gap-2 text-sm text-slate-400">
+                  <div className="mt-4 grid gap-2 text-sm text-slate-600">
                     {recipe.ingredients.map((ingredient) => (
-                      <div key={`${recipe.id}-${ingredient.inventoryId}`} className="flex items-center justify-between rounded-2xl bg-slate-900 px-4 py-3">
+                      <div key={`${recipe.id}-${ingredient.inventoryId}`} className="flex items-center justify-between rounded-2xl bg-slate-100 px-4 py-3">
                         <span>{ingredient.name}</span>
                         <span>{ingredient.quantity} {ingredient.unit}</span>
                       </div>

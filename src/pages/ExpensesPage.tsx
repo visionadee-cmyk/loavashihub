@@ -49,11 +49,11 @@ export default function ExpensesPage() {
   return (
     <AppShell title="Expenses">
       <div className="grid gap-6 xl:grid-cols-[0.95fr_0.85fr]">
-        <section className="rounded-3xl border border-slate-800 bg-slate-950/70 p-6 shadow-2xl shadow-slate-950/20">
+        <section className="rounded-3xl border border-slate-200 bg-slate-50/70 p-6 shadow-2xl shadow-slate-300/20">
           <div className="mb-5 flex items-center justify-between gap-3">
             <div>
-              <h3 className="text-xl font-semibold text-white">Daily expense tracker</h3>
-              <p className="text-sm text-slate-400">Upload receipts and track purchases by staff.</p>
+              <h3 className="text-xl font-semibold text-slate-900">Daily expense tracker</h3>
+              <p className="text-sm text-slate-600">Upload receipts and track purchases by staff.</p>
             </div>
             <button className="inline-flex items-center gap-2 rounded-3xl bg-violet-600 px-4 py-3 text-sm font-semibold text-white hover:bg-violet-500">
               <Upload className="h-4 w-4" /> Upload receipt
@@ -61,30 +61,30 @@ export default function ExpensesPage() {
           </div>
 
           <div className="grid gap-4">
-            <label className="block text-sm text-slate-300">
+            <label className="block text-sm text-slate-600">
               Title
               <input
                 value={expenseForm.title}
                 onChange={(event) => setExpenseForm((current) => ({ ...current, title: event.target.value }))}
-                className="mt-2 w-full rounded-3xl border border-slate-700 bg-slate-950 px-4 py-3 text-slate-100 outline-none"
+                className="mt-2 w-full rounded-3xl border border-slate-300 bg-white px-4 py-3 text-slate-900 outline-none"
               />
             </label>
             <div className="grid gap-4 sm:grid-cols-2">
-              <label className="block text-sm text-slate-300">
+              <label className="block text-sm text-slate-600">
                 Amount (MVR)
                 <input
                   type="number"
                   value={expenseForm.amount}
                   onChange={(event) => setExpenseForm((current) => ({ ...current, amount: Number(event.target.value) }))}
-                  className="mt-2 w-full rounded-3xl border border-slate-700 bg-slate-950 px-4 py-3 text-slate-100 outline-none"
+                  className="mt-2 w-full rounded-3xl border border-slate-300 bg-white px-4 py-3 text-slate-900 outline-none"
                 />
               </label>
-              <label className="block text-sm text-slate-300">
+              <label className="block text-sm text-slate-600">
                 Category
                 <select
                   value={expenseForm.category}
                   onChange={(event) => setExpenseForm((current) => ({ ...current, category: event.target.value }))}
-                  className="mt-2 w-full rounded-3xl border border-slate-700 bg-slate-950 px-4 py-3 text-slate-100 outline-none"
+                  className="mt-2 w-full rounded-3xl border border-slate-300 bg-white px-4 py-3 text-slate-900 outline-none"
                 >
                   <option>Daily expenses</option>
                   <option>Purchases</option>
@@ -94,25 +94,25 @@ export default function ExpensesPage() {
               </label>
             </div>
             <div className="grid gap-4 sm:grid-cols-2">
-              <label className="block text-sm text-slate-300">
+              <label className="block text-sm text-slate-600">
                 Paid from
                 <select
                   value={expenseForm.paidBy}
                   onChange={(event) => setExpenseForm((current) => ({ ...current, paidBy: event.target.value }))}
-                  className="mt-2 w-full rounded-3xl border border-slate-700 bg-slate-950 px-4 py-3 text-slate-100 outline-none"
+                  className="mt-2 w-full rounded-3xl border border-slate-300 bg-white px-4 py-3 text-slate-900 outline-none"
                 >
                   <option>Daily sales</option>
                   <option>Bank</option>
                   <option>Other</option>
                 </select>
               </label>
-              <label className="block text-sm text-slate-300">
+              <label className="block text-sm text-slate-600">
                 Date
                 <input
                   type="date"
                   value={expenseForm.date}
                   onChange={(event) => setExpenseForm((current) => ({ ...current, date: event.target.value }))}
-                  className="mt-2 w-full rounded-3xl border border-slate-700 bg-slate-950 px-4 py-3 text-slate-100 outline-none"
+                  className="mt-2 w-full rounded-3xl border border-slate-300 bg-white px-4 py-3 text-slate-900 outline-none"
                 />
               </label>
             </div>
@@ -143,54 +143,54 @@ export default function ExpensesPage() {
 
           <div className="mt-6 grid gap-4">
             {expenses.map((expense) => (
-              <div key={expense.id} className="rounded-3xl border border-slate-800 bg-slate-900 p-4">
+              <div key={expense.id} className="rounded-3xl border border-slate-200 bg-slate-100 p-4">
                 <div className="flex items-center justify-between gap-3">
                   <div>
-                    <p className="font-medium text-white">{expense.title}</p>
-                    <p className="text-sm text-slate-400">{expense.category} • {expense.date}</p>
+                    <p className="font-medium text-slate-900">{expense.title}</p>
+                    <p className="text-sm text-slate-600">{expense.category} • {expense.date}</p>
                   </div>
                   <p className="text-sm font-semibold text-violet-300">{formatMVR(expense.amount)}</p>
                 </div>
-                <p className="mt-3 text-sm text-slate-400">Paid from {expense.paidBy}</p>
+                <p className="mt-3 text-sm text-slate-600">Paid from {expense.paidBy}</p>
               </div>
             ))}
           </div>
         </section>
 
         <section className="space-y-6">
-          <div className="rounded-3xl border border-slate-800 bg-slate-950/70 p-6 shadow-2xl shadow-slate-950/20">
+          <div className="rounded-3xl border border-slate-200 bg-slate-50/70 p-6 shadow-2xl shadow-slate-300/20">
             <div className="mb-4 flex items-center justify-between gap-3">
               <div>
-                <h3 className="text-xl font-semibold text-white">Monthly expense plan</h3>
-                <p className="text-sm text-slate-400">Record rent, salary and utilities.</p>
+                <h3 className="text-xl font-semibold text-slate-900">Monthly expense plan</h3>
+                <p className="text-sm text-slate-600">Record rent, salary and utilities.</p>
               </div>
               <span className="rounded-full bg-slate-800 px-3 py-1 text-xs uppercase tracking-[0.24em] text-slate-300">{monthlyExpenses.length} entries</span>
             </div>
 
             <div className="grid gap-4">
-              <label className="block text-sm text-slate-300">
+              <label className="block text-sm text-slate-600">
                 Title
                 <input
                   value={monthlyForm.title}
                   onChange={(event) => setMonthlyForm((current) => ({ ...current, title: event.target.value }))}
-                  className="mt-2 w-full rounded-3xl border border-slate-700 bg-slate-950 px-4 py-3 text-slate-100 outline-none"
+                  className="mt-2 w-full rounded-3xl border border-slate-300 bg-white px-4 py-3 text-slate-900 outline-none"
                 />
               </label>
-              <label className="block text-sm text-slate-300">
+              <label className="block text-sm text-slate-600">
                 Amount (MVR)
                 <input
                   type="number"
                   value={monthlyForm.amount}
                   onChange={(event) => setMonthlyForm((current) => ({ ...current, amount: Number(event.target.value) }))}
-                  className="mt-2 w-full rounded-3xl border border-slate-700 bg-slate-950 px-4 py-3 text-slate-100 outline-none"
+                  className="mt-2 w-full rounded-3xl border border-slate-300 bg-white px-4 py-3 text-slate-900 outline-none"
                 />
               </label>
-              <label className="block text-sm text-slate-300">
+              <label className="block text-sm text-slate-600">
                 Category
                 <select
                   value={monthlyForm.category}
                   onChange={(event) => setMonthlyForm((current) => ({ ...current, category: event.target.value }))}
-                  className="mt-2 w-full rounded-3xl border border-slate-700 bg-slate-950 px-4 py-3 text-slate-100 outline-none"
+                  className="mt-2 w-full rounded-3xl border border-slate-300 bg-white px-4 py-3 text-slate-900 outline-none"
                 >
                   <option>Rent</option>
                   <option>Salary</option>
@@ -200,13 +200,13 @@ export default function ExpensesPage() {
                   <option>Accommodation costs</option>
                 </select>
               </label>
-              <label className="block text-sm text-slate-300">
+              <label className="block text-sm text-slate-600">
                 Due month
                 <input
                   type="text"
                   value={monthlyForm.dueMonth}
                   onChange={(event) => setMonthlyForm((current) => ({ ...current, dueMonth: event.target.value }))}
-                  className="mt-2 w-full rounded-3xl border border-slate-700 bg-slate-950 px-4 py-3 text-slate-100 outline-none"
+                  className="mt-2 w-full rounded-3xl border border-slate-300 bg-white px-4 py-3 text-slate-900 outline-none"
                 />
               </label>
               <button
@@ -234,26 +234,26 @@ export default function ExpensesPage() {
             </div>
           </div>
 
-          <div className="rounded-3xl border border-slate-800 bg-slate-900/80 p-6 shadow-2xl shadow-slate-950/20">
+          <div className="rounded-3xl border border-slate-200 bg-slate-100/80 p-6 shadow-2xl shadow-slate-300/20">
             <div className="mb-4 flex items-center justify-between gap-3">
               <div>
-                <h3 className="text-xl font-semibold text-white">Expense summary</h3>
-                <p className="text-sm text-slate-400">Overview of daily and monthly costs.</p>
+                <h3 className="text-xl font-semibold text-slate-900">Expense summary</h3>
+                <p className="text-sm text-slate-600">Overview of daily and monthly costs.</p>
               </div>
               <div className="space-y-2 text-right">
-                <p className="text-sm text-slate-400">Daily total</p>
-                <p className="text-2xl font-semibold text-white">{formatMVR(totalDaily)}</p>
-                <p className="text-sm text-slate-400">Monthly total</p>
+                <p className="text-sm text-slate-600">Daily total</p>
+                <p className="text-2xl font-semibold text-slate-900">{formatMVR(totalDaily)}</p>
+                <p className="text-sm text-slate-600">Monthly total</p>
                 <p className="text-2xl font-semibold text-violet-300">{formatMVR(totalMonthly)}</p>
               </div>
             </div>
             <div className="grid gap-3">
               {monthlyExpenses.map((record) => (
-                <div key={record.id} className="rounded-3xl border border-slate-800 bg-slate-950 p-4">
+                <div key={record.id} className="rounded-3xl border border-slate-200 bg-white p-4">
                   <div className="flex items-center justify-between gap-3">
                     <div>
-                      <p className="text-base font-semibold text-white">{record.title}</p>
-                      <p className="text-sm text-slate-400">{record.category} · {record.dueMonth}</p>
+                      <p className="text-base font-semibold text-slate-900">{record.title}</p>
+                      <p className="text-sm text-slate-600">{record.category} · {record.dueMonth}</p>
                     </div>
                     <p className="text-sm font-semibold text-violet-300">{formatMVR(record.amount)}</p>
                   </div>

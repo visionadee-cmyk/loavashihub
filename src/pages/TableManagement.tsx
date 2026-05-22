@@ -64,11 +64,11 @@ export default function TableManagement() {
   return (
     <AppShell title="Table management">
       <div className="grid gap-6 xl:grid-cols-[0.85fr_0.95fr]">
-        <section className="rounded-3xl border border-slate-800 bg-slate-950/70 p-6 shadow-2xl shadow-slate-950/20">
+        <section className="rounded-3xl border border-slate-200 bg-slate-50/70 p-6 shadow-2xl shadow-slate-300/20">
           <div className="mb-5 flex items-center justify-between gap-3">
             <div>
-              <h3 className="text-xl font-semibold text-white">Floor plan setup</h3>
-              <p className="text-sm text-slate-400">Create new indoor, outdoor and VIP tables.</p>
+              <h3 className="text-xl font-semibold text-slate-900">Floor plan setup</h3>
+              <p className="text-sm text-slate-600">Create new indoor, outdoor and VIP tables.</p>
             </div>
             <button
               onClick={submitTable}
@@ -79,32 +79,32 @@ export default function TableManagement() {
           </div>
 
           <div className="grid gap-4">
-            <label className="block text-sm text-slate-300">
+            <label className="block text-sm text-slate-600">
               Table name
               <input
                 value={form.name}
                 onChange={(event) => setForm((current) => ({ ...current, name: event.target.value }))}
-                className="mt-2 w-full rounded-3xl border border-slate-700 bg-slate-950 px-4 py-3 text-slate-100 outline-none"
+                className="mt-2 w-full rounded-3xl border border-slate-300 bg-white px-4 py-3 text-slate-900 outline-none"
                 placeholder="Table 7"
               />
             </label>
             <div className="grid gap-4 sm:grid-cols-2">
-              <label className="block text-sm text-slate-300">
+              <label className="block text-sm text-slate-600">
                 Seats
                 <input
                   type="number"
                   min={1}
                   value={form.seats}
                   onChange={(event) => setForm((current) => ({ ...current, seats: Number(event.target.value) }))}
-                  className="mt-2 w-full rounded-3xl border border-slate-700 bg-slate-950 px-4 py-3 text-slate-100 outline-none"
+                  className="mt-2 w-full rounded-3xl border border-slate-300 bg-white px-4 py-3 text-slate-900 outline-none"
                 />
               </label>
-              <label className="block text-sm text-slate-300">
+              <label className="block text-sm text-slate-600">
                 Section
                 <select
                   value={form.section}
                   onChange={(event) => setForm((current) => ({ ...current, section: event.target.value as TableItem['section'] }))}
-                  className="mt-2 w-full rounded-3xl border border-slate-700 bg-slate-950 px-4 py-3 text-slate-100 outline-none"
+                  className="mt-2 w-full rounded-3xl border border-slate-300 bg-white px-4 py-3 text-slate-900 outline-none"
                 >
                   <option value="Indoor">Indoor</option>
                   <option value="Outdoor">Outdoor</option>
@@ -116,21 +116,21 @@ export default function TableManagement() {
         </section>
 
         <section className="space-y-6">
-          <div className="rounded-3xl border border-slate-800 bg-slate-950/70 p-6 shadow-2xl shadow-slate-950/20">
+          <div className="rounded-3xl border border-slate-200 bg-slate-50/70 p-6 shadow-2xl shadow-slate-300/20">
             <div className="mb-4 flex items-center justify-between gap-3">
               <div>
-                <h3 className="text-xl font-semibold text-white">Live table map</h3>
-                <p className="text-sm text-slate-400">Visual sections for dine-in and VIP seating.</p>
+                <h3 className="text-xl font-semibold text-slate-900">Live table map</h3>
+                <p className="text-sm text-slate-600">Visual sections for dine-in and VIP seating.</p>
               </div>
               <span className="rounded-full bg-slate-800 px-3 py-1 text-xs uppercase tracking-[0.24em] text-slate-300">{tables.length} tables</span>
             </div>
             <div className="grid gap-3 sm:grid-cols-2">
               {tables.map((table) => (
-                <div key={table.id} className="rounded-3xl border border-slate-800 bg-slate-900 px-4 py-4">
+                <div key={table.id} className="rounded-3xl border border-slate-200 bg-slate-100 px-4 py-4">
                   <div className="flex items-center justify-between gap-3">
                     <div>
-                      <p className="text-base font-semibold text-white">{table.name}</p>
-                      <p className="text-sm text-slate-400">{table.section} · {table.seats} seats</p>
+                      <p className="text-base font-semibold text-slate-900">{table.name}</p>
+                      <p className="text-sm text-slate-600">{table.section} · {table.seats} seats</p>
                     </div>
                     <div className="flex items-center gap-2">
                       <button onClick={() => beginEdit(table)} className="rounded-2xl bg-slate-800 px-3 py-2 text-slate-300 hover:bg-slate-700">

@@ -5,6 +5,7 @@ import { useInventory } from '../context/InventoryContext';
 import { hasFirebaseConfig } from '../lib/firebase';
 import { loadCollection, saveDocument, deleteDocument } from '../lib/firestore';
 import { formatMVR } from '../lib/mvr';
+import { generateInventoryProductId, generateInventoryProductNumber } from '../lib/ids';
 import type { PurchaseOrder, RFQItem } from '../types';
 
 const defaultPurchase: Partial<PurchaseOrder> = {
@@ -45,6 +46,25 @@ export default function PurchaseProductsPage() {
   const [form, setForm] = useState<Partial<PurchaseOrder>>(defaultPurchase);
   const [rfqItems, setRfqItems] = useState<RFQItem[]>([]);
   const [rfqForm, setRfqForm] = useState<Partial<RFQItem>>({ productName: '', quantity: 1, unit: 'pcs' });
+
+  const rfqProductExists = rfqForm.productName?.trim()
+    ? products.some((product) => product.name.toLowerCase() === rfqForm.productName.trim().toLowerCase())
+    : false;
+
+  const createRfqInventoryItem = () => {
+    const name = rfqForm.productName?.trim();
+    if (!name || rfqProductExists) return;
+
+    addInventoryItem({
+      id: `stock-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+      productId: generateInventoryProductId(),
+      productNumber: generateInventoryProductNumber(),
+      name,
+      quantity: 0,
+      unit: rfqForm.unit || 'pcs',
+      lowStock: 5,
+    });
+  };
 
   const addRfqItem = async () => {
     const productName = rfqForm.productName?.trim();
@@ -214,6 +234,8 @@ export default function PurchaseProductsPage() {
 
     addInventoryItem({
       id: `stock-${Date.now()}`,
+      productId: generateInventoryProductId(),
+      productNumber: generateInventoryProductNumber(),
       name: order.productName,
       quantity: order.quantity,
       unit: order.unit,
@@ -274,11 +296,11 @@ export default function PurchaseProductsPage() {
   return (
     <AppShell title="Purchase products">
       <div className="grid gap-6 xl:grid-cols-[0.85fr_1fr]">
-        <section className="rounded-3xl border border-slate-800 bg-slate-950/70 p-6 shadow-2xl shadow-slate-950/20">
+        <section className="rounded-3xl border border-slate-200 bg-slate-50/70 p-6 shadow-2xl shadow-slate-300/20">
           <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <div>
-              <h3 className="text-xl font-semibold text-white">RFQ item list</h3>
-              <p className="text-sm text-slate-400">Build a request-for-quotation list first, then assign shop prices and generate purchase orders later.</p>
+              <h3 className="text-xl font-semibold text-slate-900">RFQ item list</h3>
+              <p className="text-sm text-slate-600">Build a request-for-quotation list first, then assign shop prices and generate purchase orders later.</p>
             </div>
             <div className="flex flex-wrap items-center gap-3">
               <button
@@ -309,7 +331,7 @@ export default function PurchaseProductsPage() {
           </div>
 
           <div className="grid gap-4 sm:grid-cols-3">
-            <label className="block text-sm text-slate-300">
+            <label className="block text-sm text-slate-600">
               Product name
               <input
                 list="purchase-product-list"
@@ -319,15 +341,30 @@ export default function PurchaseProductsPage() {
                   productName: event.target.value,
                 }))}
                 placeholder="Start typing to search products"
-                className="mt-2 w-full rounded-3xl border border-slate-700 bg-slate-950 px-4 py-3 text-slate-100 outline-none"
+                className="mt-2 w-full rounded-3xl border border-slate-300 bg-white px-4 py-3 text-slate-900 outline-none"
               />
               <datalist id="purchase-product-list">
                 {products.map((product) => (
                   <option key={`${product.source ?? 'p'}-${product.id ?? product.name}`} value={product.name} />
                 ))}
               </datalist>
+              {!rfqProductExists && rfqForm.productName?.trim() && (
+                <div className="mt-3 rounded-3xl border border-amber-300/80 bg-amber-50/90 p-3 text-slate-900">
+                  <div className="mb-2 text-sm font-medium">Unknown product</div>
+                  <div className="flex flex-wrap items-center gap-2">
+                    <span className="text-sm">This product is not in inventory yet.</span>
+                    <button
+                      type="button"
+                      onClick={createRfqInventoryItem}
+                      className="rounded-3xl bg-amber-500 px-3 py-2 text-sm font-semibold text-slate-950 hover:bg-amber-400"
+                    >
+                      Create inventory item
+                    </button>
+                  </div>
+                </div>
+              )}
             </label>
-            <label className="block text-sm text-slate-300">
+            <label className="block text-sm text-slate-600">
               Quantity
               <input
                 type="number"
@@ -337,10 +374,10 @@ export default function PurchaseProductsPage() {
                   ...current,
                   quantity: Number(event.target.value),
                 }))}
-                className="mt-2 w-full rounded-3xl border border-slate-700 bg-slate-950 px-4 py-3 text-slate-100 outline-none"
+                className="mt-2 w-full rounded-3xl border border-slate-300 bg-white px-4 py-3 text-slate-900 outline-none"
               />
             </label>
-            <label className="block text-sm text-slate-300">
+            <label className="block text-sm text-slate-600">
               Unit
               <select
                 value={rfqForm.unit}
@@ -348,7 +385,7 @@ export default function PurchaseProductsPage() {
                   ...current,
                   unit: event.target.value,
                 }))}
-                className="mt-2 w-full rounded-3xl border border-slate-700 bg-slate-950 px-4 py-3 text-slate-100 outline-none"
+                className="mt-2 w-full rounded-3xl border border-slate-300 bg-white px-4 py-3 text-slate-900 outline-none"
               >
                 {unitOptions.map((unit) => (
                   <option key={unit} value={unit}>{unit}</option>
@@ -358,11 +395,11 @@ export default function PurchaseProductsPage() {
           </div>
 
           {rfqItems.length > 0 && (
-            <div className="mt-6 rounded-3xl border border-slate-800 bg-slate-900/80 p-5">
+            <div className="mt-6 rounded-3xl border border-slate-200 bg-slate-100/80 p-5">
               <div className="mb-4 flex items-center justify-between gap-3">
                 <div>
-                  <h4 className="text-lg font-semibold text-white">RFQ items</h4>
-                  <p className="text-sm text-slate-400">Assign vendor and unit cost before making purchase orders.</p>
+                  <h4 className="text-lg font-semibold text-slate-900">RFQ items</h4>
+                  <p className="text-sm text-slate-600">Assign vendor and unit cost before making purchase orders.</p>
                 </div>
                 <button
                   type="button"
@@ -376,11 +413,11 @@ export default function PurchaseProductsPage() {
 
               <div className="space-y-4">
                 {rfqItems.map((item) => (
-                  <div key={item.id} className="rounded-3xl border border-slate-800 bg-slate-950 p-4">
+                  <div key={item.id} className="rounded-3xl border border-slate-200 bg-white p-4">
                     <div className="flex flex-wrap items-center justify-between gap-3">
                       <div>
-                        <p className="font-semibold text-white">{item.productName}</p>
-                        <p className="text-sm text-slate-400">{item.quantity} {item.unit}</p>
+                      <p className="font-semibold text-slate-900">{item.productName}</p>
+                        <p className="text-sm text-slate-600">{item.quantity} {item.unit}</p>
                       </div>
                       <button
                         type="button"
@@ -391,26 +428,26 @@ export default function PurchaseProductsPage() {
                       </button>
                     </div>
                     <div className="mt-4 grid gap-4 sm:grid-cols-3">
-                      <label className="block text-sm text-slate-300">
+                      <label className="block text-sm text-slate-600">
                         Shop name
                         <input
                           value={item.vendor ?? ''}
                           onChange={(event) => updateRfqItem(item.id, 'vendor', event.target.value)}
                           placeholder="Vendor or supplier"
-                          className="mt-2 w-full rounded-3xl border border-slate-700 bg-slate-950 px-4 py-3 text-slate-100 outline-none"
+                          className="mt-2 w-full rounded-3xl border border-slate-300 bg-white px-4 py-3 text-slate-900 outline-none"
                         />
                       </label>
-                      <label className="block text-sm text-slate-300">
+                      <label className="block text-sm text-slate-600">
                         Unit cost (MVR)
                         <input
                           type="number"
                           min={0}
                           value={item.unitCost ?? 0}
                           onChange={(event) => updateRfqItem(item.id, 'unitCost', Number(event.target.value))}
-                          className="mt-2 w-full rounded-3xl border border-slate-700 bg-slate-950 px-4 py-3 text-slate-100 outline-none"
+                          className="mt-2 w-full rounded-3xl border border-slate-300 bg-white px-4 py-3 text-slate-900 outline-none"
                         />
                       </label>
-                      <div className="block text-sm text-slate-300">
+                      <div className="block text-sm text-slate-600">
                         <span className="block mb-2">Total</span>
                         <span className="inline-flex items-center rounded-3xl bg-slate-800 px-4 py-3 text-slate-100">
                           {formatMVR((item.unitCost ?? 0) * item.quantity)}
@@ -427,11 +464,11 @@ export default function PurchaseProductsPage() {
             </div>
           )}
 
-          <div className="mt-8 rounded-3xl border border-slate-800 bg-slate-950/70 p-6 shadow-2xl shadow-slate-950/20">
+          <div className="mt-8 rounded-3xl border border-slate-200 bg-slate-50/70 p-6 shadow-2xl shadow-slate-300/20">
             <div className="mb-6 flex items-center justify-between gap-3">
               <div>
-                <h3 className="text-xl font-semibold text-white">Purchase order entry</h3>
-                <p className="text-sm text-slate-400">Create new purchase orders for consumables and supplies.</p>
+                <h3 className="text-xl font-semibold text-slate-900">Purchase order entry</h3>
+                <p className="text-sm text-slate-600">Create new purchase orders for consumables and supplies.</p>
               </div>
               <button
                 onClick={saveOrder}
@@ -443,7 +480,7 @@ export default function PurchaseProductsPage() {
             </div>
 
             <div className="grid gap-4">
-            <label className="block text-sm text-slate-300">
+            <label className="block text-sm text-slate-600">
               Product name
               <input
                 list="purchase-product-list"
@@ -457,7 +494,7 @@ export default function PurchaseProductsPage() {
                   }));
                 }}
                 placeholder="Start typing to search products"
-                className="mt-2 w-full rounded-3xl border border-slate-700 bg-slate-950 px-4 py-3 text-slate-100 outline-none"
+                className="mt-2 w-full rounded-3xl border border-slate-300 bg-white px-4 py-3 text-slate-900 outline-none"
               />
               <datalist id="purchase-product-list">
                 {products.map((product) => (
@@ -467,67 +504,67 @@ export default function PurchaseProductsPage() {
             </label>
 
             <div className="grid gap-4 sm:grid-cols-2">
-              <label className="block text-sm text-slate-300">
+              <label className="block text-sm text-slate-600">
                 Vendor
                 <input
                   value={form.vendor}
                   onChange={(event) => setForm((current) => ({ ...current, vendor: event.target.value }))}
-                  className="mt-2 w-full rounded-3xl border border-slate-700 bg-slate-950 px-4 py-3 text-slate-100 outline-none"
+                  className="mt-2 w-full rounded-3xl border border-slate-300 bg-white px-4 py-3 text-slate-900 outline-none"
                   placeholder="Island Suppliers"
                 />
               </label>
-              <label className="block text-sm text-slate-300">
+              <label className="block text-sm text-slate-600">
                 Order date
                 <input
                   type="date"
                   value={form.date}
                   onChange={(event) => setForm((current) => ({ ...current, date: event.target.value }))}
-                  className="mt-2 w-full rounded-3xl border border-slate-700 bg-slate-950 px-4 py-3 text-slate-100 outline-none"
+                  className="mt-2 w-full rounded-3xl border border-slate-300 bg-white px-4 py-3 text-slate-900 outline-none"
                 />
               </label>
             </div>
 
             <div className="grid gap-4 sm:grid-cols-3">
-              <label className="block text-sm text-slate-300">
+              <label className="block text-sm text-slate-600">
                 Quantity
                 <input
                   type="number"
                   min={1}
                   value={form.quantity}
                   onChange={(event) => setForm((current) => ({ ...current, quantity: Number(event.target.value) }))}
-                  className="mt-2 w-full rounded-3xl border border-slate-700 bg-slate-950 px-4 py-3 text-slate-100 outline-none"
+                  className="mt-2 w-full rounded-3xl border border-slate-300 bg-white px-4 py-3 text-slate-900 outline-none"
                 />
               </label>
-              <label className="block text-sm text-slate-300">
+              <label className="block text-sm text-slate-600">
                 Unit
                 <select
                   value={form.unit}
                   onChange={(event) => setForm((current) => ({ ...current, unit: event.target.value }))}
-                  className="mt-2 w-full rounded-3xl border border-slate-700 bg-slate-950 px-4 py-3 text-slate-100 outline-none"
+                  className="mt-2 w-full rounded-3xl border border-slate-300 bg-white px-4 py-3 text-slate-900 outline-none"
                 >
                   {unitOptions.map((unit) => (
                     <option key={unit} value={unit}>{unit}</option>
                   ))}
                 </select>
               </label>
-              <label className="block text-sm text-slate-300">
+              <label className="block text-sm text-slate-600">
                 Unit cost (MVR)
                 <input
                   type="number"
                   min={0}
                   value={form.unitCost}
                   onChange={(event) => setForm((current) => ({ ...current, unitCost: Number(event.target.value) }))}
-                  className="mt-2 w-full rounded-3xl border border-slate-700 bg-slate-950 px-4 py-3 text-slate-100 outline-none"
+                  className="mt-2 w-full rounded-3xl border border-slate-300 bg-white px-4 py-3 text-slate-900 outline-none"
                 />
               </label>
             </div>
 
-            <label className="block text-sm text-slate-300">
+            <label className="block text-sm text-slate-600">
               Status
               <select
                 value={form.status}
                 onChange={(event) => setForm((current) => ({ ...current, status: event.target.value as PurchaseOrder['status'] }))}
-                className="mt-2 w-full rounded-3xl border border-slate-700 bg-slate-950 px-4 py-3 text-slate-100 outline-none"
+                className="mt-2 w-full rounded-3xl border border-slate-300 bg-white px-4 py-3 text-slate-900 outline-none"
               >
                 <option value="Ordered">Ordered</option>
                 <option value="Received">Received</option>
@@ -539,25 +576,25 @@ export default function PurchaseProductsPage() {
         </section>
 
         <section className="space-y-6">
-          <div className="rounded-3xl border border-slate-800 bg-slate-950/70 p-6 shadow-2xl shadow-slate-950/20">
+          <div className="rounded-3xl border border-slate-200 bg-slate-50/70 p-6 shadow-2xl shadow-slate-300/20">
             <div className="mb-4 flex items-center justify-between gap-3">
               <div>
-                <h3 className="text-xl font-semibold text-white">Purchase summary</h3>
-                <p className="text-sm text-slate-400">Review ordered products and total spend.</p>
+                <h3 className="text-xl font-semibold text-slate-900">Purchase summary</h3>
+                <p className="text-sm text-slate-600">Review ordered products and total spend.</p>
               </div>
               <span className="rounded-full bg-slate-800 px-3 py-1 text-xs uppercase tracking-[0.24em] text-slate-300">{orders.length} orders</span>
             </div>
             <div className="grid gap-3">
               {orders.map((order) => (
-                <div key={order.id} className="rounded-3xl border border-slate-800 bg-slate-900 p-4">
+                <div key={order.id} className="rounded-3xl border border-slate-200 bg-slate-100 p-4">
                   <div className="flex flex-wrap items-center justify-between gap-3">
                     <div>
-                      <p className="font-semibold text-white">{order.productName}</p>
-                      <p className="text-sm text-slate-400">{order.vendor} • {order.quantity} {order.unit}</p>
+                      <p className="font-semibold text-slate-900">{order.productName}</p>
+                      <p className="text-sm text-slate-600">{order.vendor} • {order.quantity} {order.unit}</p>
                     </div>
                     <div className="text-right">
-                      <p className="text-sm text-slate-400">{order.status}</p>
-                      <p className="text-lg font-semibold text-white">{formatMVR(order.totalCost)}</p>
+                      <p className="text-sm text-slate-600">{order.status}</p>
+                      <p className="text-lg font-semibold text-slate-900">{formatMVR(order.totalCost)}</p>
                     </div>
                   </div>
                   <div className="mt-3 flex flex-wrap items-center justify-between gap-2">
@@ -579,24 +616,24 @@ export default function PurchaseProductsPage() {
           </div>
 
           <div className="grid gap-5">
-            <div className="rounded-3xl border border-slate-800 bg-slate-900/80 p-5 shadow-xl shadow-slate-950/20">
+            <div className="rounded-3xl border border-slate-200 bg-slate-100/80 p-5 shadow-xl shadow-slate-300/20">
               <div className="flex items-center justify-between gap-3">
                 <div>
-                  <h3 className="text-xl font-semibold text-white">Spend total</h3>
-                  <p className="text-sm text-slate-400">Real-time purchase cost total.</p>
+                  <h3 className="text-xl font-semibold text-slate-900">Spend total</h3>
+                  <p className="text-sm text-slate-600">Real-time purchase cost total.</p>
                 </div>
                 <div className="inline-flex items-center gap-2 rounded-3xl bg-slate-800 px-4 py-3 text-sm text-slate-200">
                   <CheckCircle2 className="h-4 w-4 text-emerald-400" /> {receivedOrders} received
                 </div>
               </div>
-              <p className="mt-4 text-3xl font-semibold text-white">{formatMVR(totalSpend)}</p>
+              <p className="mt-4 text-3xl font-semibold text-slate-900">{formatMVR(totalSpend)}</p>
             </div>
 
-            <div className="rounded-3xl border border-slate-800 bg-slate-900/80 p-5 shadow-xl shadow-slate-950/20">
+            <div className="rounded-3xl border border-slate-200 bg-slate-100/80 p-5 shadow-xl shadow-slate-300/20">
               <div className="flex items-center justify-between gap-3">
                 <div>
-                  <h3 className="text-xl font-semibold text-white">Restock status</h3>
-                  <p className="text-sm text-slate-400">Orders that are pending inventory receipt.</p>
+                  <h3 className="text-xl font-semibold text-slate-900">Restock status</h3>
+                  <p className="text-sm text-slate-600">Orders that are pending inventory receipt.</p>
                 </div>
                 <span className="rounded-full bg-slate-800 px-3 py-1 text-xs uppercase tracking-[0.24em] text-slate-300">{pendingOrders} pending</span>
               </div>

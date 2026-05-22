@@ -147,10 +147,10 @@ export default function AdminDashboard() {
               key={metric.label}
               initial={{ opacity: 0, y: 18 }}
               animate={{ opacity: 1, y: 0 }}
-              className="rounded-3xl border border-slate-800 bg-slate-900/80 p-6 shadow-2xl shadow-slate-950/20"
+              className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm"
             >
-              <p className="text-sm uppercase tracking-[0.24em] text-slate-400">{metric.label}</p>
-              <p className="mt-3 text-3xl font-semibold text-white">{metric.value}</p>
+              <p className="text-sm uppercase tracking-[0.24em] text-slate-500">{metric.label}</p>
+              <p className="mt-3 text-3xl font-semibold text-slate-900">{metric.value}</p>
             </motion.div>
           ))}
         </div>
@@ -159,12 +159,12 @@ export default function AdminDashboard() {
           <motion.section
             initial={{ opacity: 0, x: -20 }}
             animate={{ opacity: 1, x: 0 }}
-            className="rounded-3xl border border-slate-800 bg-slate-900/80 p-6 shadow-2xl shadow-slate-950/20"
+            className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm"
           >
             <div className="mb-4 flex items-center justify-between">
               <div>
-                <h3 className="text-lg font-semibold text-white">Daily sales</h3>
-                <p className="text-sm text-slate-400">Sales by day for the current week.</p>
+                <h3 className="text-lg font-semibold text-slate-900">Daily sales</h3>
+                <p className="text-sm text-slate-500">Sales by day for the current week.</p>
               </div>
             </div>
 
@@ -184,11 +184,11 @@ export default function AdminDashboard() {
           <motion.section
             initial={{ opacity: 0, x: 20 }}
             animate={{ opacity: 1, x: 0 }}
-            className="rounded-3xl border border-slate-800 bg-slate-900/80 p-6 shadow-2xl shadow-slate-950/20"
+            className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm"
           >
             <div className="mb-4">
-              <h3 className="text-lg font-semibold text-white">Payment breakdown</h3>
-              <p className="text-sm text-slate-400">Cash, card and bank transfer mix.</p>
+              <h3 className="text-lg font-semibold text-slate-900">Payment breakdown</h3>
+              <p className="text-sm text-slate-500">Cash, card and bank transfer mix.</p>
             </div>
             <div className="h-72">
               <ResponsiveContainer width="100%" height="100%">
@@ -209,17 +209,17 @@ export default function AdminDashboard() {
           <motion.section
             initial={{ opacity: 0, y: 16 }}
             animate={{ opacity: 1, y: 0 }}
-            className="rounded-3xl border border-slate-800 bg-slate-900/80 p-6 shadow-2xl shadow-slate-950/20"
+            className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm"
           >
-            <h3 className="text-lg font-semibold text-white">Top selling items</h3>
+            <h3 className="text-lg font-semibold text-slate-900">Top selling items</h3>
             <div className="mt-5 space-y-4">
               {topItems.map((item) => (
-                <div key={item.id} className="flex items-center justify-between rounded-3xl border border-slate-800 bg-slate-950 px-4 py-4">
+                <div key={item.id} className="flex items-center justify-between rounded-3xl border border-slate-200 bg-slate-50 px-4 py-4">
                   <div>
-                    <p className="font-medium text-white">{item.name}</p>
-                    <p className="text-sm text-slate-400">{item.category}</p>
+                    <p className="font-medium text-slate-900">{item.name}</p>
+                    <p className="text-sm text-slate-500">{item.category}</p>
                   </div>
-                  <p className="text-sm font-semibold text-violet-300">{formatMVR(item.price)}</p>
+                  <p className="text-sm font-semibold text-violet-600">{formatMVR(item.price)}</p>
                 </div>
               ))}
             </div>
@@ -228,29 +228,29 @@ export default function AdminDashboard() {
           <motion.section
             initial={{ opacity: 0, y: 16 }}
             animate={{ opacity: 1, y: 0 }}
-            className="rounded-3xl border border-slate-800 bg-slate-900/80 p-6 shadow-2xl shadow-slate-950/20"
+            className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm"
           >
             <div className="mb-5 flex items-center justify-between">
               <div>
-                <h3 className="text-lg font-semibold text-white">Inventory alerts</h3>
-                <p className="text-sm text-slate-400">Low stock items to restock.</p>
+                <h3 className="text-lg font-semibold text-slate-900">Inventory alerts</h3>
+                <p className="text-sm text-slate-500">Low stock items to restock.</p>
               </div>
             </div>
             <div className="space-y-4">
               {lowStockAlerts.length ? (
                 lowStockAlerts.map((item) => (
-                  <div key={item.id} className="rounded-3xl border border-slate-800 bg-slate-950 px-4 py-4">
+                  <div key={item.id} className="rounded-3xl border border-slate-200 bg-slate-50 px-4 py-4">
                     <div className="flex items-center justify-between gap-4">
                       <div>
-                        <p className="font-medium text-white">{item.name}</p>
-                        <p className="text-sm text-slate-400">Only {item.quantity} {item.unit} remaining</p>
+                        <p className="font-medium text-slate-900">{item.name}</p>
+                        <p className="text-sm text-slate-500">Only {item.quantity} {item.unit} remaining</p>
                       </div>
-                      <span className="rounded-2xl bg-rose-600/10 px-3 py-1 text-xs uppercase tracking-[0.24em] text-rose-300">Low stock</span>
+                      <span className="rounded-2xl bg-rose-100 px-3 py-1 text-xs uppercase tracking-[0.24em] text-rose-700">Low stock</span>
                     </div>
                   </div>
                 ))
               ) : (
-                <p className="text-sm text-slate-400">All inventory looks healthy.</p>
+                <p className="text-sm text-slate-500">All inventory looks healthy.</p>
               )}
             </div>
           </motion.section>
@@ -259,28 +259,28 @@ export default function AdminDashboard() {
         <motion.section
           initial={{ opacity: 0, y: 16 }}
           animate={{ opacity: 1, y: 0 }}
-          className="rounded-3xl border border-slate-800 bg-slate-900/80 p-6 shadow-2xl shadow-slate-950/20"
+          className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm"
         >
           <div className="mb-4 flex items-center justify-between">
             <div>
-              <h3 className="text-lg font-semibold text-white">Menu items</h3>
-              <p className="text-sm text-slate-400">All products currently available in the menu.</p>
+              <h3 className="text-lg font-semibold text-slate-900">Menu items</h3>
+              <p className="text-sm text-slate-500">All products currently available in the menu.</p>
             </div>
-            <span className="rounded-full bg-slate-800 px-3 py-1 text-xs uppercase tracking-[0.24em] text-slate-300">{products.length} items</span>
+            <span className="rounded-full bg-slate-100 px-3 py-1 text-xs uppercase tracking-[0.24em] text-slate-700">{products.length} items</span>
           </div>
           <div className="grid gap-3">
             {products.length > 0 ? (
               products.map((product) => (
-                <div key={product.id} className="flex items-center justify-between rounded-3xl border border-slate-800 bg-slate-950 px-4 py-4">
+                <div key={product.id} className="flex items-center justify-between rounded-3xl border border-slate-200 bg-slate-50 px-4 py-4">
                   <div>
-                    <p className="font-medium text-white">{product.name}</p>
-                    <p className="text-sm text-slate-400">{product.category}</p>
+                    <p className="font-medium text-slate-900">{product.name}</p>
+                    <p className="text-sm text-slate-500">{product.category}</p>
                   </div>
-                  <p className="text-sm font-semibold text-violet-300">{formatMVR(product.price)}</p>
+                  <p className="text-sm font-semibold text-violet-600">{formatMVR(product.price)}</p>
                 </div>
               ))
             ) : (
-              <p className="text-sm text-slate-400">No menu items available yet.</p>
+              <p className="text-sm text-slate-500">No menu items available yet.</p>
             )}
           </div>
         </motion.section>
@@ -288,22 +288,22 @@ export default function AdminDashboard() {
         <motion.section
           initial={{ opacity: 0, y: 16 }}
           animate={{ opacity: 1, y: 0 }}
-          className="rounded-3xl border border-slate-800 bg-slate-900/80 p-6 shadow-2xl shadow-slate-950/20"
+          className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm"
         >
           <div className="mb-4 flex items-center justify-between">
             <div>
-              <h3 className="text-lg font-semibold text-white">Monthly sales comparison</h3>
-              <p className="text-sm text-slate-400">Performance for the last five months.</p>
+              <h3 className="text-lg font-semibold text-slate-900">Monthly sales comparison</h3>
+              <p className="text-sm text-slate-500">Performance for the last five months.</p>
             </div>
           </div>
           <div className="h-72">
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={monthlySales} margin={{ top: 10, right: 0, left: -20, bottom: 0 }}>
-                <CartesianGrid stroke="#334155" strokeDasharray="3 3" />
-                <XAxis dataKey="day" tick={{ fill: '#94a3b8' }} />
-                <YAxis tick={{ fill: '#94a3b8' }} />
-                <Tooltip contentStyle={{ backgroundColor: '#0f172a', borderRadius: 16, border: '1px solid #334155' }} />
-                <Bar dataKey="amount" fill="#818cf8" radius={[12, 12, 0, 0]} />
+                <CartesianGrid stroke="#cbd5e1" strokeDasharray="3 3" />
+                <XAxis dataKey="day" tick={{ fill: '#64748b' }} />
+                <YAxis tick={{ fill: '#64748b' }} />
+                <Tooltip contentStyle={{ backgroundColor: '#ffffff', color: '#0f172a', borderRadius: 16, border: '1px solid #cbd5e1' }} />
+                <Bar dataKey="amount" fill="#8b5cf6" radius={[12, 12, 0, 0]} />
               </BarChart>
             </ResponsiveContainer>
           </div>

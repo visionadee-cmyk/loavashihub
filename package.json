@@ -9,7 +9,10 @@
     "lint": "eslint .",
     "preview": "vite preview",
     "seed:firestore": "node ./scripts/seedFirestore.js",
-    "create:auth-users": "node ./scripts/createFirebaseAuthUsers.js"
+    "create:auth-users": "node ./scripts/createFirebaseAuthUsers.js",
+    "migrate:inventory-ids": "node ./scripts/migrateInventoryIds.js",
+    "migrate:menu-ids": "node ./scripts/migrateMenuIds.js",
+    "migrate:all": "npm run migrate:inventory-ids && npm run migrate:menu-ids"
   },
   "dependencies": {
     "file-saver": "^2.0.5",

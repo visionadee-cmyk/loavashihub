@@ -43,10 +43,23 @@ export interface StaffMember {
 
 export interface InventoryItem {
   id: string;
+  productId?: string;
+  productNumber?: string;
   name: string;
   quantity: number;
   unit: string;
   lowStock: number;
+}
+
+export interface MenuItem {
+  id: string;
+  menuItemId?: string;
+  name: string;
+  category: string;
+  price: number;
+  costPrice?: number;
+  description: string;
+  image: string;
 }
 
 export interface PurchaseOrder {

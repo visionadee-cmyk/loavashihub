@@ -4,8 +4,7 @@ import AppShell from '../components/AppShell';
 import { formatMVR } from '../lib/mvr';
 import { hasFirebaseConfig } from '../lib/firebase';
 import { deleteDocument, loadCollection, saveDocument } from '../lib/firestore';
-import { uploadImageToCloudinary, isCloudinaryEnabled } from '../lib/cloudinary';
-import type { MenuItem } from '../types';
+import { uploadImageToCloudinary, isCloudinaryEnabled } from '../lib/cloudinary';import { generateMenuItemId } from '../lib/ids';import type { MenuItem } from '../types';
 
 const CATEGORY_OPTIONS = ['Coffee', 'Tea', 'Burger', 'Pizza', 'Dessert', 'Juice', 'Others'] as const;
 
@@ -84,8 +83,10 @@ export default function MenuManagement() {
   };
 
   const handleSave = async () => {
+    const id = editingId ?? generateMenuItemId();
     const payload: MenuItem = {
-      id: editingId ?? `product-${Date.now()}`,
+      id,
+      menuItemId: editingId ? form.menuItemId || id : id,
       name: form.name?.trim() || 'New item',
       category: form.category || 'Others',
       price: Number(form.price) || 0,
@@ -134,12 +135,12 @@ export default function MenuManagement() {
   return (
     <AppShell title="Menu items management">
       <div className="grid gap-6 xl:grid-cols-[0.85fr_0.95fr]">
-        <section className="rounded-3xl border border-slate-800 bg-slate-950/70 p-6 shadow-2xl shadow-slate-950/20">
+        <section className="rounded-3xl border border-slate-200 bg-slate-50/70 p-6 shadow-2xl shadow-slate-300/20">
           <div className="mb-5 flex flex-col gap-3">
             <div className="flex items-center justify-between gap-3">
               <div>
-                <h3 className="text-xl font-semibold text-white">Add or edit menu items</h3>
-                <p className="text-sm text-slate-400">Configure categories, prices in MVR and item descriptions.</p>
+                <h3 className="text-xl font-semibold text-slate-900">Add or edit menu items</h3>
+                <p className="text-sm text-slate-600">Configure categories, prices in MVR and item descriptions.</p>
               </div>
               <button
                 onClick={handleSave}
@@ -163,68 +164,68 @@ export default function MenuManagement() {
           </div>
 
           <div className="grid gap-4">
-            <label className="block text-sm text-slate-300">
+            <label className="block text-sm text-slate-600">
               Item name
               <input
                 value={form.name}
                 onChange={(event) => setForm((current) => ({ ...current, name: event.target.value }))}
-                className="mt-2 w-full rounded-3xl border border-slate-700 bg-slate-950 px-4 py-3 text-slate-100 outline-none"
+                className="mt-2 w-full rounded-3xl border border-slate-300 bg-white px-4 py-3 text-slate-900 outline-none"
                 placeholder="Espresso, Burger, Juice"
               />
             </label>
             <div className="grid gap-4 sm:grid-cols-3">
-              <label className="block text-sm text-slate-300">
+              <label className="block text-sm text-slate-600">
                 Category
                 <select
                   value={form.category}
                   onChange={(event) => setForm((current) => ({ ...current, category: event.target.value }))}
-                  className="mt-2 w-full rounded-3xl border border-slate-700 bg-slate-950 px-4 py-3 text-slate-100 outline-none"
+                  className="mt-2 w-full rounded-3xl border border-slate-300 bg-white px-4 py-3 text-slate-900 outline-none"
                 >
                   {categoryOptions.map((category) => (
                     <option key={category} value={category}>{category}</option>
                   ))}
                 </select>
               </label>
-              <label className="block text-sm text-slate-300">
+              <label className="block text-sm text-slate-600">
                 Cost price (MVR)
                 <input
                   type="number"
                   value={form.costPrice}
                   onChange={(event) => setForm((current) => ({ ...current, costPrice: Number(event.target.value) }))}
-                  className="mt-2 w-full rounded-3xl border border-slate-700 bg-slate-950 px-4 py-3 text-slate-100 outline-none"
+                  className="mt-2 w-full rounded-3xl border border-slate-300 bg-white px-4 py-3 text-slate-900 outline-none"
                   placeholder="0"
                 />
               </label>
-              <label className="block text-sm text-slate-300">
+              <label className="block text-sm text-slate-600">
                 Selling price (MVR)
                 <input
                   type="number"
                   value={form.price}
                   onChange={(event) => setForm((current) => ({ ...current, price: Number(event.target.value) }))}
-                  className="mt-2 w-full rounded-3xl border border-slate-700 bg-slate-950 px-4 py-3 text-slate-100 outline-none"
+                  className="mt-2 w-full rounded-3xl border border-slate-300 bg-white px-4 py-3 text-slate-900 outline-none"
                   placeholder="25"
                 />
               </label>
             </div>
-            <label className="block text-sm text-slate-300">
+            <label className="block text-sm text-slate-600">
               Description
               <textarea
                 value={form.description}
                 onChange={(event) => setForm((current) => ({ ...current, description: event.target.value }))}
-                className="mt-2 h-28 w-full rounded-3xl border border-slate-700 bg-slate-950 px-4 py-3 text-slate-100 outline-none"
+                className="mt-2 h-28 w-full rounded-3xl border border-slate-300 bg-white px-4 py-3 text-slate-900 outline-none"
                 placeholder="A delicious new menu item"
               />
             </label>
-            <label className="block text-sm text-slate-300">
+            <label className="block text-sm text-slate-600">
               Image URL
               <input
                 value={form.image}
                 onChange={(event) => setForm((current) => ({ ...current, image: event.target.value }))}
-                className="mt-2 w-full rounded-3xl border border-slate-700 bg-slate-950 px-4 py-3 text-slate-100 outline-none"
+                className="mt-2 w-full rounded-3xl border border-slate-300 bg-white px-4 py-3 text-slate-900 outline-none"
                 placeholder="https://..."
               />
             </label>
-            <label className="block text-sm text-slate-300">
+            <label className="block text-sm text-slate-600">
               Upload image
               <input
                 type="file"
@@ -232,7 +233,7 @@ export default function MenuManagement() {
                 capture="environment"
                 onChange={handleImageUpload}
                 disabled={!isCloudinaryEnabled}
-                className="mt-2 w-full rounded-3xl border border-slate-700 bg-slate-950 px-4 py-3 text-slate-100 outline-none disabled:cursor-not-allowed disabled:opacity-50"
+                className="mt-2 w-full rounded-3xl border border-slate-300 bg-white px-4 py-3 text-slate-900 outline-none disabled:cursor-not-allowed disabled:opacity-50"
               />
             </label>
             {uploadError ? <p className="text-sm text-rose-400">Upload error: {uploadError}</p> : null}
@@ -242,7 +243,7 @@ export default function MenuManagement() {
               <p className="text-sm text-amber-400">Cloudinary upload preset is not configured. Set <code>VITE_CLOUDINARY_UPLOAD_PRESET</code> in your local .env or in Vercel environment variables.</p>
             )}
             {form.image ? (
-              <div className="mt-4 max-w-md overflow-hidden rounded-3xl border border-slate-700 bg-slate-900">
+              <div className="mt-4 max-w-md overflow-hidden rounded-3xl border border-slate-300 bg-slate-100">
                 <img src={form.image} alt="Preview" className="h-48 w-full object-cover" />
               </div>
             ) : null}
@@ -250,12 +251,12 @@ export default function MenuManagement() {
         </section>
 
         <section className="space-y-6">
-          <div className="rounded-3xl border border-slate-800 bg-slate-950/70 p-6 shadow-2xl shadow-slate-950/20">
+          <div className="rounded-3xl border border-slate-200 bg-slate-50/70 p-6 shadow-2xl shadow-slate-300/20">
             <div className="mb-6 flex flex-col gap-4">
               <div className="flex items-center justify-between gap-3">
                 <div>
-                  <h3 className="text-xl font-semibold text-white">Menu items</h3>
-                  <p className="text-sm text-slate-400">Manage all products and update menu item details, images, and pricing.</p>
+                  <h3 className="text-xl font-semibold text-slate-900">Menu items</h3>
+                  <p className="text-sm text-slate-600">Manage all products and update menu item details, images, and pricing.</p>
                 </div>
                 <span className="rounded-full bg-slate-800 px-3 py-1 text-xs uppercase tracking-[0.24em] text-slate-300">{filteredProducts.length} of {products.length}</span>
               </div>
@@ -268,7 +269,7 @@ export default function MenuManagement() {
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
                     placeholder="Search by name, category, or description..."
-                    className="w-full rounded-3xl border border-slate-700 bg-slate-900 py-3 pl-10 pr-4 text-sm text-slate-100 outline-none transition focus:border-violet-500"
+                    className="w-full rounded-3xl border border-slate-300 bg-slate-100 py-3 pl-10 pr-4 text-sm text-slate-900 outline-none transition focus:border-violet-500"
                   />
                   {searchQuery && (
                     <button
@@ -284,7 +285,7 @@ export default function MenuManagement() {
                 <select
                   value={filterCategory}
                   onChange={(e) => setFilterCategory(e.target.value)}
-                  className="rounded-3xl border border-slate-700 bg-slate-900 px-4 py-3 text-sm text-slate-100 outline-none transition focus:border-violet-500 sm:min-w-[180px]"
+                  className="rounded-3xl border border-slate-300 bg-slate-100 px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-violet-500 sm:min-w-[180px]"
                 >
                   <option value="All">All categories</option>
                   {categoryOptions.map((category) => (
@@ -297,7 +298,7 @@ export default function MenuManagement() {
             <div className="grid gap-4">
               {filteredProducts.length > 0 ? (
                 filteredProducts.map((product) => (
-                <div key={product.id} className="rounded-3xl border border-slate-800 bg-slate-900 p-4">
+                <div key={product.id} className="rounded-3xl border border-slate-200 bg-slate-100 p-4">
                   <div className="flex items-center gap-4">
                     <div className="h-16 w-16 overflow-hidden rounded-3xl bg-slate-800">
                       <img src={product.image} alt={product.name} className="h-full w-full object-cover" />
@@ -305,20 +306,21 @@ export default function MenuManagement() {
                     <div className="flex-1">
                       <div className="flex items-center justify-between gap-4">
                         <div>
-                          <p className="text-base font-semibold text-white">{product.name}</p>
-                          <p className="text-sm text-slate-400">{product.category}</p>
-                          <p className="text-sm text-slate-400">Cost: {formatMVR(product.costPrice ?? 0)}</p>
+                          <p className="text-base font-semibold text-slate-900">{product.name}</p>
+                          <p className="text-sm text-slate-600">{product.category}</p>
+                          <p className="text-sm text-slate-600">ID: {product.menuItemId ?? product.id}</p>
+                          <p className="text-sm text-slate-600">Cost: {formatMVR(product.costPrice ?? 0)}</p>
                         </div>
                         <span className="text-sm font-semibold text-violet-300">{formatMVR(product.price)}</span>
                       </div>
-                      <p className="mt-2 text-sm text-slate-400">{product.description}</p>
+                      <p className="mt-2 text-sm text-slate-600">{product.description}</p>
                     </div>
                   </div>
                   <div className="mt-4 flex items-center gap-3">
                     <button
                       type="button"
                       onClick={() => startEdit(product)}
-                      className="inline-flex items-center gap-2 rounded-3xl border border-slate-700 bg-slate-800 px-4 py-2 text-sm text-slate-200 hover:bg-slate-700"
+                      className="inline-flex items-center gap-2 rounded-3xl border border-slate-300 bg-slate-800 px-4 py-2 text-sm text-slate-200 hover:bg-slate-700"
                     >
                       <Pen className="h-4 w-4" /> Edit
                     </button>
@@ -333,7 +335,7 @@ export default function MenuManagement() {
                 </div>
               ))
               ) : (
-                <div className="rounded-3xl border border-slate-700 bg-slate-900/50 p-8 text-center">
+                <div className="rounded-3xl border border-slate-300 bg-slate-100/50 p-8 text-center">
                   <p className="text-slate-400">No menu items found. Try adjusting your search or filters.</p>
                 </div>
               )}

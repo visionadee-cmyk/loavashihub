@@ -54,24 +54,24 @@ export default function BillManagement() {
           ].map((metric) => {
             const Icon = metric.icon;
             return (
-              <div key={metric.label} className="rounded-3xl border border-slate-800 bg-slate-950/80 p-6 shadow-2xl shadow-slate-950/20">
+              <div key={metric.label} className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
                 <div className="flex items-center justify-between gap-3">
                   <div>
-                    <p className="text-sm uppercase tracking-[0.24em] text-slate-400">{metric.label}</p>
-                    <p className="mt-3 text-3xl font-semibold text-white">{metric.value}</p>
+                    <p className="text-sm uppercase tracking-[0.24em] text-slate-500">{metric.label}</p>
+                    <p className="mt-3 text-3xl font-semibold text-slate-900">{metric.value}</p>
                   </div>
-                  <Icon className="h-7 w-7 text-violet-300" />
+                  <Icon className="h-7 w-7 text-violet-600" />
                 </div>
               </div>
             );
           })}
         </div>
 
-        <div className="rounded-3xl border border-slate-800 bg-slate-900/80 p-6 shadow-2xl shadow-slate-950/20">
+        <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
           <div className="mb-4 flex items-center justify-between gap-3">
             <div>
-              <h3 className="text-lg font-semibold text-white">Recent bills</h3>
-              <p className="text-sm text-slate-400">Review and manage POS invoices.</p>
+              <h3 className="text-lg font-semibold text-slate-900">Recent bills</h3>
+              <p className="text-sm text-slate-500">Review and manage POS invoices.</p>
             </div>
           </div>
           {loading ? (
@@ -81,25 +81,25 @@ export default function BillManagement() {
               {openBills.length > 0 && (
                 <div className="space-y-4">
                   <div className="flex items-center justify-between gap-3">
-                    <h4 className="text-lg font-semibold text-white">Open bills</h4>
-                    <span className="text-sm text-slate-400">Bills awaiting completion</span>
+                    <h4 className="text-lg font-semibold text-slate-900">Open bills</h4>
+                    <span className="text-sm text-slate-500">Bills awaiting completion</span>
                   </div>
                   {openBills.map((bill) => (
-                    <div key={bill.id} className="rounded-3xl border border-slate-800 bg-slate-950 p-4">
+                    <div key={bill.id} className="rounded-3xl border border-slate-200 bg-slate-50 p-4">
                       <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
                         <div>
-                          <p className="font-semibold text-white">{bill.billNumber ?? bill.title}</p>
-                          <p className="text-sm text-slate-400">{bill.table} • {bill.orderType} • {bill.createdAt.slice(0, 10)}</p>
+                          <p className="font-semibold text-slate-900">{bill.billNumber ?? bill.title}</p>
+                          <p className="text-sm text-slate-500">{bill.table} • {bill.orderType} • {bill.createdAt.slice(0, 10)}</p>
                         </div>
                         <div className="flex flex-wrap items-center gap-2">
-                          <span className="rounded-full bg-slate-800 px-3 py-1 text-xs uppercase tracking-[0.24em] text-slate-300">{bill.status}</span>
-                          <span className="rounded-full bg-slate-800 px-3 py-1 text-xs uppercase tracking-[0.24em] text-slate-300">{bill.paymentStatus}</span>
+                          <span className="rounded-full bg-slate-100 px-3 py-1 text-xs uppercase tracking-[0.24em] text-slate-700">{bill.status}</span>
+                          <span className="rounded-full bg-slate-100 px-3 py-1 text-xs uppercase tracking-[0.24em] text-slate-700">{bill.paymentStatus}</span>
                         </div>
                       </div>
                       <div className="grid gap-3 sm:grid-cols-[1fr_auto]">
                         <div className="space-y-2">
                           {bill.items.map((item) => (
-                            <div key={item.id} className="flex items-center justify-between rounded-3xl bg-slate-900 px-4 py-3 text-sm text-slate-200">
+                            <div key={item.id} className="flex items-center justify-between rounded-3xl bg-slate-100 px-4 py-3 text-sm text-slate-700">
                               <span>{item.quantity} x {item.name}</span>
                               <span>{formatMVR(item.price * item.quantity)}</span>
                             </div>
@@ -107,7 +107,7 @@ export default function BillManagement() {
                         </div>
                         <div className="space-y-3 text-right">
                           <p className="text-sm text-slate-400">Total</p>
-                          <p className="text-xl font-semibold text-white">
+                          <p className="text-xl font-semibold text-slate-900">
                             {formatMVR(bill.items.reduce((sum, item) => sum + item.price * item.quantity, 0))}
                           </p>
                           <button
@@ -127,24 +127,24 @@ export default function BillManagement() {
               {completedBillList.length > 0 && (
                 <div className="space-y-4">
                   <div className="flex items-center justify-between gap-3">
-                    <h4 className="text-lg font-semibold text-white">Completed bills</h4>
-                    <span className="text-sm text-slate-400">Paid and served invoices</span>
+                    <h4 className="text-lg font-semibold text-slate-900">Completed bills</h4>
+                    <span className="text-sm text-slate-500">Paid and served invoices</span>
                   </div>
                   {completedBillList.map((bill) => (
-                    <div key={bill.id} className="rounded-3xl border border-slate-800 bg-slate-950 p-4">
+                    <div key={bill.id} className="rounded-3xl border border-slate-200 bg-slate-50 p-4">
                       <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
                         <div>
-                          <p className="font-semibold text-white">{bill.billNumber ?? bill.title}</p>
-                          <p className="text-sm text-slate-400">{bill.table} • {bill.orderType} • {bill.createdAt.slice(0, 10)}</p>
+                          <p className="font-semibold text-slate-900">{bill.billNumber ?? bill.title}</p>
+                          <p className="text-sm text-slate-500">{bill.table} • {bill.orderType} • {bill.createdAt.slice(0, 10)}</p>
                         </div>
                         <div className="flex flex-wrap items-center gap-2">
-                          <span className="rounded-full bg-emerald-800 px-3 py-1 text-xs uppercase tracking-[0.24em] text-slate-200">{bill.status}</span>
-                          <span className="rounded-full bg-emerald-800 px-3 py-1 text-xs uppercase tracking-[0.24em] text-slate-200">{bill.paymentStatus}</span>
+                          <span className="rounded-full bg-emerald-100 px-3 py-1 text-xs uppercase tracking-[0.24em] text-emerald-700">{bill.status}</span>
+                          <span className="rounded-full bg-emerald-100 px-3 py-1 text-xs uppercase tracking-[0.24em] text-emerald-700">{bill.paymentStatus}</span>
                         </div>
                       </div>
                       <div className="text-right">
-                        <p className="text-sm text-slate-400">Total</p>
-                        <p className="text-xl font-semibold text-white">
+                        <p className="text-sm text-slate-500">Total</p>
+                        <p className="text-xl font-semibold text-slate-900">
                           {formatMVR(bill.items.reduce((sum, item) => sum + item.price * item.quantity, 0))}
                         </p>
                       </div>

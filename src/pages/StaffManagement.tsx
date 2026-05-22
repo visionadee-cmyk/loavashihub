@@ -73,11 +73,11 @@ export default function StaffManagement() {
   return (
     <AppShell title="Staff management">
       <div className="grid gap-6 xl:grid-cols-[0.85fr_0.95fr]">
-        <section className="rounded-3xl border border-slate-800 bg-slate-950/70 p-6 shadow-2xl shadow-slate-950/20">
+        <section className="rounded-3xl border border-slate-200 bg-slate-50/70 p-6 shadow-2xl shadow-slate-300/20">
           <div className="mb-5 flex items-center justify-between gap-3">
             <div>
-              <h3 className="text-xl font-semibold text-white">Manage staff profiles</h3>
-              <p className="text-sm text-slate-400">Track passports, visas, salaries and renewals.</p>
+              <h3 className="text-xl font-semibold text-slate-900">Manage staff profiles</h3>
+              <p className="text-sm text-slate-600">Track passports, visas, salaries and renewals.</p>
             </div>
             <button
               onClick={saveStaff}
@@ -88,99 +88,99 @@ export default function StaffManagement() {
           </div>
 
           <div className="grid gap-4">
-            <label className="block text-sm text-slate-300">
+            <label className="block text-sm text-slate-600">
               Full name
               <input
                 value={form.name}
                 onChange={(event) => setForm((current) => ({ ...current, name: event.target.value }))}
-                className="mt-2 w-full rounded-3xl border border-slate-700 bg-slate-950 px-4 py-3 text-slate-100 outline-none"
+                className="mt-2 w-full rounded-3xl border border-slate-300 bg-white px-4 py-3 text-slate-900 outline-none"
               />
             </label>
             <div className="grid gap-4 sm:grid-cols-2">
-              <label className="block text-sm text-slate-300">
+              <label className="block text-sm text-slate-600">
                 Designation
                 <input
                   value={form.designation}
                   onChange={(event) => setForm((current) => ({ ...current, designation: event.target.value }))}
-                  className="mt-2 w-full rounded-3xl border border-slate-700 bg-slate-950 px-4 py-3 text-slate-100 outline-none"
+                  className="mt-2 w-full rounded-3xl border border-slate-300 bg-white px-4 py-3 text-slate-900 outline-none"
                 />
               </label>
-              <label className="block text-sm text-slate-300">
+              <label className="block text-sm text-slate-600">
                 Passport number
                 <input
                   value={form.passport}
                   onChange={(event) => setForm((current) => ({ ...current, passport: event.target.value }))}
-                  className="mt-2 w-full rounded-3xl border border-slate-700 bg-slate-950 px-4 py-3 text-slate-100 outline-none"
+                  className="mt-2 w-full rounded-3xl border border-slate-300 bg-white px-4 py-3 text-slate-900 outline-none"
                 />
               </label>
             </div>
             <div className="grid gap-4 sm:grid-cols-2">
-              <label className="block text-sm text-slate-300">
+              <label className="block text-sm text-slate-600">
                 Salary (MVR)
                 <input
                   type="number"
                   value={form.salary}
                   onChange={(event) => setForm((current) => ({ ...current, salary: Number(event.target.value) }))}
-                  className="mt-2 w-full rounded-3xl border border-slate-700 bg-slate-950 px-4 py-3 text-slate-100 outline-none"
+                  className="mt-2 w-full rounded-3xl border border-slate-300 bg-white px-4 py-3 text-slate-900 outline-none"
                 />
               </label>
-              <label className="block text-sm text-slate-300">
+              <label className="block text-sm text-slate-600">
                 Date of joining
                 <input
                   type="date"
                   value={form.doj}
                   onChange={(event) => setForm((current) => ({ ...current, doj: event.target.value }))}
-                  className="mt-2 w-full rounded-3xl border border-slate-700 bg-slate-950 px-4 py-3 text-slate-100 outline-none"
+                  className="mt-2 w-full rounded-3xl border border-slate-300 bg-white px-4 py-3 text-slate-900 outline-none"
                 />
               </label>
             </div>
             <div className="grid gap-4 sm:grid-cols-2">
-              <label className="block text-sm text-slate-300">
+              <label className="block text-sm text-slate-600">
                 Work permit
                 <input
                   value={form.workPermit}
                   onChange={(event) => setForm((current) => ({ ...current, workPermit: event.target.value }))}
-                  className="mt-2 w-full rounded-3xl border border-slate-700 bg-slate-950 px-4 py-3 text-slate-100 outline-none"
+                  className="mt-2 w-full rounded-3xl border border-slate-300 bg-white px-4 py-3 text-slate-900 outline-none"
                 />
               </label>
-              <label className="block text-sm text-slate-300">
+              <label className="block text-sm text-slate-600">
                 Visa expiry
                 <input
                   type="date"
                   value={form.visaExpiry}
                   onChange={(event) => setForm((current) => ({ ...current, visaExpiry: event.target.value }))}
-                  className="mt-2 w-full rounded-3xl border border-slate-700 bg-slate-950 px-4 py-3 text-slate-100 outline-none"
+                  className="mt-2 w-full rounded-3xl border border-slate-300 bg-white px-4 py-3 text-slate-900 outline-none"
                 />
               </label>
             </div>
-            <label className="block text-sm text-slate-300">
+            <label className="block text-sm text-slate-600">
               Medical expiry
               <input
                 type="date"
                 value={form.medicalExpiry}
                 onChange={(event) => setForm((current) => ({ ...current, medicalExpiry: event.target.value }))}
-                className="mt-2 w-full rounded-3xl border border-slate-700 bg-slate-950 px-4 py-3 text-slate-100 outline-none"
+                className="mt-2 w-full rounded-3xl border border-slate-300 bg-white px-4 py-3 text-slate-900 outline-none"
               />
             </label>
           </div>
         </section>
 
         <section className="space-y-6">
-          <div className="rounded-3xl border border-slate-800 bg-slate-950/70 p-6 shadow-2xl shadow-slate-950/20">
+          <div className="rounded-3xl border border-slate-200 bg-slate-50/70 p-6 shadow-2xl shadow-slate-300/20">
             <div className="mb-4 flex items-center justify-between gap-3">
               <div>
-                <h3 className="text-xl font-semibold text-white">Staff roster</h3>
-                <p className="text-sm text-slate-400">Monitor visa expiry and renewals.</p>
+                <h3 className="text-xl font-semibold text-slate-900">Staff roster</h3>
+                <p className="text-sm text-slate-600">Monitor visa expiry and renewals.</p>
               </div>
               <span className="rounded-full bg-slate-800 px-3 py-1 text-xs uppercase tracking-[0.24em] text-slate-300">{staffList.length} members</span>
             </div>
             <div className="space-y-4">
               {staffList.map((staff) => (
-                <div key={staff.id} className="rounded-3xl border border-slate-800 bg-slate-900 p-4">
+                <div key={staff.id} className="rounded-3xl border border-slate-200 bg-slate-100 p-4">
                   <div className="flex flex-wrap items-center justify-between gap-3">
                     <div>
-                      <p className="text-base font-semibold text-white">{staff.name}</p>
-                      <p className="text-sm text-slate-400">{staff.designation} • {staff.passport}</p>
+                      <p className="text-base font-semibold text-slate-900">{staff.name}</p>
+                      <p className="text-sm text-slate-600">{staff.designation} • {staff.passport}</p>
                     </div>
                     <div className="flex items-center gap-2">
                       <button onClick={() => editStaff(staff)} className="rounded-2xl bg-slate-800 px-3 py-2 text-slate-300 hover:bg-slate-700">
@@ -191,7 +191,7 @@ export default function StaffManagement() {
                       </button>
                     </div>
                   </div>
-                  <div className="mt-3 grid gap-2 sm:grid-cols-2 text-sm text-slate-400">
+                  <div className="mt-3 grid gap-2 sm:grid-cols-2 text-sm text-slate-600">
                     <span>DOJ: {staff.doj}</span>
                     <span>Salary: MVR {staff.salary.toLocaleString()}</span>
                     <span>Visa expiry: {staff.visaExpiry}</span>

@@ -71,11 +71,11 @@ export default function AssetManagement() {
   return (
     <AppShell title="Asset management">
       <div className="grid gap-6 xl:grid-cols-[0.85fr_1fr]">
-        <section className="rounded-3xl border border-slate-800 bg-slate-950/70 p-6 shadow-2xl shadow-slate-950/20">
+        <section className="rounded-3xl border border-slate-200 bg-slate-50/70 p-6 shadow-2xl shadow-slate-300/20">
           <div className="mb-6 flex items-center justify-between gap-3">
             <div>
-              <h3 className="text-xl font-semibold text-white">Assets register</h3>
-              <p className="text-sm text-slate-400">Track equipment, devices and capital assets.</p>
+              <h3 className="text-xl font-semibold text-slate-900">Assets register</h3>
+              <p className="text-sm text-slate-600">Track equipment, devices and capital assets.</p>
             </div>
             <button
               onClick={saveAsset}
@@ -86,65 +86,65 @@ export default function AssetManagement() {
           </div>
 
           <div className="grid gap-4">
-            <label className="block text-sm text-slate-300">
+            <label className="block text-sm text-slate-600">
               Asset name
               <input
                 value={form.name}
                 onChange={(event) => setForm((current) => ({ ...current, name: event.target.value }))}
-                className="mt-2 w-full rounded-3xl border border-slate-700 bg-slate-950 px-4 py-3 text-slate-100 outline-none"
+                className="mt-2 w-full rounded-3xl border border-slate-300 bg-white px-4 py-3 text-slate-900 outline-none"
                 placeholder="Espresso machine"
               />
             </label>
 
             <div className="grid gap-4 sm:grid-cols-2">
-              <label className="block text-sm text-slate-300">
+              <label className="block text-sm text-slate-600">
                 Category
                 <input
                   value={form.category}
                   onChange={(event) => setForm((current) => ({ ...current, category: event.target.value }))}
-                  className="mt-2 w-full rounded-3xl border border-slate-700 bg-slate-950 px-4 py-3 text-slate-100 outline-none"
+                  className="mt-2 w-full rounded-3xl border border-slate-300 bg-white px-4 py-3 text-slate-900 outline-none"
                   placeholder="Kitchen"
                 />
               </label>
-              <label className="block text-sm text-slate-300">
+              <label className="block text-sm text-slate-600">
                 Location
                 <input
                   value={form.location}
                   onChange={(event) => setForm((current) => ({ ...current, location: event.target.value }))}
-                  className="mt-2 w-full rounded-3xl border border-slate-700 bg-slate-950 px-4 py-3 text-slate-100 outline-none"
+                  className="mt-2 w-full rounded-3xl border border-slate-300 bg-white px-4 py-3 text-slate-900 outline-none"
                   placeholder="Main kitchen"
                 />
               </label>
             </div>
 
             <div className="grid gap-4 sm:grid-cols-2">
-              <label className="block text-sm text-slate-300">
+              <label className="block text-sm text-slate-600">
                 Value
                 <input
                   type="number"
                   min={0}
                   value={form.value}
                   onChange={(event) => setForm((current) => ({ ...current, value: Number(event.target.value) }))}
-                  className="mt-2 w-full rounded-3xl border border-slate-700 bg-slate-950 px-4 py-3 text-slate-100 outline-none"
+                  className="mt-2 w-full rounded-3xl border border-slate-300 bg-white px-4 py-3 text-slate-900 outline-none"
                 />
               </label>
-              <label className="block text-sm text-slate-300">
+              <label className="block text-sm text-slate-600">
                 Purchase date
                 <input
                   type="date"
                   value={form.purchaseDate}
                   onChange={(event) => setForm((current) => ({ ...current, purchaseDate: event.target.value }))}
-                  className="mt-2 w-full rounded-3xl border border-slate-700 bg-slate-950 px-4 py-3 text-slate-100 outline-none"
+                  className="mt-2 w-full rounded-3xl border border-slate-300 bg-white px-4 py-3 text-slate-900 outline-none"
                 />
               </label>
             </div>
 
-            <label className="block text-sm text-slate-300">
+            <label className="block text-sm text-slate-600">
               Status
               <select
                 value={form.status}
                 onChange={(event) => setForm((current) => ({ ...current, status: event.target.value as Asset['status'] }))}
-                className="mt-2 w-full rounded-3xl border border-slate-700 bg-slate-950 px-4 py-3 text-slate-100 outline-none"
+                className="mt-2 w-full rounded-3xl border border-slate-300 bg-white px-4 py-3 text-slate-900 outline-none"
               >
                 <option value="Operational">Operational</option>
                 <option value="Needs repair">Needs repair</option>
@@ -155,22 +155,22 @@ export default function AssetManagement() {
         </section>
 
         <section className="space-y-6">
-          <div className="rounded-3xl border border-slate-800 bg-slate-950/70 p-6 shadow-2xl shadow-slate-950/20">
+          <div className="rounded-3xl border border-slate-200 bg-slate-50/70 p-6 shadow-2xl shadow-slate-300/20">
             <div className="mb-4 flex items-center justify-between gap-3">
               <div>
-                <h3 className="text-xl font-semibold text-white">Asset list</h3>
-                <p className="text-sm text-slate-400">View fixed assets and track their condition.</p>
+                <h3 className="text-xl font-semibold text-slate-900">Asset list</h3>
+                <p className="text-sm text-slate-600">View fixed assets and track their condition.</p>
               </div>
               <span className="rounded-full bg-slate-800 px-3 py-1 text-xs uppercase tracking-[0.24em] text-slate-300">{assets.length} items</span>
             </div>
 
             <div className="grid gap-4">
               {assets.map((asset) => (
-                <div key={asset.id} className="rounded-3xl border border-slate-800 bg-slate-900 p-4">
+                <div key={asset.id} className="rounded-3xl border border-slate-200 bg-slate-100 p-4">
                   <div className="flex flex-wrap items-center justify-between gap-3">
                     <div>
-                      <p className="text-lg font-semibold text-white">{asset.name}</p>
-                      <p className="text-sm text-slate-400">{asset.category} · {asset.location}</p>
+                      <p className="text-lg font-semibold text-slate-900">{asset.name}</p>
+                      <p className="text-sm text-slate-600">{asset.category} · {asset.location}</p>
                     </div>
                     <div className="flex gap-2">
                       <button
@@ -187,16 +187,16 @@ export default function AssetManagement() {
                       </button>
                     </div>
                   </div>
-                  <div className="mt-4 grid gap-2 sm:grid-cols-2 text-sm text-slate-400">
-                    <div className="rounded-3xl bg-slate-950 px-4 py-3">
+                  <div className="mt-4 grid gap-2 sm:grid-cols-2 text-sm text-slate-600">
+                    <div className="rounded-3xl bg-white px-4 py-3">
                       <p className="font-semibold text-slate-200">Value</p>
                       <p className="mt-1">{asset.value} MVR</p>
                     </div>
-                    <div className="rounded-3xl bg-slate-950 px-4 py-3">
+                    <div className="rounded-3xl bg-white px-4 py-3">
                       <p className="font-semibold text-slate-200">Purchased</p>
                       <p className="mt-1">{asset.purchaseDate}</p>
                     </div>
-                    <div className="rounded-3xl bg-slate-950 px-4 py-3">
+                    <div className="rounded-3xl bg-white px-4 py-3">
                       <p className="font-semibold text-slate-200">Status</p>
                       <p className="mt-1">{asset.status}</p>
                     </div>

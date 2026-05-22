@@ -3,7 +3,7 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { ArrowLeft, Printer, X } from 'lucide-react';
 import AppShell from '../components/AppShell';
 import { formatMVR } from '../lib/mvr';
-import { loadCollection, saveDocument } from '../lib/firestore';
+import { loadCollection, saveDocument, deleteDocument } from '../lib/firestore';
 import type { Bill } from '../types';
 
 export default function BillDetailsPage() {
@@ -82,16 +82,39 @@ export default function BillDetailsPage() {
     }
   };
 
+  const saveBillChanges = async () => {
+    if (!bill) return;
+    try {
+      await saveDocument('bills', bill.id, bill);
+      setStatusMessage('Bill changes saved.');
+    } catch (error) {
+      console.error('Failed to save bill changes:', error);
+      setStatusMessage('Unable to save bill changes.');
+    }
+  };
+
   const markServed = async () => {
     if (!bill) return;
-    const updatedBill = { ...(bill as Bill), status: 'Served', paymentStatus: 'Paid' } as Bill;
+    const updatedBill = { ...bill, status: 'Served' as Bill['status'] };
     setBill(updatedBill);
     setStatusMessage('Bill marked as served.');
     try {
       await saveDocument('bills', updatedBill.id, updatedBill);
     } catch (error) {
-      console.error('Failed to save bill status:', error);
-      setStatusMessage('Unable to persist bill status change.');
+      console.error('Failed to update bill status to served:', error);
+      setStatusMessage('Unable to save served status.');
+    }
+  };
+
+  const deleteBill = async () => {
+    if (!bill) return;
+    try {
+      await deleteDocument('bills', bill.id);
+      setStatusMessage('Bill deleted successfully.');
+      navigate('/bills/pending');
+    } catch (error) {
+      console.error('Failed to delete bill:', error);
+      setStatusMessage('Unable to delete bill.');
     }
   };
 
@@ -121,6 +144,24 @@ export default function BillDetailsPage() {
                 <Printer className="h-4 w-4" />
                 Print bill
               </button>
+              {bill ? (
+                <button
+                  type="button"
+                  onClick={saveBillChanges}
+                  className="inline-flex items-center gap-2 rounded-[28px] bg-[#7c4b2e] px-4 py-3 text-sm font-semibold text-white shadow-lg hover:bg-[#6a4028]"
+                >
+                  Save changes
+                </button>
+              ) : null}
+              {bill ? (
+                <button
+                  type="button"
+                  onClick={deleteBill}
+                  className="inline-flex items-center gap-2 rounded-[28px] bg-rose-600 px-4 py-3 text-sm font-semibold text-white shadow-lg hover:bg-rose-500"
+                >
+                  Delete bill
+                </button>
+              ) : null}
               {bill && bill.status !== 'Served' && bill.paymentStatus !== 'Paid' ? (
                 <button
                   type="button"
@@ -329,6 +370,56 @@ export default function BillDetailsPage() {
               <div className="rounded-[24px] border border-slate-200 bg-slate-50 p-4 text-sm text-slate-700">
                 <p className="font-semibold text-slate-900">Notes</p>
                 <p className="mt-2 text-slate-500">{bill?.notes || 'No additional notes.'}</p>
+              </div>
+              <div className="rounded-[24px] border border-slate-200 bg-white p-4">
+                <h3 className="text-sm font-semibold text-slate-900">Edit bill details</h3>
+                <div className="mt-4 space-y-4">
+                  <label className="block text-sm text-slate-600">
+                    Table
+                    <input
+                      value={bill?.table ?? ''}
+                      onChange={(event) => bill && setBill({ ...bill, table: event.target.value })}
+                      className="mt-2 w-full rounded-3xl border border-slate-200 bg-slate-50 px-4 py-3 text-slate-900 outline-none"
+                    />
+                  </label>
+                  <label className="block text-sm text-slate-600">
+                    Order type
+                    <select
+                      value={bill?.orderType ?? 'Dine-in'}
+                      onChange={(event) => bill && setBill({ ...bill, orderType: event.target.value as Bill['orderType'] })}
+                      className="mt-2 w-full rounded-3xl border border-slate-200 bg-slate-50 px-4 py-3 text-slate-900 outline-none"
+                    >
+                      <option value="Dine-in">Dine-in</option>
+                      <option value="Takeaway">Takeaway</option>
+                      <option value="Delivery">Delivery</option>
+                    </select>
+                  </label>
+                  <label className="block text-sm text-slate-600">
+                    Status
+                    <select
+                      value={bill?.status ?? 'Pending'}
+                      onChange={(event) => bill && setBill({ ...bill, status: event.target.value as Bill['status'] })}
+                      className="mt-2 w-full rounded-3xl border border-slate-200 bg-slate-50 px-4 py-3 text-slate-900 outline-none"
+                    >
+                      <option value="Pending">Pending</option>
+                      <option value="Preparing">Preparing</option>
+                      <option value="Ready">Ready</option>
+                      <option value="Served">Served</option>
+                    </select>
+                  </label>
+                  <label className="block text-sm text-slate-600">
+                    Payment status
+                    <select
+                      value={bill?.paymentStatus ?? 'Unpaid'}
+                      onChange={(event) => bill && setBill({ ...bill, paymentStatus: event.target.value as Bill['paymentStatus'] })}
+                      className="mt-2 w-full rounded-3xl border border-slate-200 bg-slate-50 px-4 py-3 text-slate-900 outline-none"
+                    >
+                      <option value="Unpaid">Unpaid</option>
+                      <option value="Partial">Partial</option>
+                      <option value="Paid">Paid</option>
+                    </select>
+                  </label>
+                </div>
               </div>
             </aside>
           </div>

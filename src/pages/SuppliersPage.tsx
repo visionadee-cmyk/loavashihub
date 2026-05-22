@@ -15,6 +15,7 @@ const defaultSupplierForm = {
 export default function SuppliersPage() {
   const [suppliers, setSuppliers] = useState<Supplier[]>([]);
   const [form, setForm] = useState(defaultSupplierForm);
+  const [editingId, setEditingId] = useState<string | null>(null);
 
   useEffect(() => {
     if (!hasFirebaseConfig) {
@@ -32,7 +33,7 @@ export default function SuppliersPage() {
     if (!name) return;
 
     const supplier: Supplier = {
-      id: `supplier-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+      id: editingId ?? `supplier-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
       name,
       phone: form.phone.trim() || '',
       email: form.email.trim() || '',
@@ -40,8 +41,14 @@ export default function SuppliersPage() {
       createdAt: new Date().toISOString(),
     };
 
-    setSuppliers((current) => [supplier, ...current]);
+    setSuppliers((current) => {
+      if (editingId) {
+        return current.map((item) => (item.id === editingId ? supplier : item));
+      }
+      return [supplier, ...current];
+    });
     setForm(defaultSupplierForm);
+    setEditingId(null);
 
     if (hasFirebaseConfig) {
       try {
@@ -61,6 +68,21 @@ export default function SuppliersPage() {
         console.error('Failed to delete supplier:', error);
       }
     }
+  };
+
+  const startEditSupplier = (supplier: Supplier) => {
+    setEditingId(supplier.id);
+    setForm({
+      name: supplier.name,
+      phone: supplier.phone || '',
+      email: supplier.email || '',
+      notes: supplier.notes || '',
+    });
+  };
+
+  const cancelEdit = () => {
+    setEditingId(null);
+    setForm(defaultSupplierForm);
   };
 
   return (
@@ -124,14 +146,25 @@ export default function SuppliersPage() {
               />
             </label>
 
-            <button
-              type="button"
-              onClick={addSupplier}
-              disabled={!form.name.trim()}
-              className="inline-flex items-center gap-2 rounded-3xl bg-[#43e311] px-4 py-3 text-sm font-semibold text-white hover:bg-[#37c211] disabled:cursor-not-allowed disabled:opacity-50"
-            >
-              <Plus className="h-4 w-4" /> Add supplier
-            </button>
+            <div className="flex flex-col gap-3 sm:flex-row">
+              <button
+                type="button"
+                onClick={addSupplier}
+                disabled={!form.name.trim()}
+                className="inline-flex items-center gap-2 rounded-3xl bg-[#43e311] px-4 py-3 text-sm font-semibold text-white hover:bg-[#37c211] disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                <Plus className="h-4 w-4" /> {editingId ? 'Save supplier' : 'Add supplier'}
+              </button>
+              {editingId ? (
+                <button
+                  type="button"
+                  onClick={cancelEdit}
+                  className="inline-flex items-center gap-2 rounded-3xl border border-slate-300 bg-white px-4 py-3 text-sm font-semibold text-slate-700 hover:bg-slate-50"
+                >
+                  Cancel edit
+                </button>
+              ) : null}
+            </div>
           </div>
         </section>
 
@@ -153,13 +186,22 @@ export default function SuppliersPage() {
                       <p className="text-sm text-slate-600">{supplier.phone || 'No phone'} · {supplier.email || 'No email'}</p>
                       {supplier.notes ? <p className="mt-2 text-sm text-slate-500">{supplier.notes}</p> : null}
                     </div>
-                    <button
-                      type="button"
-                      onClick={() => removeSupplier(supplier.id)}
-                      className="inline-flex items-center gap-2 rounded-3xl bg-rose-600 px-4 py-3 text-sm font-semibold text-white hover:bg-rose-500"
-                    >
-                      <Trash2 className="h-4 w-4" /> Remove
-                    </button>
+                    <div className="flex flex-wrap items-center gap-2">
+                      <button
+                        type="button"
+                        onClick={() => startEditSupplier(supplier)}
+                        className="inline-flex items-center gap-2 rounded-3xl border border-slate-300 bg-slate-100 px-4 py-3 text-sm font-semibold text-slate-700 hover:bg-slate-200"
+                      >
+                        Edit
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => removeSupplier(supplier.id)}
+                        className="inline-flex items-center gap-2 rounded-3xl bg-rose-600 px-4 py-3 text-sm font-semibold text-white hover:bg-rose-500"
+                      >
+                        <Trash2 className="h-4 w-4" /> Remove
+                      </button>
+                    </div>
                   </div>
                 </div>
               ))

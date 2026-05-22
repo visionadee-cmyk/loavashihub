@@ -21,6 +21,7 @@ export default function DirectPurchasePage() {
   const [items, setItems] = useState<DirectPurchaseItem[]>([]);
   const [form, setForm] = useState({ shopName: '', productName: '', quantity: 1, unit: 'pcs', unitCost: 0, gst: 0 });
   const [newItemUnit, setNewItemUnit] = useState('pcs');
+  const [editingId, setEditingId] = useState<string | null>(null);
 
   useEffect(() => {
     if (!hasFirebaseConfig) return;
@@ -107,17 +108,23 @@ export default function DirectPurchasePage() {
     if (!items.length || !form.shopName.trim()) return;
 
     const shopName = form.shopName.trim();
+    const existingPurchase = purchases.find((purchase) => purchase.id === editingId);
     const payload: DirectPurchase = {
-      id: `dpurch-${Date.now()}`,
+      id: editingId ?? `dpurch-${Date.now()}`,
       shopName,
       items,
       gst: form.gst,
       subtotal,
       total,
-      date: new Date().toISOString().slice(0, 10),
+      date: existingPurchase?.date ?? new Date().toISOString().slice(0, 10),
     };
 
-    setPurchases((current) => [payload, ...current]);
+    setPurchases((current) => {
+      if (editingId) {
+        return current.map((purchase) => (purchase.id === editingId ? payload : purchase));
+      }
+      return [payload, ...current];
+    });
 
     if (!shopAlreadySaved) {
       const newSupplier = {
@@ -133,6 +140,7 @@ export default function DirectPurchasePage() {
 
     setItems([]);
     setForm({ shopName: '', productName: '', quantity: 1, unit: 'pcs', unitCost: 0, gst: 0 });
+    setEditingId(null);
 
     if (hasFirebaseConfig) {
       try {
@@ -141,6 +149,19 @@ export default function DirectPurchasePage() {
         console.error('Failed to save direct purchase:', error);
       }
     }
+  };
+
+  const beginEditPurchase = (purchase: DirectPurchase) => {
+    setEditingId(purchase.id);
+    setForm({
+      shopName: purchase.shopName,
+      productName: '',
+      quantity: 1,
+      unit: 'pcs',
+      unitCost: 0,
+      gst: purchase.gst,
+    });
+    setItems(purchase.items);
   };
 
   const deletePurchase = async (id: string) => {
@@ -152,6 +173,12 @@ export default function DirectPurchasePage() {
         console.error('Failed to delete direct purchase:', error);
       }
     }
+  };
+
+  const cancelPurchaseEdit = () => {
+    setEditingId(null);
+    setItems([]);
+    setForm({ shopName: '', productName: '', quantity: 1, unit: 'pcs', unitCost: 0, gst: 0 });
   };
 
   return (
@@ -356,12 +383,23 @@ export default function DirectPurchasePage() {
                   </div>
                 </div>
               </div>
-              <button
-                onClick={savePurchase}
-                className="w-full mt-4 rounded-3xl bg-emerald-600 px-4 py-3 text-sm font-semibold text-white hover:bg-emerald-500"
-              >
-                Save Purchase
-              </button>
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+                <button
+                  onClick={savePurchase}
+                  className="w-full rounded-3xl bg-emerald-600 px-4 py-3 text-sm font-semibold text-white hover:bg-emerald-500"
+                >
+                  {editingId ? 'Update Purchase' : 'Save Purchase'}
+                </button>
+                {editingId ? (
+                  <button
+                    type="button"
+                    onClick={cancelPurchaseEdit}
+                    className="w-full rounded-3xl border border-slate-300 bg-white px-4 py-3 text-sm font-semibold text-slate-700 hover:bg-slate-50"
+                  >
+                    Cancel edit
+                  </button>
+                ) : null}
+              </div>
             </div>
           )}
         </section>
@@ -371,14 +409,23 @@ export default function DirectPurchasePage() {
           <div className="space-y-3 max-h-96 overflow-y-auto">
             {purchases.map((purchase) => (
               <div key={purchase.id} className="rounded-3xl border border-slate-200 bg-white p-4">
-                <div className="flex items-center justify-between mb-2">
+                <div className="flex flex-wrap items-center justify-between mb-2 gap-3">
                   <p className="font-semibold text-slate-900">{purchase.shopName}</p>
-                  <button
-                    onClick={() => deletePurchase(purchase.id)}
-                    className="text-red-500 hover:text-red-400"
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </button>
+                  <div className="flex flex-wrap items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={() => beginEditPurchase(purchase)}
+                      className="rounded-3xl bg-slate-100 px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-200"
+                    >
+                      Edit
+                    </button>
+                    <button
+                      onClick={() => deletePurchase(purchase.id)}
+                      className="text-red-500 hover:text-red-400"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </button>
+                  </div>
                 </div>
                 <p className="text-xs text-slate-400 mb-2">{purchase.date}</p>
                 <p className="text-sm text-slate-600 mb-2">{purchase.items.length} item(s)</p>

@@ -48,6 +48,7 @@ export default function DailyDirectRevenuePage() {
     cashCounts: { ...initialCashCounts },
     cardPayments: [initialCardPayment],
   });
+  const [editingId, setEditingId] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
@@ -103,8 +104,9 @@ export default function DailyDirectRevenuePage() {
   const saveRevenue = async () => {
     if (!form.closedBy.trim() || totalDirectRevenue <= 0) return;
 
+    const existingEntry = entries.find((entry) => entry.id === editingId);
     const payload: DailyDirectRevenue = {
-      id: `directrev-${Date.now()}`,
+      id: editingId ?? `directrev-${Date.now()}`,
       date: form.date,
       closedBy: form.closedBy.trim(),
       cashCounts: { ...form.cashCounts },
@@ -112,24 +114,50 @@ export default function DailyDirectRevenuePage() {
       cashTotal,
       cardTotal,
       totalDirectRevenue,
-      createdAt: new Date().toISOString(),
+      createdAt: existingEntry?.createdAt ?? new Date().toISOString(),
     };
 
     setSaving(true);
     try {
       await saveDocument('dailyDirectRevenue', payload.id, payload);
-      setEntries((current) => [payload, ...current]);
+      setEntries((current) => {
+        if (editingId) {
+          return current.map((entry) => (entry.id === editingId ? payload : entry));
+        }
+        return [payload, ...current];
+      });
       setForm({
         date: new Date().toISOString().slice(0, 10),
         closedBy: '',
         cashCounts: { ...initialCashCounts },
         cardPayments: [initialCardPayment],
       });
+      setEditingId(null);
     } catch (error) {
       console.error('Failed to save direct revenue entry:', error);
     } finally {
       setSaving(false);
     }
+  };
+
+  const beginEditEntry = (entry: DailyDirectRevenue) => {
+    setEditingId(entry.id);
+    setForm({
+      date: entry.date,
+      closedBy: entry.closedBy,
+      cashCounts: { ...entry.cashCounts },
+      cardPayments: entry.cardPayments.length ? entry.cardPayments : [initialCardPayment],
+    });
+  };
+
+  const cancelEdit = () => {
+    setEditingId(null);
+    setForm({
+      date: new Date().toISOString().slice(0, 10),
+      closedBy: '',
+      cashCounts: { ...initialCashCounts },
+      cardPayments: [initialCardPayment],
+    });
   };
 
   const deleteEntry = async (id: string) => {
@@ -290,14 +318,25 @@ export default function DailyDirectRevenuePage() {
                 <p className="mt-2 text-2xl font-semibold text-[#7c4b2e]">{formatMVR(totalDirectRevenue)}</p>
               </div>
             </div>
-            <button
-              type="button"
-              onClick={saveRevenue}
-              disabled={!form.closedBy.trim() || totalDirectRevenue <= 0 || saving}
-              className="mt-6 w-full rounded-3xl bg-[#7c4b2e] px-4 py-3 text-sm font-semibold text-white hover:bg-[#6a4028] disabled:cursor-not-allowed disabled:opacity-50"
-            >
-              Save daily direct revenue
-            </button>
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+              <button
+                type="button"
+                onClick={saveRevenue}
+                disabled={!form.closedBy.trim() || totalDirectRevenue <= 0 || saving}
+                className="w-full rounded-3xl bg-[#7c4b2e] px-4 py-3 text-sm font-semibold text-white hover:bg-[#6a4028] disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                {editingId ? 'Update direct revenue' : 'Save daily direct revenue'}
+              </button>
+              {editingId ? (
+                <button
+                  type="button"
+                  onClick={cancelEdit}
+                  className="w-full rounded-3xl border border-slate-300 bg-white px-4 py-3 text-sm font-semibold text-slate-700 hover:bg-slate-50"
+                >
+                  Cancel edit
+                </button>
+              ) : null}
+            </div>
           </div>
         </section>
 
@@ -316,18 +355,27 @@ export default function DailyDirectRevenuePage() {
             {entries.length > 0 ? (
               entries.map((entry) => (
                 <div key={entry.id} className="rounded-3xl border border-slate-200 bg-slate-50 p-4">
-                  <div className="flex items-start justify-between gap-3">
+                  <div className="flex flex-wrap items-start justify-between gap-3">
                     <div>
                       <p className="font-semibold text-[#05093f]">{entry.date}</p>
                       <p className="text-sm text-slate-500">Closed by {entry.closedBy}</p>
                     </div>
-                    <button
-                      type="button"
-                      onClick={() => deleteEntry(entry.id)}
-                      className="inline-flex h-10 items-center justify-center rounded-3xl bg-rose-500 px-3 text-sm font-semibold text-white hover:bg-rose-400"
-                    >
-                      Delete
-                    </button>
+                    <div className="flex flex-wrap items-center gap-2">
+                      <button
+                        type="button"
+                        onClick={() => beginEditEntry(entry)}
+                        className="inline-flex h-10 items-center justify-center rounded-3xl bg-slate-100 px-3 text-sm font-semibold text-slate-700 hover:bg-slate-200"
+                      >
+                        Edit
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => deleteEntry(entry.id)}
+                        className="inline-flex h-10 items-center justify-center rounded-3xl bg-rose-500 px-3 text-sm font-semibold text-white hover:bg-rose-400"
+                      >
+                        Delete
+                      </button>
+                    </div>
                   </div>
                   <div className="mt-4 grid gap-3 sm:grid-cols-3">
                     <div className="rounded-3xl border border-slate-200 bg-white p-3">

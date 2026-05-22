@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { CheckCircle2, Clock } from 'lucide-react';
 import AppShell from '../components/AppShell';
-import { loadCollection, saveDocument } from '../lib/firestore';
+import { loadCollection, saveDocument, deleteDocument } from '../lib/firestore';
 import { formatMVR } from '../lib/mvr';
 import type { Bill } from '../types';
 
@@ -26,6 +26,15 @@ export default function PendingBillsPage() {
       await saveDocument('bills', updatedBill.id, updatedBill);
     } catch (error) {
       console.error('Failed to update bill:', error);
+    }
+  };
+
+  const deleteBill = async (id: string) => {
+    setBills((current) => current.filter((bill) => bill.id !== id));
+    try {
+      await deleteDocument('bills', id);
+    } catch (error) {
+      console.error('Failed to delete bill:', error);
     }
   };
 
@@ -98,7 +107,7 @@ export default function PendingBillsPage() {
                         onClick={() => navigate(`/bills/${bill.id}`)}
                         className="rounded-3xl border border-slate-200 bg-slate-100 px-4 py-3 text-sm font-semibold text-[#05093f] hover:bg-slate-200"
                       >
-                        Open bill
+                        Edit
                       </button>
                       <button
                         type="button"
@@ -106,6 +115,13 @@ export default function PendingBillsPage() {
                         className="rounded-3xl bg-violet-600 px-4 py-3 text-sm font-semibold text-white hover:bg-violet-500"
                       >
                         Mark served
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => deleteBill(bill.id)}
+                        className="rounded-3xl bg-rose-600 px-4 py-3 text-sm font-semibold text-white hover:bg-rose-500"
+                      >
+                        Delete
                       </button>
                     </div>
                   </div>

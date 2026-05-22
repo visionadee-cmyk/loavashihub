@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { CheckCircle2, Clock } from 'lucide-react';
 import AppShell from '../components/AppShell';
-import { loadCollection } from '../lib/firestore';
+import { loadCollection, deleteDocument } from '../lib/firestore';
 import { formatMVR } from '../lib/mvr';
 import type { Bill } from '../types';
 
@@ -23,6 +23,15 @@ export default function CompletedBillsPage() {
   const completedBills = useMemo(() => bills.filter((bill) => bill.status === 'Served'), [bills]);
   const openCount = useMemo(() => bills.filter((bill) => bill.status !== 'Served').length, [bills]);
   const navigate = useNavigate();
+
+  const deleteBill = async (id: string) => {
+    setBills((current) => current.filter((bill) => bill.id !== id));
+    try {
+      await deleteDocument('bills', id);
+    } catch (error) {
+      console.error('Failed to delete bill:', error);
+    }
+  };
 
   return (
     <AppShell title="Completed bills">
@@ -81,13 +90,22 @@ export default function CompletedBillsPage() {
                   </div>
                   <div className="mt-4 flex flex-wrap items-center justify-between gap-3 text-[#05093f]">
                     <div>Total {formatMVR(bill.items.reduce((sum, item) => sum + item.price * item.quantity, 0))}</div>
-                    <button
-                      type="button"
-                      onClick={() => navigate(`/bills/${bill.id}`)}
-                      className="rounded-3xl bg-[#7c4b2e] px-4 py-3 text-sm font-semibold text-white hover:bg-[#6a4028]"
-                    >
-                      View details
-                    </button>
+                    <div className="flex flex-wrap items-center gap-2">
+                      <button
+                        type="button"
+                        onClick={() => navigate(`/bills/${bill.id}`)}
+                        className="rounded-3xl bg-[#7c4b2e] px-4 py-3 text-sm font-semibold text-white hover:bg-[#6a4028]"
+                      >
+                        Edit
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => deleteBill(bill.id)}
+                        className="rounded-3xl bg-rose-600 px-4 py-3 text-sm font-semibold text-white hover:bg-rose-500"
+                      >
+                        Delete
+                      </button>
+                    </div>
                   </div>
                 </div>
               ))}

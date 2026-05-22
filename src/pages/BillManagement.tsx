@@ -1,13 +1,15 @@
 import { useEffect, useMemo, useState } from 'react';
 import { CheckCircle2, Clock, ListChecks } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import AppShell from '../components/AppShell';
-import { loadCollection, saveDocument } from '../lib/firestore';
+import { loadCollection, saveDocument, deleteDocument } from '../lib/firestore';
 import { formatMVR } from '../lib/mvr';
 import type { Bill } from '../types';
 
 export default function BillManagement() {
   const [bills, setBills] = useState<Bill[]>([]);
   const [loading, setLoading] = useState(true);
+  const navigate = useNavigate();
 
   useEffect(() => {
     loadCollection<Bill>('bills', [])
@@ -25,6 +27,15 @@ export default function BillManagement() {
       await saveDocument('bills', bill.id, bill);
     } catch (error) {
       console.error('Failed to update bill:', error);
+    }
+  };
+
+  const deleteBill = async (id: string) => {
+    setBills((current) => current.filter((bill) => bill.id !== id));
+    try {
+      await deleteDocument('bills', id);
+    } catch (error) {
+      console.error('Failed to delete bill:', error);
     }
   };
 
@@ -110,13 +121,29 @@ export default function BillManagement() {
                           <p className="text-xl font-semibold text-[#05093f]">
                             {formatMVR(bill.items.reduce((sum, item) => sum + item.price * item.quantity, 0))}
                           </p>
-                          <button
-                            type="button"
-                            onClick={() => updateBill({ ...bill, status: 'Served', paymentStatus: 'Paid' })}
-                            className="inline-flex items-center gap-2 rounded-3xl bg-violet-600 px-4 py-3 text-sm font-semibold text-white hover:bg-violet-500"
-                          >
-                            Mark served
-                          </button>
+                          <div className="flex flex-wrap items-center gap-2">
+                            <button
+                              type="button"
+                              onClick={() => updateBill({ ...bill, status: 'Served', paymentStatus: 'Paid' })}
+                              className="inline-flex items-center gap-2 rounded-3xl bg-violet-600 px-4 py-3 text-sm font-semibold text-white hover:bg-violet-500"
+                            >
+                              Mark served
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => navigate(`/bills/${bill.id}`)}
+                              className="inline-flex items-center gap-2 rounded-3xl border border-slate-200 bg-slate-100 px-4 py-3 text-sm font-semibold text-[#05093f] hover:bg-slate-200"
+                            >
+                              Edit
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => deleteBill(bill.id)}
+                              className="inline-flex items-center gap-2 rounded-3xl bg-rose-600 px-4 py-3 text-sm font-semibold text-white hover:bg-rose-500"
+                            >
+                              Delete
+                            </button>
+                          </div>
                         </div>
                       </div>
                     </div>
@@ -142,11 +169,27 @@ export default function BillManagement() {
                           <span className="rounded-full bg-emerald-100 px-3 py-1 text-xs uppercase tracking-[0.24em] text-emerald-700">{bill.paymentStatus}</span>
                         </div>
                       </div>
-                      <div className="text-right">
-                      <p className="text-sm text-[#05093f]">Total</p>
-                      <p className="text-xl font-semibold text-[#05093f]">
+                      <div className="space-y-3 text-right">
+                        <p className="text-sm text-[#05093f]">Total</p>
+                        <p className="text-xl font-semibold text-[#05093f]">
                           {formatMVR(bill.items.reduce((sum, item) => sum + item.price * item.quantity, 0))}
                         </p>
+                        <div className="flex flex-wrap items-center justify-end gap-2">
+                          <button
+                            type="button"
+                            onClick={() => navigate(`/bills/${bill.id}`)}
+                            className="inline-flex items-center gap-2 rounded-3xl border border-slate-200 bg-slate-100 px-4 py-3 text-sm font-semibold text-[#05093f] hover:bg-slate-200"
+                          >
+                            Edit
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => deleteBill(bill.id)}
+                            className="inline-flex items-center gap-2 rounded-3xl bg-rose-600 px-4 py-3 text-sm font-semibold text-white hover:bg-rose-500"
+                          >
+                            Delete
+                          </button>
+                        </div>
                       </div>
                     </div>
                   ))}

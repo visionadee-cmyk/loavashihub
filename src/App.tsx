@@ -22,12 +22,14 @@ import BillDetailsPage from './pages/BillDetailsPage';
 import CustomersPage from './pages/CustomersPage';
 import SettingsPage from './pages/SettingsPage';
 import ProtectedRoute from './components/ProtectedRoute';
+import ServiceWorkerNotifier from './components/ServiceWorkerNotifier';
 
 function App() {
   return (
     <AuthProvider>
       <InventoryProvider>
         <BrowserRouter>
+          <ServiceWorkerNotifier />
           <Routes>
             <Route path="/login" element={<LoginPage />} />
             <Route

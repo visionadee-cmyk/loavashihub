@@ -18,6 +18,21 @@ if ('serviceWorker' in navigator) {
       setInterval(() => {
         registration.update();
       }, 60000); // Check every minute
+      
+        // Notify app when a new update is available
+        if (registration.waiting) {
+          window.dispatchEvent(new CustomEvent('sw-update-available', { detail: { registration } }));
+        }
+
+        registration.addEventListener('updatefound', () => {
+          const newWorker = registration.installing;
+          if (!newWorker) return;
+          newWorker.addEventListener('statechange', () => {
+            if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+              window.dispatchEvent(new CustomEvent('sw-update-available', { detail: { registration } }));
+            }
+          });
+        });
     } catch (error) {
       console.error('❌ Service Worker registration failed:', error);
     }
@@ -26,5 +41,7 @@ if ('serviceWorker' in navigator) {
   // Handle service worker updates
   navigator.serviceWorker.addEventListener('controllerchange', () => {
     console.log('🔄 Service Worker controller changed - app updated');
+    // Reload to activate the new service worker and updated content
+    window.location.reload();
   });
 }

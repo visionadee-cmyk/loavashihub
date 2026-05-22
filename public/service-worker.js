@@ -126,3 +126,15 @@ self.addEventListener('fetch', (event) => {
   );
 });
 
+// Listen for messages from the client to skip waiting
+self.addEventListener('message', (event) => {
+  try {
+    if (!event.data) return;
+    if (event.data.type === 'SKIP_WAITING') {
+      self.skipWaiting();
+    }
+  } catch (err) {
+    console.warn('Service worker message handler error:', err);
+  }
+});
+

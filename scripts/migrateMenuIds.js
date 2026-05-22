@@ -22,7 +22,7 @@ function generateMenuItemId() {
 async function migrateMenuIds() {
   try {
     console.log('Starting menu items migration...');
-    const menuSnapshot = await db.collection('menu').get();
+    const menuSnapshot = await db.collection('menuItems').get();
 
     let updated = 0;
     let skipped = 0;
@@ -34,7 +34,7 @@ async function migrateMenuIds() {
       if (!data.menuItemId) {
         const menuItemId = generateMenuItemId();
 
-        await db.collection('menu').doc(doc.id).update({
+        await db.collection('menuItems').doc(doc.id).update({
           menuItemId,
         });
 

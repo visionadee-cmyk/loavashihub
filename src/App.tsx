@@ -11,6 +11,8 @@ import InventoryManagement from './pages/InventoryManagement';
 import ExpensesPage from './pages/ExpensesPage';
 import ReportsPage from './pages/ReportsPage';
 import PurchaseProductsPage from './pages/PurchaseProductsPage';
+import DirectPurchasePage from './pages/DirectPurchasePage';
+import InventoryUpdatePage from './pages/InventoryUpdatePage';
 import RecipeManagement from './pages/RecipeManagement';
 import AssetManagement from './pages/AssetManagement';
 import BillManagement from './pages/BillManagement';
@@ -121,6 +123,22 @@ function App() {
               element={
                 <ProtectedRoute allowedRoles={['admin']}>
                   <PurchaseProductsPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/admin/direct-purchase"
+              element={
+                <ProtectedRoute allowedRoles={['admin']}>
+                  <DirectPurchasePage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/admin/inventory-update"
+              element={
+                <ProtectedRoute allowedRoles={['admin']}>
+                  <InventoryUpdatePage />
                 </ProtectedRoute>
               }
             />

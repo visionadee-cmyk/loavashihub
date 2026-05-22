@@ -71,6 +71,37 @@ export interface RFQItem {
   unitCost?: number;
 }
 
+export interface DirectPurchaseItem {
+  id: string;
+  productName: string;
+  quantity: number;
+  unit: string;
+  unitCost: number;
+  totalCost: number;
+}
+
+export interface DirectPurchase {
+  id: string;
+  shopName: string;
+  items: DirectPurchaseItem[];
+  gst: number;
+  subtotal: number;
+  total: number;
+  date: string;
+}
+
+export interface InventoryAdjustment {
+  id: string;
+  inventoryId: string;
+  productName: string;
+  previousQuantity: number;
+  adjustedQuantity: number;
+  newQuantity: number;
+  reason: 'daily-count' | 'month-end' | 'physical-count' | 'damaged' | 'other';
+  date: string;
+  notes?: string;
+}
+
 export interface RecipeIngredient {
   inventoryId: string;
   name: string;

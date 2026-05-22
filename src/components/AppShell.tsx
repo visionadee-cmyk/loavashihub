@@ -1,5 +1,5 @@
-import { Link, NavLink } from 'react-router-dom';
-import { useState } from 'react';
+import { Link, NavLink, useLocation } from 'react-router-dom';
+import { useEffect, useState } from 'react';
 import { LogOut, LayoutDashboard, ShoppingCart, ShoppingBag, Coffee, Table, Users2, ClipboardList, Box, Layers, BookOpen, BarChart3, Clock, CheckCircle2, ListChecks, Menu, X } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 const logo = '/logo.jpeg';
@@ -36,12 +36,20 @@ interface AppShellProps {
 
 export default function AppShell({ title, children }: AppShellProps) {
   const { user, logout } = useAuth();
+  const location = useLocation();
   const navItems = user?.role === 'admin' ? adminNav : cashierNav;
   const [sidebarOpen, setSidebarOpen] = useState(false);
+
+  useEffect(() => {
+    if (sidebarOpen) {
+      setSidebarOpen(false);
+    }
+  }, [location.pathname]);
 
   return (
     <div className="min-h-screen bg-slate-50 text-slate-900">
       {/* Sidebar */}
+      <div className={`fixed inset-0 z-30 bg-slate-900/40 transition-opacity md:hidden ${sidebarOpen ? 'opacity-100 visible' : 'opacity-0 invisible'}`} onClick={() => setSidebarOpen(false)} />
       <aside className={`fixed inset-y-0 left-0 w-64 transform bg-white border-r border-slate-200 p-4 z-40 transition-transform ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'} md:translate-x-0`}>
         <div className="flex items-center justify-between mb-6">
           <div className="flex items-center gap-3">
@@ -60,10 +68,19 @@ export default function AppShell({ title, children }: AppShellProps) {
           {navItems.map((item) => {
             const Icon = item.icon;
             return (
-              <Link key={item.path} to={item.path} className="flex items-center gap-3 rounded-lg px-3 py-2 text-sm hover:bg-slate-100">
-                <Icon className="h-4 w-4 text-slate-600" />
-                <span className="text-slate-800">{item.label}</span>
-              </Link>
+              <NavLink
+                key={item.path}
+                to={item.path}
+                onClick={() => setSidebarOpen(false)}
+                className={({ isActive }) =>
+                  `flex items-center gap-3 rounded-lg px-3 py-2 text-sm transition ${
+                    isActive ? 'bg-violet-600 text-white' : 'text-slate-800 hover:bg-slate-100'
+                  }`
+                }
+              >
+                <Icon className="h-4 w-4" />
+                <span>{item.label}</span>
+              </NavLink>
             );
           })}
         </nav>
@@ -149,7 +166,7 @@ export default function AppShell({ title, children }: AppShellProps) {
         {navItems.map((item) => {
           const Icon = item.icon;
           return (
-            <Link key={item.path} to={item.path} className="flex flex-col items-center gap-1 text-xs hover:text-slate-900">
+            <Link key={item.path} to={item.path} onClick={() => setSidebarOpen(false)} className="flex flex-col items-center gap-1 text-xs hover:text-slate-900">
               <Icon className="h-5 w-5" />
               {item.label}
             </Link>

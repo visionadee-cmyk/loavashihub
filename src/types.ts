@@ -103,6 +103,35 @@ export interface DirectPurchase {
   date: string;
 }
 
+export interface CardPayment {
+  id: string;
+  type: string;
+  amount: number;
+}
+
+export interface DailyDirectRevenue {
+  id: string;
+  date: string;
+  closedBy: string;
+  cashCounts: {
+    fiftyLari: number;
+    oneRf: number;
+    twoRf: number;
+    note5: number;
+    note10: number;
+    note20: number;
+    note50: number;
+    note100: number;
+    note500: number;
+    note1000: number;
+  };
+  cardPayments: CardPayment[];
+  cashTotal: number;
+  cardTotal: number;
+  totalDirectRevenue: number;
+  createdAt: string;
+}
+
 export interface InventoryAdjustment {
   id: string;
   inventoryId: string;

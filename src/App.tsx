@@ -12,6 +12,7 @@ import ExpensesPage from './pages/ExpensesPage';
 import ReportsPage from './pages/ReportsPage';
 import PurchaseProductsPage from './pages/PurchaseProductsPage';
 import DirectPurchasePage from './pages/DirectPurchasePage';
+import DailyDirectRevenuePage from './pages/DailyDirectRevenuePage';
 import InventoryUpdatePage from './pages/InventoryUpdatePage';
 import RecipeManagement from './pages/RecipeManagement';
 import AssetManagement from './pages/AssetManagement';
@@ -133,6 +134,14 @@ function App() {
               element={
                 <ProtectedRoute allowedRoles={['admin']}>
                   <DirectPurchasePage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/admin/daily-direct-revenue"
+              element={
+                <ProtectedRoute allowedRoles={['admin']}>
+                  <DailyDirectRevenuePage />
                 </ProtectedRoute>
               }
             />

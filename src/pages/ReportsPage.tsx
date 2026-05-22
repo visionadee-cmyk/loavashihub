@@ -6,7 +6,7 @@ import AppShell from '../components/AppShell';
 import { demoMonthlySales, demoPaymentTypeBreakdown, demoProducts, demoExpenses } from '../data/demo';
 import { loadCollection } from '../lib/firestore';
 import { formatMVR } from '../lib/mvr';
-import type { Bill, Expense } from '../types';
+import type { Bill, DailyDirectRevenue, Expense } from '../types';
 
 const colors = ['#7c4b2e', '#05093f', '#4c3929'];
 
@@ -23,6 +23,7 @@ function formatMonthLabel(key: string) {
 export default function ReportsPage() {
   const [bills, setBills] = useState<Bill[]>([]);
   const [expenses, setExpenses] = useState<Expense[]>([]);
+  const [directRevenueEntries, setDirectRevenueEntries] = useState<DailyDirectRevenue[]>([]);
 
   useEffect(() => {
     loadCollection<Bill>('bills', [])
@@ -31,11 +32,19 @@ export default function ReportsPage() {
     loadCollection<Expense>('expenses', [])
       .then((items) => setExpenses(items))
       .catch(() => undefined);
+    loadCollection<DailyDirectRevenue>('dailyDirectRevenue', [])
+      .then((items) => setDirectRevenueEntries(items))
+      .catch(() => undefined);
   }, []);
 
   const totalSales = useMemo(
     () => bills.reduce((sum, bill) => sum + bill.items.reduce((itemSum, item) => itemSum + item.price * item.quantity, 0), 0),
     [bills],
+  );
+
+  const directRevenueTotal = useMemo(
+    () => directRevenueEntries.reduce((sum, entry) => sum + entry.totalDirectRevenue, 0),
+    [directRevenueEntries],
   );
 
   const totalExpenses = useMemo(
@@ -114,9 +123,10 @@ export default function ReportsPage() {
   return (
     <AppShell title="Reports & analytics">
       <div className="space-y-8">
-        <div className="grid gap-5 xl:grid-cols-3">
+        <div className="grid gap-5 xl:grid-cols-4">
           {[
-            { label: 'Total sales', value: formatMVR(totalSales || demoMonthlySales.reduce((total, item) => total + item.amount, 0)) },
+            { label: 'POS revenue', value: formatMVR(totalSales || demoMonthlySales.reduce((total, item) => total + item.amount, 0)) },
+            { label: 'Direct revenue', value: formatMVR(directRevenueTotal) },
             { label: 'Total expense', value: formatMVR(totalExpenses || demoExpenses.reduce((total, item) => total + item.amount, 0)) },
             { label: 'Profit', value: formatMVR((totalSales || demoMonthlySales.reduce((total, item) => total + item.amount, 0)) - (totalExpenses || demoExpenses.reduce((sum, item) => sum + item.amount, 0))) },
           ].map((card) => (

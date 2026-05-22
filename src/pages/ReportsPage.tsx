@@ -8,7 +8,7 @@ import { loadCollection } from '../lib/firestore';
 import { formatMVR } from '../lib/mvr';
 import type { Bill, Expense } from '../types';
 
-const colors = ['#8b5cf6', '#38bdf8', '#f97316'];
+const colors = ['#7c4b2e', '#05093f', '#4c3929'];
 
 function monthKey(dateString: string) {
   const date = new Date(dateString);
@@ -121,8 +121,8 @@ export default function ReportsPage() {
             { label: 'Profit', value: formatMVR((totalSales || demoMonthlySales.reduce((total, item) => total + item.amount, 0)) - (totalExpenses || demoExpenses.reduce((sum, item) => sum + item.amount, 0))) },
           ].map((card) => (
             <div key={card.label} className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm shadow-slate-300/20">
-              <p className="text-sm uppercase tracking-[0.24em] text-slate-500">{card.label}</p>
-              <p className="mt-4 text-3xl font-semibold text-slate-900">{card.value}</p>
+              <p className="text-sm uppercase tracking-[0.24em] text-[#05093f]">{card.label}</p>
+              <p className="mt-4 text-3xl font-semibold text-[#05093f]">{card.value}</p>
             </div>
           ))}
         </div>
@@ -132,12 +132,12 @@ export default function ReportsPage() {
             <div className="mb-4 flex items-center justify-between gap-3">
               <div>
                 <h3 className="text-lg font-semibold text-slate-900">Monthly revenue</h3>
-                <p className="text-sm text-slate-600">Comparison of sales across months.</p>
+                <p className="text-sm text-[#05093f]">Comparison of sales across months.</p>
               </div>
               <button
                 type="button"
                 onClick={exportXlsx}
-                className="inline-flex items-center gap-2 rounded-3xl bg-violet-600 px-4 py-3 text-sm font-semibold text-white hover:bg-violet-500"
+                className="inline-flex items-center gap-2 rounded-3xl bg-[#7c4b2e] px-4 py-3 text-sm font-semibold text-white hover:bg-[#6a4028]"
               >
                 Export Excel
               </button>
@@ -145,11 +145,11 @@ export default function ReportsPage() {
             <div className="h-72">
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart data={revenueByMonth} margin={{ top: 8, right: 0, left: -20, bottom: 0 }}>
-                  <CartesianGrid stroke="#cbd5e1" strokeDasharray="3 3" />
-                  <XAxis dataKey="name" tick={{ fill: '#475569' }} />
-                  <YAxis tick={{ fill: '#475569' }} />
-                  <Tooltip contentStyle={{ backgroundColor: '#ffffff', borderRadius: 16, border: '1px solid #cbd5e1', color: '#0f172a' }} />
-                  <Bar dataKey="revenue" fill="#8b5cf6" radius={[12, 12, 0, 0]} />
+                  <CartesianGrid stroke="rgba(5, 9, 63, 0.15)" strokeDasharray="3 3" />
+                  <XAxis dataKey="name" tick={{ fill: 'rgba(5, 9, 63, 0.7)' }} />
+                  <YAxis tick={{ fill: 'rgba(5, 9, 63, 0.7)' }} />
+                  <Tooltip contentStyle={{ backgroundColor: '#ffffff', borderRadius: 16, border: '1px solid rgba(5, 9, 63, 0.2)', color: '#05093f' }} />
+                  <Bar dataKey="revenue" fill="#7c4b2e" radius={[12, 12, 0, 0]} />
                 </BarChart>
               </ResponsiveContainer>
             </div>
@@ -157,7 +157,7 @@ export default function ReportsPage() {
 
           <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm shadow-slate-300/20">
             <h3 className="text-lg font-semibold text-slate-900">Payment types</h3>
-            <p className="text-sm text-slate-600">Revenue distribution by method.</p>
+            <p className="text-sm text-[#05093f]">Revenue distribution by method.</p>
             <div className="mt-8 h-72">
               <ResponsiveContainer width="100%" height="100%">
                 <PieChart>
@@ -181,9 +181,9 @@ export default function ReportsPage() {
                   <div className="flex items-center justify-between gap-4">
                     <div>
                       <p className="font-medium text-slate-900">{product.name}</p>
-                      <p className="text-sm text-slate-500">{product.category || 'POS item'}</p>
+                      <p className="text-sm text-[#05093f]">{product.category || 'POS item'}</p>
                     </div>
-                    <p className="text-sm font-semibold text-violet-600">{formatMVR(product.price)}</p>
+                    <p className="text-sm font-semibold text-[#05093f]">{formatMVR(product.price)}</p>
                   </div>
                 </div>
               ))}
@@ -192,24 +192,24 @@ export default function ReportsPage() {
 
           <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm shadow-slate-300/20">
             <h3 className="text-lg font-semibold text-slate-900">Expense summary</h3>
-            <p className="text-sm text-slate-600">Daily and monthly costs broken down.</p>
+            <p className="text-sm text-[#05093f]">Daily and monthly costs broken down.</p>
             <div className="mt-6 space-y-4">
               <div className="rounded-3xl border border-slate-200 bg-slate-50 p-4">
                 <div className="flex items-center justify-between">
-                  <span className="text-sm text-slate-500">Daily expense</span>
+                  <span className="text-sm text-[#05093f]">Daily expense</span>
                   <span className="font-semibold text-slate-900">{formatMVR(weeklyExpenses.reduce((sum, item) => sum + item.amount, 0))}</span>
                 </div>
               </div>
               <div className="rounded-3xl border border-slate-200 bg-slate-50 p-4">
                 <div className="flex items-center justify-between">
-                  <span className="text-sm text-slate-500">Monthly expense</span>
+                  <span className="text-sm text-[#05093f]">Monthly expense</span>
                   <span className="font-semibold text-slate-900">{formatMVR(weeklyExpenses.reduce((sum, item) => sum + item.amount, 0))}</span>
                 </div>
               </div>
               <div className="rounded-3xl border border-slate-200 bg-slate-50 p-4">
                 <div className="flex items-center justify-between">
-                  <span className="text-sm text-slate-500">Profit</span>
-                  <span className="font-semibold text-violet-600">{formatMVR(profit)}</span>
+                  <span className="text-sm text-[#05093f]">Profit</span>
+                  <span className="font-semibold text-[#7c4b2e]">{formatMVR(profit)}</span>
                 </div>
               </div>
             </div>

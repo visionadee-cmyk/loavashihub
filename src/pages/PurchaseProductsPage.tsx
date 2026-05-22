@@ -47,8 +47,9 @@ export default function PurchaseProductsPage() {
   const [rfqItems, setRfqItems] = useState<RFQItem[]>([]);
   const [rfqForm, setRfqForm] = useState<Partial<RFQItem>>({ productName: '', quantity: 1, unit: 'pcs' });
 
-  const rfqProductExists = rfqForm.productName?.trim()
-    ? products.some((product) => product.name.toLowerCase() === rfqForm.productName.trim().toLowerCase())
+  const rfqProductName = rfqForm.productName?.trim();
+  const rfqProductExists = rfqProductName
+    ? products.some((product) => product.name.toLowerCase() === rfqProductName.toLowerCase())
     : false;
 
   const createRfqInventoryItem = () => {

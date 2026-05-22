@@ -6,7 +6,7 @@ import { loadCollection, saveDocument } from '../lib/firestore';
 import { formatMVR } from '../lib/mvr';
 import type { Bill, MenuItem, InventoryItem, PurchaseOrder } from '../types';
 
-const paymentColors = ['#8b5cf6', '#38bdf8', '#f97316'];
+const paymentColors = ['#7c4b2e', '#05093f', '#7c4b2e'];
 
 export default function AdminDashboard() {
   const [products, setProducts] = useState<MenuItem[]>([]);
@@ -135,7 +135,7 @@ export default function AdminDashboard() {
 
   return (
     <AppShell title="Dashboard">
-      <div className="space-y-8">
+      <div className="space-y-8 text-[#05093f]">
         <div className="grid gap-5 xl:grid-cols-4">
           {[
             { label: "Today's sales", value: formatMVR(todaySales) },
@@ -149,8 +149,8 @@ export default function AdminDashboard() {
               animate={{ opacity: 1, y: 0 }}
               className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm"
             >
-              <p className="text-sm uppercase tracking-[0.24em] text-slate-500">{metric.label}</p>
-              <p className="mt-3 text-3xl font-semibold text-slate-900">{metric.value}</p>
+              <p className="text-sm uppercase tracking-[0.24em] text-[#05093f]">{metric.label}</p>
+              <p className="mt-3 text-3xl font-semibold text-[#05093f]">{metric.value}</p>
             </motion.div>
           ))}
         </div>
@@ -163,19 +163,19 @@ export default function AdminDashboard() {
           >
             <div className="mb-4 flex items-center justify-between">
               <div>
-                <h3 className="text-lg font-semibold text-slate-900">Daily sales</h3>
-                <p className="text-sm text-slate-500">Sales by day for the current week.</p>
+                <h3 className="text-lg font-semibold text-[#05093f]">Daily sales</h3>
+                <p className="text-sm text-[#05093f]">Sales by day for the current week.</p>
               </div>
             </div>
 
             <div className="h-72">
               <ResponsiveContainer width="100%" height="100%">
                 <LineChart data={dailySales} margin={{ top: 10, right: 0, left: -20, bottom: 0 }}>
-                  <CartesianGrid stroke="#334155" strokeDasharray="3 3" />
-                  <XAxis dataKey="day" tick={{ fill: '#94a3b8' }} />
-                  <YAxis tick={{ fill: '#94a3b8' }} />
-                  <Tooltip contentStyle={{ backgroundColor: '#0f172a', borderRadius: 16, border: '1px solid #334155' }} />
-                  <Line type="monotone" dataKey="amount" stroke="#a78bfa" strokeWidth={4} dot={{ r: 3 }} />
+                  <CartesianGrid stroke="rgba(5, 9, 63, 0.15)" strokeDasharray="3 3" />
+                  <XAxis dataKey="day" tick={{ fill: 'rgba(5, 9, 63, 0.7)' }} />
+                  <YAxis tick={{ fill: 'rgba(5, 9, 63, 0.7)' }} />
+                  <Tooltip contentStyle={{ backgroundColor: '#ffffff', borderRadius: 16, border: '1px solid rgba(5, 9, 63, 0.2)', color: '#05093f' }} />
+                  <Line type="monotone" dataKey="amount" stroke="#7c4b2e" strokeWidth={4} dot={{ r: 3 }} />
                 </LineChart>
               </ResponsiveContainer>
             </div>
@@ -187,8 +187,8 @@ export default function AdminDashboard() {
             className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm"
           >
             <div className="mb-4">
-              <h3 className="text-lg font-semibold text-slate-900">Payment breakdown</h3>
-              <p className="text-sm text-slate-500">Cash, card and bank transfer mix.</p>
+              <h3 className="text-lg font-semibold text-[#05093f]">Payment breakdown</h3>
+              <p className="text-sm text-[#05093f]">Cash, card and bank transfer mix.</p>
             </div>
             <div className="h-72">
               <ResponsiveContainer width="100%" height="100%">
@@ -198,7 +198,7 @@ export default function AdminDashboard() {
                       <Cell key={entry.method} fill={paymentColors[index % paymentColors.length]} />
                     ))}
                   </Pie>
-                  <Legend verticalAlign="bottom" align="center" wrapperStyle={{ color: '#cbd5e1' }} />
+                  <Legend verticalAlign="bottom" align="center" wrapperStyle={{ color: '#05093f' }} />
                 </PieChart>
               </ResponsiveContainer>
             </div>
@@ -211,15 +211,15 @@ export default function AdminDashboard() {
             animate={{ opacity: 1, y: 0 }}
             className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm"
           >
-            <h3 className="text-lg font-semibold text-slate-900">Top selling items</h3>
+            <h3 className="text-lg font-semibold text-[#05093f]">Top selling items</h3>
             <div className="mt-5 space-y-4">
               {topItems.map((item) => (
-                <div key={item.id} className="flex items-center justify-between rounded-3xl border border-slate-200 bg-slate-50 px-4 py-4">
+                <div key={item.id} className="flex items-center justify-between rounded-3xl border border-slate-200 bg-white px-4 py-4 shadow-sm">
                   <div>
-                    <p className="font-medium text-slate-900">{item.name}</p>
-                    <p className="text-sm text-slate-500">{item.category}</p>
+                    <p className="font-medium text-[#05093f]">{item.name}</p>
+                    <p className="text-sm text-[#05093f]">{item.category}</p>
                   </div>
-                  <p className="text-sm font-semibold text-violet-600">{formatMVR(item.price)}</p>
+                  <p className="text-sm font-semibold text-[#05093f]">{formatMVR(item.price)}</p>
                 </div>
               ))}
             </div>
@@ -232,25 +232,25 @@ export default function AdminDashboard() {
           >
             <div className="mb-5 flex items-center justify-between">
               <div>
-                <h3 className="text-lg font-semibold text-slate-900">Inventory alerts</h3>
-                <p className="text-sm text-slate-500">Low stock items to restock.</p>
+                <h3 className="text-lg font-semibold text-[#05093f]">Inventory alerts</h3>
+                <p className="text-sm text-[#05093f]">Low stock items to restock.</p>
               </div>
             </div>
             <div className="space-y-4">
               {lowStockAlerts.length ? (
                 lowStockAlerts.map((item) => (
-                  <div key={item.id} className="rounded-3xl border border-slate-200 bg-slate-50 px-4 py-4">
+                  <div key={item.id} className="rounded-3xl border border-slate-200 bg-white px-4 py-4 shadow-sm">
                     <div className="flex items-center justify-between gap-4">
                       <div>
-                        <p className="font-medium text-slate-900">{item.name}</p>
-                        <p className="text-sm text-slate-500">Only {item.quantity} {item.unit} remaining</p>
+                        <p className="font-medium text-[#05093f]">{item.name}</p>
+                        <p className="text-sm text-[#05093f]">Only {item.quantity} {item.unit} remaining</p>
                       </div>
-                      <span className="rounded-2xl bg-rose-100 px-3 py-1 text-xs uppercase tracking-[0.24em] text-rose-700">Low stock</span>
+                      <span className="rounded-2xl bg-[#7c4b2e] px-3 py-1 text-xs uppercase tracking-[0.24em] text-white">Low stock</span>
                     </div>
                   </div>
                 ))
               ) : (
-                <p className="text-sm text-slate-500">All inventory looks healthy.</p>
+                <p className="text-sm text-[#05093f]">All inventory looks healthy.</p>
               )}
             </div>
           </motion.section>
@@ -263,24 +263,24 @@ export default function AdminDashboard() {
         >
           <div className="mb-4 flex items-center justify-between">
             <div>
-              <h3 className="text-lg font-semibold text-slate-900">Menu items</h3>
-              <p className="text-sm text-slate-500">All products currently available in the menu.</p>
+              <h3 className="text-lg font-semibold text-[#05093f]">Menu items</h3>
+              <p className="text-sm text-[#05093f]">All products currently available in the menu.</p>
             </div>
-            <span className="rounded-full bg-slate-100 px-3 py-1 text-xs uppercase tracking-[0.24em] text-slate-700">{products.length} items</span>
+            <span className="rounded-full bg-slate-100 px-3 py-1 text-xs uppercase tracking-[0.24em] text-[#05093f]">{products.length} items</span>
           </div>
           <div className="grid gap-3">
             {products.length > 0 ? (
               products.map((product) => (
                 <div key={product.id} className="flex items-center justify-between rounded-3xl border border-slate-200 bg-slate-50 px-4 py-4">
                   <div>
-                    <p className="font-medium text-slate-900">{product.name}</p>
-                    <p className="text-sm text-slate-500">{product.category}</p>
+                    <p className="font-medium text-[#05093f]">{product.name}</p>
+                    <p className="text-sm text-[#05093f]">{product.category}</p>
                   </div>
-                  <p className="text-sm font-semibold text-violet-600">{formatMVR(product.price)}</p>
+                  <p className="text-sm font-semibold text-[#05093f]">{formatMVR(product.price)}</p>
                 </div>
               ))
             ) : (
-              <p className="text-sm text-slate-500">No menu items available yet.</p>
+              <p className="text-sm text-[#05093f]">No menu items available yet.</p>
             )}
           </div>
         </motion.section>
@@ -292,18 +292,18 @@ export default function AdminDashboard() {
         >
           <div className="mb-4 flex items-center justify-between">
             <div>
-              <h3 className="text-lg font-semibold text-slate-900">Monthly sales comparison</h3>
-              <p className="text-sm text-slate-500">Performance for the last five months.</p>
+              <h3 className="text-lg font-semibold text-[#05093f]">Monthly sales comparison</h3>
+              <p className="text-sm text-[#05093f]">Performance for the last five months.</p>
             </div>
           </div>
           <div className="h-72">
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={monthlySales} margin={{ top: 10, right: 0, left: -20, bottom: 0 }}>
-                <CartesianGrid stroke="#cbd5e1" strokeDasharray="3 3" />
-                <XAxis dataKey="day" tick={{ fill: '#64748b' }} />
-                <YAxis tick={{ fill: '#64748b' }} />
-                <Tooltip contentStyle={{ backgroundColor: '#ffffff', color: '#0f172a', borderRadius: 16, border: '1px solid #cbd5e1' }} />
-                <Bar dataKey="amount" fill="#8b5cf6" radius={[12, 12, 0, 0]} />
+                <CartesianGrid stroke="rgba(5, 9, 63, 0.15)" strokeDasharray="3 3" />
+                <XAxis dataKey="day" tick={{ fill: 'rgba(5, 9, 63, 0.7)' }} />
+                <YAxis tick={{ fill: 'rgba(5, 9, 63, 0.7)' }} />
+                <Tooltip contentStyle={{ backgroundColor: '#ffffff', color: '#05093f', borderRadius: 16, border: '1px solid rgba(5, 9, 63, 0.2)' }} />
+                <Bar dataKey="amount" fill="#7c4b2e" radius={[12, 12, 0, 0]} />
               </BarChart>
             </ResponsiveContainer>
           </div>

@@ -1,8 +1,12 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" fill="none">
-  <rect width="256" height="256" rx="48" fill="#0f172a" />
-  <path d="M72 152c24 0 24-48 0-48" stroke="#8b5cf6" stroke-width="18" stroke-linecap="round" />
-  <path d="M184 152c-24 0-24-48 0-48" stroke="#38bdf8" stroke-width="18" stroke-linecap="round" />
-  <path d="M72 120h112" stroke="#a78bfa" stroke-width="18" stroke-linecap="round" />
-  <circle cx="128" cy="128" r="28" fill="#7c3aed" />
-  <path d="M92 84h72v20H92z" fill="#0f172a" />
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-labelledby="title desc">
+  <title id="title">Loavashi Hub icon</title>
+  <desc id="desc">App icon badge with coffee cup icon.</desc>
+  <rect width="512" height="512" fill="none" />
+  <circle cx="256" cy="256" r="240" fill="#ffffff" stroke="#0d1a3b" stroke-width="28" />
+  <circle cx="256" cy="256" r="190" fill="#7c4b2e" />
+  <path d="M140 270 C140 230 170 210 256 210 H316 C402 210 432 230 432 270 V285 C432 320 402 330 316 330 H256 C170 330 140 320 140 285 Z" fill="#ffffff" stroke="#0d1a3b" stroke-width="14" stroke-linejoin="round" />
+  <path d="M276 220 C276 200 295 180 320 180" fill="none" stroke="#ffffff" stroke-width="14" stroke-linecap="round" />
+  <path d="M205 190 C205 170 225 150 245 150 C265 150 285 170 285 190" fill="none" stroke="#ffffff" stroke-width="14" stroke-linecap="round" />
+  <path d="M335 240 C345 220 365 210 375 210" fill="none" stroke="#ffffff" stroke-width="14" stroke-linecap="round" />
+  <ellipse cx="256" cy="325" rx="100" ry="20" fill="#ffffff" stroke="#0d1a3b" stroke-width="12" />
 </svg>

@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 280" role="img" aria-labelledby="title desc">
+  <title id="title">Loavashi Hub horizontal logo</title>
+  <desc id="desc">Horizontal brand lockup for Loavashi Hub with badge, name, and tagline.</desc>
+  <rect width="960" height="280" fill="none" />
+  <g transform="translate(80 40)">
+    <circle cx="120" cy="120" r="120" fill="#ffffff" stroke="#0d1a3b" stroke-width="20" />
+    <circle cx="120" cy="120" r="100" fill="#7c4b2e" />
+    <path d="M40 140 C40 100 70 80 120 80 H180 C230 80 260 100 260 140 V155 C260 190 230 200 180 200 H120 C70 200 40 190 40 155 Z" fill="#ffffff" stroke="#0d1a3b" stroke-width="12" stroke-linejoin="round" />
+    <path d="M150 120 C150 100 165 80 185 80" fill="none" stroke="#ffffff" stroke-width="12" stroke-linecap="round" />
+    <path d="M95 90 C95 70 115 50 135 50 C155 50 175 70 175 90" fill="none" stroke="#ffffff" stroke-width="12" stroke-linecap="round" />
+    <path d="M210 140 C220 120 235 110 245 110" fill="none" stroke="#ffffff" stroke-width="12" stroke-linecap="round" />
+    <ellipse cx="120" cy="210" rx="70" ry="14" fill="#ffffff" stroke="#0d1a3b" stroke-width="10" />
+  </g>
+  <g transform="translate(300 80)">
+    <text x="0" y="70" fill="#0d1a3b" font-family="Inter, sans-serif" font-size="72" font-weight="800" letter-spacing="2">LOAVASHI</text>
+    <text x="0" y="138" fill="#0d1a3b" font-family="Inter, sans-serif" font-size="56" font-weight="800" letter-spacing="2">HUB</text>
+    <text x="0" y="200" fill="#7c4b2e" font-family="Inter, sans-serif" font-size="24" font-weight="600" letter-spacing="1.8">Taste of All Times</text>
+  </g>
+</svg>

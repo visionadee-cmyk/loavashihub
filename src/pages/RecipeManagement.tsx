@@ -3,6 +3,7 @@ import { Plus, RefreshCcw, Zap } from 'lucide-react';
 import AppShell from '../components/AppShell';
 import { hasFirebaseConfig } from '../lib/firebase';
 import { loadCollection, saveDocument } from '../lib/firestore';
+import { generateMenuItemId } from '../lib/ids';
 
 import { useInventory } from '../context/InventoryContext';
 import type { MenuItem, Recipe, RecipeIngredient } from '../types';

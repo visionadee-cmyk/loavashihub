@@ -72,12 +72,12 @@ export default function AppShell({ title, children }: AppShellProps) {
                 to={item.path}
                 onClick={() => setSidebarOpen(false)}
                 className={({ isActive }) =>
-                  `flex items-center gap-3 rounded-lg px-3 py-2 text-sm transition ${
-                    isActive ? 'bg-violet-600 text-white' : 'text-slate-800 hover:bg-slate-100'
+                  `group flex items-center gap-3 rounded-lg px-3 py-2 text-sm transition ${
+                    isActive ? 'bg-slate-200 text-white' : 'text-[#05093f] hover:bg-slate-100'
                   }`
                 }
               >
-                <Icon className="h-4 w-4" />
+                <Icon className="h-4 w-4 text-current" />
                 <span>{item.label}</span>
               </NavLink>
             );
@@ -139,14 +139,23 @@ export default function AppShell({ title, children }: AppShellProps) {
         </footer>
       </div>
 
-      <nav className="fixed bottom-0 left-0 right-0 z-20 mx-auto flex max-w-4xl items-center justify-around bg-white px-4 py-3 text-slate-700 shadow-t md:hidden">
+      <nav className="fixed bottom-0 left-0 right-0 z-20 mx-auto flex max-w-4xl items-center justify-around bg-white px-4 py-3 shadow-t md:hidden">
         {navItems.map((item) => {
           const Icon = item.icon;
           return (
-            <Link key={item.path} to={item.path} onClick={() => setSidebarOpen(false)} className="flex flex-col items-center gap-1 text-xs hover:text-slate-900">
-              <Icon className="h-5 w-5" />
-              {item.label}
-            </Link>
+            <NavLink
+              key={item.path}
+              to={item.path}
+              onClick={() => setSidebarOpen(false)}
+              className={({ isActive }) =>
+                `flex flex-col items-center gap-1 text-xs transition ${
+                  isActive ? 'text-slate-200' : 'text-[#05093f] hover:text-[#05093f]/80'
+                }`
+              }
+            >
+              <Icon className="h-5 w-5 text-current" />
+              <span>{item.label}</span>
+            </NavLink>
           );
         })}
       </nav>

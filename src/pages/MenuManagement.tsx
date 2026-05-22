@@ -19,8 +19,10 @@ const initialForm: Partial<MenuItem> = {
 
 export default function MenuManagement() {
   const [products, setProducts] = useState<MenuItem[]>([]);
-  const [form, setForm] = useState<Partial<MenuItem>>(initialForm);
+  const [addForm, setAddForm] = useState<Partial<MenuItem>>(initialForm);
+  const [editForm, setEditForm] = useState<Partial<MenuItem>>(initialForm);
   const [editingId, setEditingId] = useState<string | null>(null);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const [uploadError, setUploadError] = useState<string | null>(null);
   const [saveError, setSaveError] = useState<string | null>(null);
@@ -61,7 +63,10 @@ export default function MenuManagement() {
       .finally(() => setLoading(false));
   }, []);
 
-  const handleImageUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+  const handleImageUpload = async (
+    event: React.ChangeEvent<HTMLInputElement>,
+    setter: React.Dispatch<React.SetStateAction<Partial<MenuItem>>>,
+  ) => {
     if (!isCloudinaryEnabled) {
       setUploadError('Cloudinary upload preset is not configured. Set VITE_CLOUDINARY_UPLOAD_PRESET in your .env or Vercel environment variables.');
       return;
@@ -76,31 +81,26 @@ export default function MenuManagement() {
 
     try {
       const imageUrl = await uploadImageToCloudinary(file);
-      setForm((current) => ({ ...current, image: imageUrl }));
+      setter((current) => ({ ...current, image: imageUrl }));
     } catch (error) {
       setUploadError((error as Error).message);
     }
   };
 
-  const handleSave = async () => {
-    const id = editingId ?? generateMenuItemId();
+  const handleAdd = async () => {
+    const id = generateMenuItemId();
     const payload: MenuItem = {
       id,
-      menuItemId: editingId ? form.menuItemId || id : id,
-      name: form.name?.trim() || 'New item',
-      category: form.category || 'Others',
-      price: Number(form.price) || 0,
-      costPrice: Number(form.costPrice) || 0,
-      description: form.description || 'Fresh product.',
-      image: form.image ?? initialForm.image ?? '',
+      menuItemId: id,
+      name: addForm.name?.trim() || 'New item',
+      category: addForm.category || 'Others',
+      price: Number(addForm.price) || 0,
+      costPrice: Number(addForm.costPrice) || 0,
+      description: addForm.description || 'Fresh product.',
+      image: addForm.image ?? initialForm.image ?? '',
     };
 
-    if (editingId) {
-      setProducts((current) => current.map((item) => (item.id === editingId ? payload : item)));
-      setEditingId(null);
-    } else {
-      setProducts((current) => [payload, ...current]);
-    }
+    setProducts((current) => [payload, ...current]);
 
     if (hasFirebaseConfig) {
       try {
@@ -113,12 +113,55 @@ export default function MenuManagement() {
       setSaveError('Firebase is not configured for this deployment. Menu items will not persist to Firestore.');
     }
 
-    setForm(initialForm);
+    setAddForm(initialForm);
+  };
+
+  const handleEditSave = async () => {
+    if (!editingId) {
+      return;
+    }
+
+    const payload: MenuItem = {
+      id: editingId,
+      menuItemId: editForm.menuItemId || editingId,
+      name: editForm.name?.trim() || 'Updated item',
+      category: editForm.category || 'Others',
+      price: Number(editForm.price) || 0,
+      costPrice: Number(editForm.costPrice) || 0,
+      description: editForm.description || 'Fresh product.',
+      image: editForm.image ?? initialForm.image ?? '',
+    };
+
+    setProducts((current) => current.map((item) => (item.id === editingId ? payload : item)));
+    setEditingId(null);
+    setIsEditModalOpen(false);
+
+    if (hasFirebaseConfig) {
+      try {
+        await saveDocument('menuItems', payload.id, payload);
+      } catch (error) {
+        console.error('Failed to save menu item to Firestore:', error);
+        setSaveError('Failed to save menu item to Firestore. Check deployment logs.');
+      }
+    } else {
+      setSaveError('Firebase is not configured for this deployment. Menu items will not persist to Firestore.');
+    }
+
+    setEditForm(initialForm);
   };
 
   const startEdit = (item: MenuItem) => {
     setEditingId(item.id);
-    setForm(item);
+    setEditForm(item);
+    setIsEditModalOpen(true);
+  };
+
+  const closeEditModal = () => {
+    setEditingId(null);
+    setEditForm(initialForm);
+    setIsEditModalOpen(false);
+    setSaveError(null);
+    setUploadError(null);
   };
 
   const removeItem = async (id: string) => {
@@ -143,12 +186,12 @@ export default function MenuManagement() {
                 <p className="text-sm text-slate-600">Configure categories, prices in MVR and item descriptions.</p>
               </div>
               <button
-                onClick={handleSave}
+                onClick={handleAdd}
                 disabled={loading}
                 className="inline-flex items-center gap-2 rounded-3xl bg-violet-600 px-4 py-3 text-sm font-semibold text-white hover:bg-violet-500 disabled:cursor-not-allowed disabled:opacity-50"
               >
                 <Check className="h-4 w-4" />
-                {editingId ? 'Save item' : 'Add item'}
+                Add item
               </button>
             </div>
             {firebaseMissing ? (
@@ -167,8 +210,8 @@ export default function MenuManagement() {
             <label className="block text-sm text-slate-600">
               Item name
               <input
-                value={form.name}
-                onChange={(event) => setForm((current) => ({ ...current, name: event.target.value }))}
+                value={addForm.name}
+                onChange={(event) => setAddForm((current) => ({ ...current, name: event.target.value }))}
                 className="mt-2 w-full rounded-3xl border border-slate-300 bg-white px-4 py-3 text-slate-900 outline-none"
                 placeholder="Espresso, Burger, Juice"
               />
@@ -177,8 +220,8 @@ export default function MenuManagement() {
               <label className="block text-sm text-slate-600">
                 Category
                 <select
-                  value={form.category}
-                  onChange={(event) => setForm((current) => ({ ...current, category: event.target.value }))}
+                  value={addForm.category}
+                  onChange={(event) => setAddForm((current) => ({ ...current, category: event.target.value }))}
                   className="mt-2 w-full rounded-3xl border border-slate-300 bg-white px-4 py-3 text-slate-900 outline-none"
                 >
                   {categoryOptions.map((category) => (
@@ -190,8 +233,8 @@ export default function MenuManagement() {
                 Cost price (MVR)
                 <input
                   type="number"
-                  value={form.costPrice}
-                  onChange={(event) => setForm((current) => ({ ...current, costPrice: Number(event.target.value) }))}
+                  value={addForm.costPrice}
+                  onChange={(event) => setAddForm((current) => ({ ...current, costPrice: Number(event.target.value) }))}
                   className="mt-2 w-full rounded-3xl border border-slate-300 bg-white px-4 py-3 text-slate-900 outline-none"
                   placeholder="0"
                 />
@@ -200,8 +243,8 @@ export default function MenuManagement() {
                 Selling price (MVR)
                 <input
                   type="number"
-                  value={form.price}
-                  onChange={(event) => setForm((current) => ({ ...current, price: Number(event.target.value) }))}
+                  value={addForm.price}
+                  onChange={(event) => setAddForm((current) => ({ ...current, price: Number(event.target.value) }))}
                   className="mt-2 w-full rounded-3xl border border-slate-300 bg-white px-4 py-3 text-slate-900 outline-none"
                   placeholder="25"
                 />
@@ -210,8 +253,8 @@ export default function MenuManagement() {
             <label className="block text-sm text-slate-600">
               Description
               <textarea
-                value={form.description}
-                onChange={(event) => setForm((current) => ({ ...current, description: event.target.value }))}
+                value={addForm.description}
+                onChange={(event) => setAddForm((current) => ({ ...current, description: event.target.value }))}
                 className="mt-2 h-28 w-full rounded-3xl border border-slate-300 bg-white px-4 py-3 text-slate-900 outline-none"
                 placeholder="A delicious new menu item"
               />
@@ -219,8 +262,8 @@ export default function MenuManagement() {
             <label className="block text-sm text-slate-600">
               Image URL
               <input
-                value={form.image}
-                onChange={(event) => setForm((current) => ({ ...current, image: event.target.value }))}
+                value={addForm.image}
+                onChange={(event) => setAddForm((current) => ({ ...current, image: event.target.value }))}
                 className="mt-2 w-full rounded-3xl border border-slate-300 bg-white px-4 py-3 text-slate-900 outline-none"
                 placeholder="https://..."
               />
@@ -231,7 +274,7 @@ export default function MenuManagement() {
                 type="file"
                 accept="image/*"
                 capture="environment"
-                onChange={handleImageUpload}
+                onChange={(event) => handleImageUpload(event, setAddForm)}
                 disabled={!isCloudinaryEnabled}
                 className="mt-2 w-full rounded-3xl border border-slate-300 bg-white px-4 py-3 text-slate-900 outline-none disabled:cursor-not-allowed disabled:opacity-50"
               />
@@ -242,9 +285,9 @@ export default function MenuManagement() {
             ) : (
               <p className="text-sm text-amber-400">Cloudinary upload preset is not configured. Set <code>VITE_CLOUDINARY_UPLOAD_PRESET</code> in your local .env or in Vercel environment variables.</p>
             )}
-            {form.image ? (
+            {addForm.image ? (
               <div className="mt-4 max-w-md overflow-hidden rounded-3xl border border-slate-300 bg-slate-100">
-                <img src={form.image} alt="Preview" className="h-48 w-full object-cover" />
+                <img src={addForm.image} alt="Preview" className="h-48 w-full object-cover" />
               </div>
             ) : null}
           </div>
@@ -343,6 +386,120 @@ export default function MenuManagement() {
           </div>
         </section>
       </div>
+
+      {isEditModalOpen ? (
+        <div className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-slate-950/70 p-4 pt-8 sm:items-center">
+          <div className="w-full max-w-3xl max-h-[calc(100vh-5rem)] overflow-y-auto rounded-3xl bg-white p-6 shadow-2xl shadow-slate-900/40">
+            <div className="mb-5 flex items-center justify-between gap-4 border-b border-slate-200 pb-4">
+              <div>
+                <h3 className="text-xl font-semibold text-slate-900">Edit menu item</h3>
+                <p className="text-sm text-slate-600">Update the item details and save to close the popup.</p>
+              </div>
+              <button type="button" onClick={closeEditModal} className="rounded-full bg-slate-100 p-2 text-slate-700 hover:bg-slate-200">
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+
+            <div className="grid gap-4">
+              <label className="block text-sm text-slate-600">
+                Item name
+                <input
+                  value={editForm.name}
+                  onChange={(event) => setEditForm((current) => ({ ...current, name: event.target.value }))}
+                  className="mt-2 w-full rounded-3xl border border-slate-300 bg-slate-100 px-4 py-3 text-slate-900 outline-none"
+                  placeholder="Espresso, Burger, Juice"
+                />
+              </label>
+              <div className="grid gap-4 sm:grid-cols-3">
+                <label className="block text-sm text-slate-600">
+                  Category
+                  <select
+                    value={editForm.category}
+                    onChange={(event) => setEditForm((current) => ({ ...current, category: event.target.value }))}
+                    className="mt-2 w-full rounded-3xl border border-slate-300 bg-slate-100 px-4 py-3 text-slate-900 outline-none"
+                  >
+                    {categoryOptions.map((category) => (
+                      <option key={category} value={category}>{category}</option>
+                    ))}
+                  </select>
+                </label>
+                <label className="block text-sm text-slate-600">
+                  Cost price (MVR)
+                  <input
+                    type="number"
+                    value={editForm.costPrice}
+                    onChange={(event) => setEditForm((current) => ({ ...current, costPrice: Number(event.target.value) }))}
+                    className="mt-2 w-full rounded-3xl border border-slate-300 bg-slate-100 px-4 py-3 text-slate-900 outline-none"
+                    placeholder="0"
+                  />
+                </label>
+                <label className="block text-sm text-slate-600">
+                  Selling price (MVR)
+                  <input
+                    type="number"
+                    value={editForm.price}
+                    onChange={(event) => setEditForm((current) => ({ ...current, price: Number(event.target.value) }))}
+                    className="mt-2 w-full rounded-3xl border border-slate-300 bg-slate-100 px-4 py-3 text-slate-900 outline-none"
+                    placeholder="25"
+                  />
+                </label>
+              </div>
+              <label className="block text-sm text-slate-600">
+                Description
+                <textarea
+                  value={editForm.description}
+                  onChange={(event) => setEditForm((current) => ({ ...current, description: event.target.value }))}
+                  className="mt-2 h-28 w-full rounded-3xl border border-slate-300 bg-slate-100 px-4 py-3 text-slate-900 outline-none"
+                  placeholder="A delicious new menu item"
+                />
+              </label>
+              <label className="block text-sm text-slate-600">
+                Image URL
+                <input
+                  value={editForm.image}
+                  onChange={(event) => setEditForm((current) => ({ ...current, image: event.target.value }))}
+                  className="mt-2 w-full rounded-3xl border border-slate-300 bg-slate-100 px-4 py-3 text-slate-900 outline-none"
+                  placeholder="https://..."
+                />
+              </label>
+              <label className="block text-sm text-slate-600">
+                Upload image
+                <input
+                  type="file"
+                  accept="image/*"
+                  capture="environment"
+                  onChange={(event) => handleImageUpload(event, setEditForm)}
+                  disabled={!isCloudinaryEnabled}
+                  className="mt-2 w-full rounded-3xl border border-slate-300 bg-slate-100 px-4 py-3 text-slate-900 outline-none disabled:cursor-not-allowed disabled:opacity-50"
+                />
+              </label>
+              {uploadError ? <p className="text-sm text-rose-400">Upload error: {uploadError}</p> : null}
+              {editForm.image ? (
+                <div className="mt-4 max-w-md overflow-hidden rounded-3xl border border-slate-300 bg-slate-100">
+                  <img src={editForm.image} alt="Preview" className="h-48 w-full object-cover" />
+                </div>
+              ) : null}
+            </div>
+
+            <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:justify-end">
+              <button
+                type="button"
+                onClick={closeEditModal}
+                className="inline-flex items-center justify-center rounded-3xl border border-slate-300 bg-white px-5 py-3 text-sm font-semibold text-slate-700 hover:bg-slate-100"
+              >
+                Close
+              </button>
+              <button
+                type="button"
+                onClick={handleEditSave}
+                className="inline-flex items-center justify-center rounded-3xl bg-violet-600 px-5 py-3 text-sm font-semibold text-white hover:bg-violet-500"
+              >
+                Save changes
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : null}
     </AppShell>
   );
 }

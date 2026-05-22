@@ -116,7 +116,7 @@ export default function BillDetailsPage() {
               <button
                 type="button"
                 onClick={printBill}
-                className="inline-flex items-center gap-2 rounded-[28px] bg-[#10B981] px-4 py-3 text-sm font-semibold text-white shadow-lg hover:bg-[#0f9b71]"
+                className="inline-flex items-center gap-2 rounded-[28px] bg-slate-900 px-4 py-3 text-sm font-semibold text-white shadow-lg hover:bg-slate-700"
               >
                 <Printer className="h-4 w-4" />
                 Print bill
@@ -125,7 +125,7 @@ export default function BillDetailsPage() {
                 <button
                   type="button"
                   onClick={openPaymentDialog}
-                  className="inline-flex items-center gap-2 rounded-[28px] bg-[#10B981] px-4 py-3 text-sm font-semibold text-white shadow-lg hover:bg-[#0f9b71]"
+                  className="inline-flex items-center gap-2 rounded-[28px] bg-slate-900 px-4 py-3 text-sm font-semibold text-white shadow-lg hover:bg-slate-700"
                 >
                   Proceed to payment
                 </button>
@@ -134,7 +134,7 @@ export default function BillDetailsPage() {
                 <button
                   type="button"
                   onClick={markServed}
-                  className="inline-flex items-center gap-2 rounded-[28px] bg-[#F27420] px-4 py-3 text-sm font-semibold text-white shadow-lg hover:bg-[#db6c1b]"
+                  className="inline-flex items-center gap-2 rounded-[28px] bg-slate-200 px-4 py-3 text-sm font-semibold text-white shadow-lg hover:bg-slate-300"
                 >
                   Mark served
                 </button>
@@ -143,7 +143,7 @@ export default function BillDetailsPage() {
           </div>
 
           {statusMessage ? (
-            <div className="rounded-[28px] border border-orange-200 bg-orange-50 px-4 py-3 text-sm text-orange-700">
+            <div className="rounded-[28px] border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-900">
               {statusMessage}
             </div>
           ) : null}
@@ -175,7 +175,7 @@ export default function BillDetailsPage() {
                           }}
                           className={`rounded-3xl border px-4 py-3 text-sm font-semibold transition ${
                             selectedPaymentMethod === method
-                              ? 'border-[#F27420] bg-[#FFF2EB] text-[#F27420] shadow-sm'
+                              ? 'border-slate-200 bg-slate-50 text-slate-900 shadow-sm'
                               : 'border-slate-200 bg-white text-slate-600 hover:bg-slate-100'
                           }`}
                         >
@@ -207,7 +207,7 @@ export default function BillDetailsPage() {
                         The selected payment method will be recorded as {selectedPaymentMethod}.
                       </p>
                     )}
-                    {paymentError ? <p className="text-sm text-rose-600">{paymentError}</p> : null}
+                    {paymentError ? <p className="text-sm text-slate-900">{paymentError}</p> : null}
                   </div>
 
                   <div className="flex flex-col gap-3 sm:flex-row sm:justify-end">
@@ -221,7 +221,7 @@ export default function BillDetailsPage() {
                     <button
                       type="button"
                       onClick={completePayment}
-                      className="inline-flex items-center justify-center rounded-[28px] bg-[#10B981] px-5 py-3 text-sm font-semibold text-white shadow-lg hover:bg-[#0f9b71]"
+                      className="inline-flex items-center justify-center rounded-[28px] bg-slate-900 px-5 py-3 text-sm font-semibold text-white shadow-lg hover:bg-slate-700"
                     >
                       Complete payment
                     </button>

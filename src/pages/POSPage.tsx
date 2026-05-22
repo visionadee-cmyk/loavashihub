@@ -361,7 +361,7 @@ export default function POSPage() {
     <AppShell title="Restro POS">
 
       <div className="mx-auto min-w-[1024px] max-w-[1700px] px-4 py-5 sm:px-6 lg:px-8">
-        <div className="grid min-h-[calc(100vh-160px)] grid-cols-[96px_minmax(0,1fr)_420px] gap-6 bg-[#F8F9FA] px-4 py-4 rounded-[32px] shadow-[0_20px_80px_rgba(31,41,55,0.08)]">
+        <div className="grid min-h-[calc(100vh-160px)] grid-cols-[96px_minmax(0,1fr)_420px] gap-6 bg-slate-50 px-4 py-4 rounded-[32px] shadow-[0_20px_80px_rgba(5,9,63,0.08)]">
           <aside className="flex h-full flex-col justify-between rounded-[32px] border border-slate-200 bg-white px-4 py-6 shadow-sm">
             <div className="space-y-10">
               <div>
@@ -378,7 +378,7 @@ export default function POSPage() {
                       className={({ isActive }) =>
                         `group flex w-full flex-col items-center gap-2 rounded-[24px] px-3 py-4 text-center transition ${
                           isActive
-                            ? 'border border-[#F27420]/20 bg-[#FFF2EB] text-[#F27420] shadow-sm'
+                            ? 'border border-slate-200 bg-slate-50 text-slate-900 shadow-sm'
                             : 'text-slate-500 hover:bg-slate-100 hover:text-slate-900'
                         }`
                       }
@@ -430,7 +430,7 @@ export default function POSPage() {
                   <button
                     type="button"
                     onClick={() => setTableMenuOpen((current) => !current)}
-                    className="inline-flex items-center gap-2 rounded-[28px] bg-[#F27420] px-4 py-3 text-sm font-semibold text-white shadow-lg shadow-[#F27420]/20 transition hover:bg-[#db6c1b]"
+                    className="inline-flex items-center gap-2 rounded-[28px] bg-slate-200 px-4 py-3 text-sm font-semibold text-slate-900 shadow-lg shadow-slate-900/20 transition hover:bg-slate-300"
                   >
                     <GridIcon className="h-4 w-4" />
                     Select Table
@@ -439,7 +439,7 @@ export default function POSPage() {
               </div>
 
               {statusMessage ? (
-                <div className="mt-4 rounded-3xl border border-orange-200 bg-orange-50 px-4 py-3 text-sm text-orange-700">
+                <div className="mt-4 rounded-3xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-900">
                   {statusMessage}
                 </div>
               ) : null}
@@ -481,7 +481,7 @@ export default function POSPage() {
                     onClick={() => setActiveCategory(tab)}
                     className={`rounded-full border px-4 py-2 text-sm font-semibold transition ${
                       isActive
-                        ? 'border-[#F27420] bg-[#FFF2EB] text-[#F27420] shadow-sm'
+                        ? 'border-slate-200 bg-slate-50 text-slate-900 shadow-sm'
                         : 'border-transparent bg-slate-100 text-slate-600 hover:bg-slate-200'
                     }`}
                   >
@@ -516,14 +516,14 @@ export default function POSPage() {
           </main>
 
           <aside className="flex flex-col gap-6 rounded-[32px] border border-slate-200 bg-white p-5 shadow-sm">
-            <div className="rounded-[32px] border border-slate-200 bg-[#F8F9FA] p-4">
+            <div className="rounded-[32px] border border-slate-200 bg-slate-50 p-4">
               <div className="flex flex-wrap items-center justify-between gap-3">
                 <button
                   type="button"
                   onClick={() => setCustomerPanelOpen((current) => !current)}
                   className="inline-flex items-center gap-2 rounded-[24px] border border-slate-200 bg-white px-4 py-3 text-sm font-semibold text-slate-700 shadow-sm hover:bg-slate-50"
                 >
-                  <Plus className="h-4 w-4 text-[#F27420]" />
+                  <Plus className="h-4 w-4 text-slate-900" />
                   Add Customer
                 </button>
                 <div className="flex items-center gap-2">
@@ -539,7 +539,7 @@ export default function POSPage() {
                     onClick={togglePaymentStatus}
                     className="inline-flex h-11 w-11 items-center justify-center rounded-2xl border border-slate-200 bg-white text-slate-700 shadow-sm hover:bg-slate-50"
                   >
-                    <span className="h-2.5 w-2.5 rounded-full bg-[#10B981]" />
+                    <span className="h-2.5 w-2.5 rounded-full bg-slate-900" />
                   </button>
                   <button
                     type="button"
@@ -610,7 +610,7 @@ export default function POSPage() {
                     <button
                       type="button"
                       onClick={addCustomer}
-                      className="inline-flex w-full items-center justify-center gap-2 rounded-[28px] bg-[#F27420] px-4 py-3 text-sm font-semibold text-white shadow-lg shadow-[#F27420]/20 hover:bg-[#db6c1b]"
+                      className="inline-flex w-full items-center justify-center gap-2 rounded-[28px] bg-slate-200 px-4 py-3 text-sm font-semibold text-slate-900 shadow-lg shadow-slate-900/20 hover:bg-slate-300"
                     >
                       Add customer
                     </button>
@@ -639,7 +639,7 @@ export default function POSPage() {
                     <button
                       type="button"
                       onClick={addCustomItem}
-                      className="inline-flex w-full items-center justify-center gap-2 rounded-[28px] bg-[#10B981] px-4 py-3 text-sm font-semibold text-white shadow-lg shadow-[#10B981]/20 hover:bg-[#0f9b71]"
+                      className="inline-flex w-full items-center justify-center gap-2 rounded-[28px] bg-slate-900 px-4 py-3 text-sm font-semibold text-white shadow-lg shadow-slate-900/20 hover:bg-slate-700"
                     >
                       Add custom item
                     </button>
@@ -654,7 +654,7 @@ export default function POSPage() {
                   <p className="text-sm font-semibold text-slate-900">Order summary</p>
                   <p className="text-sm text-slate-500">Review and manage items</p>
                 </div>
-                <span className="rounded-full bg-[#F8F9FA] px-3 py-2 text-xs font-semibold uppercase tracking-[0.24em] text-slate-500">{activeBill?.items.length ?? 0} items</span>
+                <span className="rounded-full bg-slate-50 px-3 py-2 text-xs font-semibold uppercase tracking-[0.24em] text-slate-500">{activeBill?.items.length ?? 0} items</span>
               </div>
 
               <div className="space-y-3 overflow-y-auto max-h-[320px] pr-1">
@@ -664,7 +664,7 @@ export default function POSPage() {
                     <div
                       key={item.id}
                       onClick={() => setActiveBillId(activeBill.id)}
-                      className={`cursor-pointer rounded-[28px] border p-4 ${isActive ? 'border-[#10B981] bg-[#F0FDF4]' : 'border-slate-200 bg-white'}`}
+                      className={`cursor-pointer rounded-[28px] border p-4 ${isActive ? 'border-slate-200 bg-slate-50' : 'border-slate-200 bg-white'}`}
                     >
                       <div className="flex items-center justify-between gap-3">
                         <div className="flex items-center gap-3">
@@ -719,7 +719,7 @@ export default function POSPage() {
               </div>
             </div>
 
-            <div className="rounded-[32px] border border-slate-200 bg-[#F8F9FA] p-4 shadow-sm">
+            <div className="rounded-[32px] border border-slate-200 bg-slate-50 p-4 shadow-sm">
               <div className="flex flex-wrap items-center gap-3">
                 {['Add', 'Discount', 'Coupon Code', 'Note'].map((action) => (
                   <button key={action} type="button" className="rounded-3xl border border-slate-200 bg-white px-4 py-3 text-sm font-semibold text-slate-700 shadow-sm hover:bg-slate-100">
@@ -747,11 +747,11 @@ export default function POSPage() {
             </div>
 
             <div className="grid gap-3 sm:grid-cols-2">
-              <button type="button" onClick={holdOrder} className="inline-flex items-center justify-center gap-2 rounded-[28px] bg-[#F27420]/10 px-5 py-4 text-sm font-semibold text-[#F27420] shadow-sm hover:bg-[#F27420]/15">
+              <button type="button" onClick={holdOrder} className="inline-flex items-center justify-center gap-2 rounded-[28px] bg-slate-200/10 px-5 py-4 text-sm font-semibold text-slate-900 shadow-sm hover:bg-slate-300/15">
                 <Pause className="h-4 w-4" />
                 Hold Order
               </button>
-              <button type="button" onClick={saveCurrentBill} className="inline-flex items-center justify-center gap-2 rounded-[28px] bg-[#10B981] px-5 py-4 text-sm font-semibold text-white shadow-lg hover:bg-[#0f9b71]">
+              <button type="button" onClick={saveCurrentBill} className="inline-flex items-center justify-center gap-2 rounded-[28px] bg-slate-900 px-5 py-4 text-sm font-semibold text-white shadow-lg hover:bg-slate-700">
                 Save order
                 <ArrowRight className="h-4 w-4" />
               </button>

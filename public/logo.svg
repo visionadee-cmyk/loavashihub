@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 500 500" role="img" aria-labelledby="title desc">
+  <title id="title">Loavashi Hub</title>
+  <desc id="desc">Premium cafe badge with coffee cup icon and tagline in navy, brown, and white.</desc>
+  <rect width="500" height="500" fill="none" />
+  <circle cx="250" cy="250" r="240" fill="none" stroke="#0d1a3b" stroke-width="24" />
+  <circle cx="250" cy="250" r="190" fill="#ffffff" />
+  <circle cx="250" cy="250" r="170" fill="#7c4b2e" />
+  <path d="M170 270 C170 230 195 210 250 210 H310 C365 210 390 230 390 270 V285 C390 320 365 330 310 330 H250 C195 330 170 320 170 285 Z" fill="#ffffff" stroke="#0d1a3b" stroke-width="12" stroke-linejoin="round" />
+  <path d="M270 220 C270 200 285 180 305 180" fill="none" stroke="#ffffff" stroke-width="12" stroke-linecap="round" />
+  <path d="M215 190 C215 170 235 150 255 150 C275 150 295 170 295 190" fill="none" stroke="#ffffff" stroke-width="12" stroke-linecap="round" />
+  <path d="M330 240 C340 220 355 210 365 210" fill="none" stroke="#ffffff" stroke-width="12" stroke-linecap="round" />
+  <ellipse cx="250" cy="325" rx="110" ry="22" fill="#ffffff" stroke="#0d1a3b" stroke-width="10" />
+  <text x="250" y="390" text-anchor="middle" fill="#ffffff" font-family="Inter, sans-serif" font-size="46" font-weight="700" letter-spacing="1.5">LOAVASHI</text>
+  <text x="250" y="438" text-anchor="middle" fill="#ffffff" font-family="Inter, sans-serif" font-size="34" font-weight="700" letter-spacing="2">HUB</text>
+  <text x="250" y="470" text-anchor="middle" fill="#ffffff" font-family="Inter, sans-serif" font-size="18" font-weight="600" letter-spacing="1.8">Taste of All Times</text>
+</svg>

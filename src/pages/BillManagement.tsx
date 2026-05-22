@@ -57,8 +57,8 @@ export default function BillManagement() {
               <div key={metric.label} className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
                 <div className="flex items-center justify-between gap-3">
                   <div>
-                    <p className="text-sm uppercase tracking-[0.24em] text-slate-500">{metric.label}</p>
-                    <p className="mt-3 text-3xl font-semibold text-slate-900">{metric.value}</p>
+                    <p className="text-sm uppercase tracking-[0.24em] text-[#05093f]">{metric.label}</p>
+                    <p className="mt-3 text-3xl font-semibold text-[#05093f]">{metric.value}</p>
                   </div>
                   <Icon className="h-7 w-7 text-violet-600" />
                 </div>
@@ -70,44 +70,44 @@ export default function BillManagement() {
         <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
           <div className="mb-4 flex items-center justify-between gap-3">
             <div>
-              <h3 className="text-lg font-semibold text-slate-900">Recent bills</h3>
-              <p className="text-sm text-slate-500">Review and manage POS invoices.</p>
+              <h3 className="text-lg font-semibold text-[#05093f]">Recent bills</h3>
+              <p className="text-sm text-[#05093f]">Review and manage POS invoices.</p>
             </div>
           </div>
           {loading ? (
-            <p className="text-slate-400">Loading bills…</p>
+            <p className="text-[#05093f]">Loading bills…</p>
           ) : billTotals.length ? (
             <div className="space-y-6">
               {openBills.length > 0 && (
                 <div className="space-y-4">
                   <div className="flex items-center justify-between gap-3">
-                    <h4 className="text-lg font-semibold text-slate-900">Open bills</h4>
-                    <span className="text-sm text-slate-500">Bills awaiting completion</span>
+                    <h4 className="text-lg font-semibold text-[#05093f]">Open bills</h4>
+                    <span className="text-sm text-[#05093f]">Bills awaiting completion</span>
                   </div>
                   {openBills.map((bill) => (
                     <div key={bill.id} className="rounded-3xl border border-slate-200 bg-slate-50 p-4">
                       <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
                         <div>
-                          <p className="font-semibold text-slate-900">{bill.billNumber ?? bill.title}</p>
-                          <p className="text-sm text-slate-500">{bill.table} • {bill.orderType} • {bill.createdAt.slice(0, 10)}</p>
+                      <p className="font-semibold text-[#05093f]">{bill.billNumber ?? bill.title}</p>
+                      <p className="text-sm text-[#05093f]">{bill.table} • {bill.orderType} • {bill.createdAt.slice(0, 10)}</p>
                         </div>
                         <div className="flex flex-wrap items-center gap-2">
-                          <span className="rounded-full bg-slate-100 px-3 py-1 text-xs uppercase tracking-[0.24em] text-slate-700">{bill.status}</span>
-                          <span className="rounded-full bg-slate-100 px-3 py-1 text-xs uppercase tracking-[0.24em] text-slate-700">{bill.paymentStatus}</span>
+                        <span className="rounded-full bg-slate-100 px-3 py-1 text-xs uppercase tracking-[0.24em] text-[#05093f]">{bill.status}</span>
+                        <span className="rounded-full bg-slate-100 px-3 py-1 text-xs uppercase tracking-[0.24em] text-[#05093f]">{bill.paymentStatus}</span>
                         </div>
                       </div>
                       <div className="grid gap-3 sm:grid-cols-[1fr_auto]">
                         <div className="space-y-2">
                           {bill.items.map((item) => (
-                            <div key={item.id} className="flex items-center justify-between rounded-3xl bg-slate-100 px-4 py-3 text-sm text-slate-700">
+                            <div key={item.id} className="flex items-center justify-between rounded-3xl bg-slate-100 px-4 py-3 text-sm text-[#05093f]">
                               <span>{item.quantity} x {item.name}</span>
                               <span>{formatMVR(item.price * item.quantity)}</span>
                             </div>
                           ))}
                         </div>
                         <div className="space-y-3 text-right">
-                          <p className="text-sm text-slate-400">Total</p>
-                          <p className="text-xl font-semibold text-slate-900">
+                          <p className="text-sm text-[#05093f]">Total</p>
+                          <p className="text-xl font-semibold text-[#05093f]">
                             {formatMVR(bill.items.reduce((sum, item) => sum + item.price * item.quantity, 0))}
                           </p>
                           <button
@@ -127,15 +127,15 @@ export default function BillManagement() {
               {completedBillList.length > 0 && (
                 <div className="space-y-4">
                   <div className="flex items-center justify-between gap-3">
-                    <h4 className="text-lg font-semibold text-slate-900">Completed bills</h4>
-                    <span className="text-sm text-slate-500">Paid and served invoices</span>
+                    <h4 className="text-lg font-semibold text-[#05093f]">Completed bills</h4>
+                    <span className="text-sm text-[#05093f]">Paid and served invoices</span>
                   </div>
                   {completedBillList.map((bill) => (
                     <div key={bill.id} className="rounded-3xl border border-slate-200 bg-slate-50 p-4">
                       <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
                         <div>
-                          <p className="font-semibold text-slate-900">{bill.billNumber ?? bill.title}</p>
-                          <p className="text-sm text-slate-500">{bill.table} • {bill.orderType} • {bill.createdAt.slice(0, 10)}</p>
+                          <p className="font-semibold text-[#05093f]">{bill.billNumber ?? bill.title}</p>
+                          <p className="text-sm text-[#05093f]">{bill.table} • {bill.orderType} • {bill.createdAt.slice(0, 10)}</p>
                         </div>
                         <div className="flex flex-wrap items-center gap-2">
                           <span className="rounded-full bg-emerald-100 px-3 py-1 text-xs uppercase tracking-[0.24em] text-emerald-700">{bill.status}</span>
@@ -143,8 +143,8 @@ export default function BillManagement() {
                         </div>
                       </div>
                       <div className="text-right">
-                        <p className="text-sm text-slate-500">Total</p>
-                        <p className="text-xl font-semibold text-slate-900">
+                      <p className="text-sm text-[#05093f]">Total</p>
+                      <p className="text-xl font-semibold text-[#05093f]">
                           {formatMVR(bill.items.reduce((sum, item) => sum + item.price * item.quantity, 0))}
                         </p>
                       </div>
@@ -154,7 +154,7 @@ export default function BillManagement() {
               )}
             </div>
           ) : (
-            <p className="text-slate-400">No bills available. Create a new bill from POS to populate sales data.</p>
+            <p className="text-[#05093f]">No bills available. Create a new bill from POS to populate sales data.</p>
           )}
         </div>
       </div>

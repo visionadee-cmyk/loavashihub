@@ -3,10 +3,9 @@ import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContaine
 import { saveAs } from 'file-saver';
 import { utils, write } from 'xlsx';
 import AppShell from '../components/AppShell';
-import { demoMonthlySales, demoPaymentTypeBreakdown, demoProducts, demoExpenses } from '../data/demo';
 import { loadCollection } from '../lib/firestore';
 import { formatMVR } from '../lib/mvr';
-import type { Bill, DailyDirectRevenue, Expense } from '../types';
+import type { Bill, DailyDirectRevenue, DirectPurchase, Expense } from '../types';
 
 const colors = ['#7c4b2e', '#05093f', '#4c3929'];
 
@@ -23,6 +22,7 @@ function formatMonthLabel(key: string) {
 export default function ReportsPage() {
   const [bills, setBills] = useState<Bill[]>([]);
   const [expenses, setExpenses] = useState<Expense[]>([]);
+  const [directPurchases, setDirectPurchases] = useState<DirectPurchase[]>([]);
   const [directRevenueEntries, setDirectRevenueEntries] = useState<DailyDirectRevenue[]>([]);
 
   useEffect(() => {
@@ -31,6 +31,9 @@ export default function ReportsPage() {
       .catch(() => undefined);
     loadCollection<Expense>('expenses', [])
       .then((items) => setExpenses(items))
+      .catch(() => undefined);
+    loadCollection<DirectPurchase>('directPurchases', [])
+      .then((items) => setDirectPurchases(items))
       .catch(() => undefined);
     loadCollection<DailyDirectRevenue>('dailyDirectRevenue', [])
       .then((items) => setDirectRevenueEntries(items))
@@ -47,12 +50,37 @@ export default function ReportsPage() {
     [directRevenueEntries],
   );
 
+  const directPurchaseExpenses = useMemo(
+    () => directPurchases.reduce((sum, purchase) => sum + purchase.total, 0),
+    [directPurchases],
+  );
+
   const totalExpenses = useMemo(
-    () => expenses.reduce((sum, expense) => sum + expense.amount, 0),
-    [expenses],
+    () => expenses.reduce((sum, expense) => sum + expense.amount, 0) + directPurchaseExpenses,
+    [expenses, directPurchaseExpenses],
   );
 
   const profit = totalSales - totalExpenses;
+
+  const todayKey = new Date().toISOString().slice(0, 10);
+  const dailySales = useMemo(
+    () => bills
+      .filter((bill) => bill.createdAt.slice(0, 10) === todayKey)
+      .reduce((sum, bill) => sum + bill.items.reduce((itemSum, item) => itemSum + item.price * item.quantity, 0), 0),
+    [bills, todayKey],
+  );
+
+  const dailyExpenses = useMemo(() => {
+    const expenseTotal = expenses
+      .filter((expense) => expense.date === todayKey)
+      .reduce((sum, expense) => sum + expense.amount, 0);
+
+    const directPurchaseTotal = directPurchases
+      .filter((purchase) => purchase.date === todayKey)
+      .reduce((sum, purchase) => sum + purchase.total, 0);
+
+    return expenseTotal + directPurchaseTotal;
+  }, [expenses, directPurchases, todayKey]);
 
   const exportXlsx = () => {
     const sheet = utils.json_to_sheet([
@@ -68,7 +96,7 @@ export default function ReportsPage() {
 
   const revenueByMonth = useMemo(() => {
     if (!bills.length) {
-      return demoMonthlySales.map((item) => ({ name: item.day, revenue: item.amount }));
+      return [];
     }
 
     const grouped = bills.reduce<Record<string, number>>((acc, bill) => {
@@ -84,7 +112,7 @@ export default function ReportsPage() {
   }, [bills]);
 
   const paymentBreakdown = useMemo(() => {
-    if (!bills.length) return demoPaymentTypeBreakdown;
+    if (!bills.length) return [];
 
     const counts = bills.reduce<Record<string, number>>((acc, bill) => {
       acc[bill.paymentMethod] = (acc[bill.paymentMethod] ?? 0) + 1;
@@ -95,7 +123,7 @@ export default function ReportsPage() {
   }, [bills]);
 
   const topProducts = useMemo(() => {
-    if (!bills.length) return demoProducts.slice(0, 4);
+    if (!bills.length) return [];
 
     const sales = bills.reduce<Record<string, { quantity: number; category?: string; price: number }>>((acc, bill) => {
       bill.items.forEach((item) => {
@@ -115,20 +143,19 @@ export default function ReportsPage() {
       .map(([name, data]) => ({ id: name, name, category: 'POS item', price: data.price, quantity: data.quantity }));
   }, [bills]);
 
-  const weeklyExpenses = useMemo(() => {
-    if (expenses.length) return expenses;
-    return demoExpenses;
-  }, [expenses]);
+  const weeklyExpenses = useMemo(() => expenses, [expenses]);
 
   return (
     <AppShell title="Reports & analytics">
       <div className="space-y-8">
         <div className="grid gap-5 xl:grid-cols-4">
           {[
-            { label: 'POS revenue', value: formatMVR(totalSales || demoMonthlySales.reduce((total, item) => total + item.amount, 0)) },
+            { label: 'Daily revenue', value: formatMVR(dailySales) },
+            { label: 'Daily expense', value: formatMVR(dailyExpenses) },
+            { label: 'POS revenue', value: formatMVR(totalSales) },
+            { label: 'Total expense', value: formatMVR(totalExpenses) },
             { label: 'Direct revenue', value: formatMVR(directRevenueTotal) },
-            { label: 'Total expense', value: formatMVR(totalExpenses || demoExpenses.reduce((total, item) => total + item.amount, 0)) },
-            { label: 'Profit', value: formatMVR((totalSales || demoMonthlySales.reduce((total, item) => total + item.amount, 0)) - (totalExpenses || demoExpenses.reduce((sum, item) => sum + item.amount, 0))) },
+            { label: 'Profit', value: formatMVR(profit) },
           ].map((card) => (
             <div key={card.label} className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm shadow-slate-300/20">
               <p className="text-sm uppercase tracking-[0.24em] text-[#05093f]">{card.label}</p>

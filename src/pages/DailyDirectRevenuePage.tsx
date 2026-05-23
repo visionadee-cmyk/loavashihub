@@ -207,8 +207,9 @@ export default function DailyDirectRevenuePage() {
 
           {showForm && (
           <>
-          <div className="mb-4 rounded-3xl border border-blue-200 bg-blue-50 p-4">
-            <p className="text-sm font-semibold text-blue-900">{editingId ? '✎ Editing Daily Revenue' : 'Adding New Daily Revenue Entry'}</p>
+          <div className="mb-4 rounded-full bg-gradient-to-r from-blue-100 to-blue-50 border-2 border-blue-400 p-4 flex items-center gap-3">
+            <div className="w-3 h-3 rounded-full bg-blue-600 animate-pulse"></div>
+            <p className="text-sm font-bold text-blue-900">{editingId ? '✎ EDITING - Update changes below' : 'Adding New Daily Revenue Entry'}</p>
           </div>
           <div className="grid gap-4 sm:grid-cols-2">
             <label className="block text-sm text-slate-500">
@@ -348,22 +349,26 @@ export default function DailyDirectRevenuePage() {
                 <p className="mt-2 text-2xl font-semibold text-[#7c4b2e]">{formatMVR(totalDirectRevenue)}</p>
               </div>
             </div>
-            <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center pt-2">
               <button
                 type="button"
                 onClick={saveRevenue}
                 disabled={!form.closedBy.trim() || totalDirectRevenue <= 0 || saving}
-                className="flex-1 rounded-3xl bg-emerald-600 px-4 py-3 text-sm font-semibold text-white hover:bg-emerald-500 disabled:cursor-not-allowed disabled:opacity-50"
+                className={`flex-1 rounded-3xl px-4 py-3 text-sm font-semibold text-white transition ${
+                  editingId
+                    ? 'bg-blue-600 hover:bg-blue-700 shadow-lg'
+                    : 'bg-emerald-600 hover:bg-emerald-500'
+                } disabled:cursor-not-allowed disabled:opacity-50`}
               >
-                {editingId ? 'Update Daily Revenue' : 'Save Daily Revenue'}
+                {editingId ? '✓ Update Daily Revenue' : 'Save Daily Revenue'}
               </button>
               {editingId ? (
                 <button
                   type="button"
                   onClick={cancelEdit}
-                  className="flex-1 rounded-3xl border border-slate-300 bg-white px-4 py-3 text-sm font-semibold text-slate-700 hover:bg-slate-50"
+                  className="flex-1 rounded-3xl border-2 border-slate-300 bg-white px-4 py-3 text-sm font-semibold text-slate-700 hover:bg-slate-50"
                 >
-                  Cancel edit
+                  ✕ Cancel Edit
                 </button>
               ) : null}
             </div>
@@ -423,8 +428,9 @@ export default function DailyDirectRevenuePage() {
                               onClick={() => {
                                 beginEditEntry(entry);
                                 setShowForm(true);
+                                window.scrollTo({ top: 0, behavior: 'smooth' });
                               }}
-                              className="inline-flex items-center gap-1 rounded-full bg-yellow-400 px-3 py-2 text-xs font-bold text-slate-900 hover:bg-yellow-300"
+                              className="inline-flex items-center gap-1 rounded-full bg-yellow-400 px-3 py-2 text-xs font-bold text-slate-900 hover:bg-yellow-300 shadow-md hover:shadow-lg transition"
                             >
                               <Edit3 className="h-3 w-3" /> Edit
                             </button>

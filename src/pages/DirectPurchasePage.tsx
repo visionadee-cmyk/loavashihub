@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Plus, Trash2 } from 'lucide-react';
+import { Plus, Trash2, ChevronDown, ChevronUp, Edit3 } from 'lucide-react';
 import AppShell from '../components/AppShell';
 import { useInventory } from '../context/InventoryContext';
 import { hasFirebaseConfig } from '../lib/firebase';
@@ -13,6 +13,78 @@ const unitOptions = [
   'sheet', 'slice', 'packet', 'roll', 'piece', 'carton', 'case', 'jar',
 ];
 
+interface PurchaseHistoryItemProps {
+  purchase: DirectPurchase;
+  onEdit: (purchase: DirectPurchase) => void;
+  onDelete: (id: string) => void;
+}
+
+function PurchaseHistoryItem({ purchase, onEdit, onDelete }: PurchaseHistoryItemProps) {
+  const [expanded, setExpanded] = useState(false);
+
+  return (
+    <div className="rounded-3xl border border-slate-200 bg-white p-4 hover:shadow-md transition">
+      <div className="flex flex-wrap items-start justify-between mb-3 gap-3">
+        <div className="flex-1">
+          <p className="font-semibold text-slate-900">{purchase.shopName}</p>
+          <p className="text-xs text-slate-400">{purchase.date}</p>
+        </div>
+        <div className="flex flex-wrap items-center gap-2">
+          <button
+            type="button"
+            onClick={() => onEdit(purchase)}
+            className="inline-flex items-center gap-2 rounded-full bg-yellow-400 px-4 py-2 text-sm font-bold text-slate-900 hover:bg-yellow-300 shadow-md hover:shadow-lg transition"
+          >
+            <Edit3 className="h-4 w-4" /> Edit Purchase
+          </button>
+          <button
+            onClick={() => onDelete(purchase.id)}
+            className="inline-flex items-center gap-1 rounded-3xl bg-red-50 px-3 py-2 text-red-600 hover:bg-red-100"
+          >
+            <Trash2 className="h-3 w-3" />
+          </button>
+          <button
+            type="button"
+            onClick={() => setExpanded(!expanded)}
+            className="rounded-3xl bg-slate-100 px-3 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-200 inline-flex items-center gap-1"
+          >
+            {expanded ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
+            {purchase.items.length} item{purchase.items.length !== 1 ? 's' : ''}
+          </button>
+        </div>
+      </div>
+      <div className="flex flex-wrap items-center justify-between gap-2 text-sm">
+        <span className="text-slate-600">Subtotal: <span className="font-semibold text-slate-900">{formatMVR(purchase.subtotal)}</span></span>
+        {purchase.gst > 0 && (
+          <span className="text-slate-600">GST: <span className="font-semibold text-slate-900">{formatMVR(purchase.gst)}</span></span>
+        )}
+        <span className="text-emerald-600 font-bold">Total: {formatMVR(purchase.total)}</span>
+      </div>
+
+      {expanded && (
+        <div className="mt-4 pt-4 border-t border-slate-200">
+          <p className="text-xs font-semibold text-slate-500 mb-3 uppercase tracking-wide">Items purchased:</p>
+          <ul className="space-y-2">
+            {purchase.items.map((item, index) => (
+              <li key={index} className="rounded-2xl border border-slate-100 bg-slate-50 p-3">
+                <div className="flex items-start justify-between gap-2 mb-2">
+                  <span className="font-medium text-slate-900 flex-1">{item.productName}</span>
+                  <span className="text-slate-600 text-sm font-semibold">{formatMVR(item.totalCost)}</span>
+                </div>
+                <div className="grid grid-cols-3 gap-2 text-xs text-slate-600">
+                  <div>Qty: <span className="font-semibold text-slate-900">{item.quantity} {item.unit}</span></div>
+                  <div>Unit: <span className="font-semibold text-slate-900">{formatMVR(item.unitCost)}/{item.unit}</span></div>
+                  <div className="text-right">Total: <span className="font-semibold text-emerald-600">{formatMVR(item.totalCost)}</span></div>
+                </div>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+    </div>
+  );
+}
+
 export default function DirectPurchasePage() {
   const { inventory, addInventoryItem } = useInventory();
   const [purchases, setPurchases] = useState<DirectPurchase[]>([]);
@@ -23,6 +95,7 @@ export default function DirectPurchasePage() {
   const [newItemUnit, setNewItemUnit] = useState('pcs');
   const [editingId, setEditingId] = useState<string | null>(null);
   const [showForm, setShowForm] = useState(false);
+  const [isShopDropdownOpen, setIsShopDropdownOpen] = useState(false);
 
   useEffect(() => {
     if (!hasFirebaseConfig) return;
@@ -141,6 +214,7 @@ export default function DirectPurchasePage() {
     setItems([]);
     setForm({ shopName: '', productName: '', quantity: 1, unit: 'pcs', unitCost: 0, gst: 0, date: new Date().toISOString().slice(0, 10) });
     setEditingId(null);
+    setShowForm(false);
 
     if (hasFirebaseConfig) {
       try {
@@ -163,6 +237,7 @@ export default function DirectPurchasePage() {
       date: purchase.date,
     });
     setItems(purchase.items);
+    setShowForm(true);
   };
 
   const deletePurchase = async (id: string) => {
@@ -182,11 +257,26 @@ export default function DirectPurchasePage() {
     setForm({ shopName: '', productName: '', quantity: 1, unit: 'pcs', unitCost: 0, gst: 0, date: new Date().toISOString().slice(0, 10) });
   };
 
+  // Group purchases by date and calculate daily totals
+  const groupedPurchases = useMemo(() => {
+    const grouped: { [key: string]: DirectPurchase[] } = {};
+    const sortedPurchases = [...purchases].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+    
+    sortedPurchases.forEach((purchase) => {
+      if (!grouped[purchase.date]) {
+        grouped[purchase.date] = [];
+      }
+      grouped[purchase.date].push(purchase);
+    });
+    
+    return grouped;
+  }, [purchases]);
+
   return (
     <AppShell title="Direct Purchase">
       <div className="grid gap-6 xl:grid-cols-[0.85fr_1fr]">
         <section className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
-          <div className="mb-6 flex items-center justify-between gap-3">
+          <div className="mb-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
             <div>
               <h3 className="text-xl font-semibold text-slate-900">Direct Purchase Entry</h3>
               <p className="text-sm text-slate-500">Add items directly without RFQ and track total expense.</p>
@@ -194,14 +284,17 @@ export default function DirectPurchasePage() {
             <button
               type="button"
               onClick={() => setShowForm(!showForm)}
-              className="inline-flex items-center gap-2 rounded-3xl bg-green-600 px-4 py-3 text-sm font-semibold text-white hover:bg-green-500"
+              className="whitespace-nowrap inline-flex items-center gap-2 rounded-full bg-lime-400 px-6 py-3 text-sm font-bold text-slate-900 hover:bg-lime-300 shadow-lg hover:shadow-xl transition-all duration-200"
             >
-              <Plus className="h-4 w-4" /> {showForm ? 'Cancel' : 'Add direct purchase'}
+              <Plus className="h-5 w-5" /> {showForm ? 'Cancel' : 'Add direct purchase'}
             </button>
           </div>
 
           {showForm && (
           <>
+          <div className="mb-4 rounded-3xl border border-blue-200 bg-blue-50 p-4">
+            <p className="text-sm font-semibold text-blue-900">{editingId ? '✎ Editing Purchase' : 'Adding New Purchase'}</p>
+          </div>
           <div className="grid gap-4 mb-6">
             <label className="block text-sm text-slate-600">
               Shop name
@@ -209,16 +302,21 @@ export default function DirectPurchasePage() {
                 <input
                   value={form.shopName}
                   onChange={(e) => setForm({ ...form, shopName: e.target.value })}
+                  onFocus={() => setIsShopDropdownOpen(true)}
+                  onBlur={() => setTimeout(() => setIsShopDropdownOpen(false), 200)}
                   placeholder="Supplier name"
                   className="w-full rounded-3xl border border-slate-300 bg-white px-4 py-3 text-slate-900 outline-none"
                 />
-                {supplierSuggestions.length > 0 && form.shopName.trim() && (
+                {supplierSuggestions.length > 0 && form.shopName.trim() && isShopDropdownOpen && (
                   <div className="absolute left-0 right-0 z-10 mt-1 max-h-52 overflow-auto rounded-3xl border border-slate-200 bg-white shadow-xl">
                     {supplierSuggestions.map((supplier) => (
                       <button
                         key={supplier.id}
                         type="button"
-                        onClick={() => setForm((current) => ({ ...current, shopName: supplier.name }))}
+                        onClick={() => {
+                          setForm((current) => ({ ...current, shopName: supplier.name }));
+                          setIsShopDropdownOpen(false);
+                        }}
                         className="w-full cursor-pointer border-b border-slate-200 px-4 py-3 text-left text-sm text-slate-700 transition hover:bg-slate-100 last:border-b-0"
                       >
                         {supplier.name}
@@ -230,6 +328,16 @@ export default function DirectPurchasePage() {
               {!shopAlreadySaved && form.shopName.trim() ? (
                 <p className="mt-2 text-xs text-emerald-700">This is a new shop. It will be saved for future direct purchases.</p>
               ) : null}
+            </label>
+
+            <label className="block text-sm text-slate-500">
+              Purchase date
+              <input
+                type="date"
+                value={form.date}
+                onChange={(e) => setForm({ ...form, date: e.target.value })}
+                className="mt-2 w-full rounded-3xl border border-slate-200 bg-white px-4 py-3 text-slate-900 outline-none"
+              />
             </label>
 
             <label className="block text-sm text-slate-500">
@@ -323,10 +431,13 @@ export default function DirectPurchasePage() {
 
           {items.length > 0 && (
             <div className="rounded-3xl border border-slate-200 bg-slate-50 p-5 space-y-3">
+              <div className="flex items-center justify-between mb-3">
+                <p className="font-semibold text-slate-900 text-sm">Items ({items.length})</p>
+              </div>
               {items.map((item) => (
-                <div key={item.id} className="rounded-3xl border border-slate-200 bg-white p-3">
+                <div key={item.id} className="rounded-3xl border border-slate-200 bg-white p-4">
                   <div className="flex items-center justify-between gap-2 mb-3">
-                    <p className="font-semibold text-slate-900 text-sm">{item.productName}</p>
+                    <p className="font-semibold text-slate-900">{item.productName}</p>
                     <button
                       onClick={() => removeItem(item.id)}
                       className="text-red-500 hover:text-red-400"
@@ -334,35 +445,47 @@ export default function DirectPurchasePage() {
                       <Trash2 className="h-4 w-4" />
                     </button>
                   </div>
-                  <div className="grid gap-2 sm:grid-cols-4 text-sm">
-                    <input
-                      type="number"
-                      min={1}
-                      value={item.quantity}
-                      onChange={(e) => updateItem(item.id, 'quantity', e.target.value)}
-                      className="rounded-2xl border border-slate-200 bg-slate-50 px-2 py-1 text-slate-900"
-                      placeholder="Qty"
-                    />
-                    <select
-                      value={item.unit}
-                      onChange={(e) => updateItem(item.id, 'unit', e.target.value)}
-                      className="rounded-2xl border border-slate-200 bg-slate-50 px-2 py-1 text-slate-900"
-                    >
-                      {unitOptions.map((unit) => (
-                        <option key={unit} value={unit}>{unit}</option>
-                      ))}
-                    </select>
-                    <input
-                      type="number"
-                      min={0}
-                      value={item.unitCost}
-                      onChange={(e) => updateItem(item.id, 'unitCost', e.target.value)}
-                      className="rounded-2xl border border-slate-200 bg-slate-50 px-2 py-1 text-slate-900"
-                      placeholder="Cost"
-                    />
-                    <span className="rounded-2xl bg-slate-100 px-2 py-1 text-slate-700">
-                      {formatMVR(item.totalCost)}
-                    </span>
+                  <div className="grid gap-3 sm:grid-cols-5">
+                    <div className="text-sm">
+                      <p className="text-slate-500 text-xs mb-1">Quantity</p>
+                      <input
+                        type="number"
+                        min={1}
+                        value={item.quantity}
+                        onChange={(e) => updateItem(item.id, 'quantity', e.target.value)}
+                        className="w-full rounded-2xl border border-slate-200 bg-white px-2 py-2 text-slate-900"
+                        placeholder="Qty"
+                      />
+                    </div>
+                    <div className="text-sm">
+                      <p className="text-slate-500 text-xs mb-1">Unit</p>
+                      <select
+                        value={item.unit}
+                        onChange={(e) => updateItem(item.id, 'unit', e.target.value)}
+                        className="w-full rounded-2xl border border-slate-200 bg-white px-2 py-2 text-slate-900"
+                      >
+                        {unitOptions.map((unit) => (
+                          <option key={unit} value={unit}>{unit}</option>
+                        ))}
+                      </select>
+                    </div>
+                    <div className="text-sm">
+                      <p className="text-slate-500 text-xs mb-1">Unit Cost (MVR)</p>
+                      <input
+                        type="number"
+                        min={0}
+                        value={item.unitCost}
+                        onChange={(e) => updateItem(item.id, 'unitCost', e.target.value)}
+                        className="w-full rounded-2xl border border-slate-200 bg-white px-2 py-2 text-slate-900"
+                        placeholder="Cost"
+                      />
+                    </div>
+                    <div className="text-sm">
+                      <p className="text-slate-500 text-xs mb-1">Total</p>
+                      <div className="rounded-2xl bg-slate-100 px-2 py-2 text-slate-700 font-semibold">
+                        {formatMVR(item.totalCost)}
+                      </div>
+                    </div>
                   </div>
                 </div>
               ))}
@@ -371,7 +494,7 @@ export default function DirectPurchasePage() {
 
           {items.length > 0 && (
             <div className="mt-6 space-y-3 rounded-3xl border border-slate-200 bg-slate-50 p-5">
-              <div className="grid gap-4 sm:grid-cols-[1fr_1fr_1fr]">
+              <div className="grid gap-4 sm:grid-cols-[1fr_1fr_auto]">
                 <label className="block text-sm text-slate-500">
                   Purchase date
                   <input
@@ -391,25 +514,25 @@ export default function DirectPurchasePage() {
                     className="mt-2 w-full rounded-3xl border border-slate-200 bg-white px-4 py-3 text-slate-900 outline-none"
                   />
                 </label>
-                <div className="rounded-3xl border border-slate-200 bg-white p-4">
-                  <div className="flex justify-between text-sm">
-                    <span className="text-slate-500">Subtotal</span>
+                <div className="rounded-3xl border border-emerald-200 bg-emerald-50 p-4">
+                  <div className="flex justify-between text-sm mb-2">
+                    <span className="text-slate-600">Subtotal</span>
                     <span className="text-slate-900 font-semibold">{formatMVR(subtotal)}</span>
                   </div>
-                  <div className="flex justify-between text-sm mt-3">
-                    <span className="text-slate-500">GST amount</span>
+                  <div className="flex justify-between text-sm mb-2">
+                    <span className="text-slate-600">GST</span>
                     <span className="text-slate-900 font-semibold">{formatMVR(gstAmount)}</span>
                   </div>
-                  <div className="border-t border-slate-200 pt-3 mt-3 flex justify-between">
+                  <div className="border-t border-emerald-200 pt-2 mt-2 flex justify-between">
                     <span className="text-slate-900 font-semibold">Total</span>
                     <span className="text-lg font-bold text-emerald-600">{formatMVR(total)}</span>
                   </div>
                 </div>
               </div>
-              <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-center pt-2">
                 <button
                   onClick={savePurchase}
-                  className="w-full rounded-3xl bg-emerald-600 px-4 py-3 text-sm font-semibold text-white hover:bg-emerald-500"
+                  className="flex-1 rounded-3xl bg-emerald-600 px-4 py-3 text-sm font-semibold text-white hover:bg-emerald-500"
                 >
                   {editingId ? 'Update Purchase' : 'Save Purchase'}
                 </button>
@@ -417,7 +540,7 @@ export default function DirectPurchasePage() {
                   <button
                     type="button"
                     onClick={cancelPurchaseEdit}
-                    className="w-full rounded-3xl border border-slate-300 bg-white px-4 py-3 text-sm font-semibold text-slate-700 hover:bg-slate-50"
+                    className="flex-1 rounded-3xl border border-slate-300 bg-white px-4 py-3 text-sm font-semibold text-slate-700 hover:bg-slate-50"
                   >
                     Cancel edit
                   </button>
@@ -427,37 +550,47 @@ export default function DirectPurchasePage() {
           )}
         </section>
 
-        <section className="rounded-3xl border border-slate-200 bg-slate-50 p-6 shadow-sm">
+        <section className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
           <h3 className="text-xl font-semibold text-slate-900 mb-4">Purchase History</h3>
-          <div className="space-y-3 max-h-96 overflow-y-auto">
-            {purchases.map((purchase) => (
-              <div key={purchase.id} className="rounded-3xl border border-slate-200 bg-white p-4">
-                <div className="flex flex-wrap items-center justify-between mb-2 gap-3">
-                  <p className="font-semibold text-slate-900">{purchase.shopName}</p>
-                  <div className="flex flex-wrap items-center gap-2">
-                    <button
-                      type="button"
-                      onClick={() => beginEditPurchase(purchase)}
-                      className="rounded-3xl bg-slate-100 px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-200"
-                    >
-                      Edit
-                    </button>
-                    <button
-                      onClick={() => deletePurchase(purchase.id)}
-                      className="text-red-500 hover:text-red-400"
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </button>
+          <div className="space-y-3">
+            {purchases.length === 0 ? (
+              <p className="text-sm text-slate-500 text-center py-8">No purchases yet. Add your first direct purchase above.</p>
+            ) : null}
+            {purchases.length > 0 && (
+              <p className="text-xs text-slate-500 mb-3">{purchases.length} purchase(s) recorded</p>
+            )}
+            <div className="space-y-4 max-h-[600px] overflow-y-auto">
+              {Object.entries(groupedPurchases).map(([date, dayPurchases]) => {
+                const dailyTotal = dayPurchases.reduce((sum, p) => sum + p.total, 0);
+                const formattedDate = new Date(date).toLocaleDateString('en-US', { weekday: 'short', year: 'numeric', month: 'short', day: 'numeric' });
+                
+                return (
+                  <div key={date} className="rounded-3xl border border-slate-200 bg-slate-50 p-4">
+                    <div className="flex items-center justify-between mb-3 pb-3 border-b border-slate-200">
+                      <div>
+                        <p className="font-semibold text-slate-900">{formattedDate}</p>
+                        <p className="text-xs text-slate-500">{dayPurchases.length} transaction(s)</p>
+                      </div>
+                      <div className="text-right">
+                        <p className="text-xs text-slate-500">Daily Total</p>
+                        <p className="text-lg font-bold text-emerald-600">{formatMVR(dailyTotal)}</p>
+                      </div>
+                    </div>
+                    
+                    <div className="space-y-2">
+                      {dayPurchases.map((purchase) => (
+                        <PurchaseHistoryItem
+                          key={purchase.id}
+                          purchase={purchase}
+                          onEdit={beginEditPurchase}
+                          onDelete={deletePurchase}
+                        />
+                      ))}
+                    </div>
                   </div>
-                </div>
-                <p className="text-xs text-slate-400 mb-2">{purchase.date}</p>
-                <p className="text-sm text-slate-600 mb-2">{purchase.items.length} item(s)</p>
-                <div className="text-right">
-                  <p className="text-xs text-slate-400">Total (with GST amount)</p>
-                  <p className="text-lg font-bold text-emerald-400">{formatMVR(purchase.total)}</p>
-                </div>
-              </div>
-            ))}
+                );
+              })}
+            </div>
           </div>
         </section>
       </div>

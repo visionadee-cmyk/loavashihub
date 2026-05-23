@@ -9,7 +9,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { loadCollection, saveDocument } from '../lib/firestore';
 import { formatMVR } from '../lib/mvr';
 import { TrendingUp, TrendingDown, DollarSign, ShoppingCart, AlertTriangle, Package } from 'lucide-react';
-import type { Bill, MenuItem, InventoryItem, PurchaseOrder } from '../types';
+import type { Bill, MenuItem, InventoryItem, PurchaseOrder, StaffMember, Expense, Recipe } from '../types';
 
 const paymentColors = ['#16a34a', '#05093f', '#7c4b2e', '#f59e0b'];
 const categoryColors = ['#16a34a', '#05093f', '#7c4b2e', '#f59e0b', '#8b5cf6', '#ec4899'];
@@ -36,6 +36,9 @@ export default function AdminDashboard() {
   const [inventory, setInventory] = useState<InventoryItem[]>([]);
   const [bills, setBills] = useState<Bill[]>([]);
   const [purchaseOrders, setPurchaseOrders] = useState<PurchaseOrder[]>([]);
+  const [staffMembers, setStaffMembers] = useState<StaffMember[]>([]);
+  const [expenses, setExpenses] = useState<Expense[]>([]);
+  const [recipes, setRecipes] = useState<Recipe[]>([]);
 
   useEffect(() => {
     loadCollection<MenuItem>('menuItems', [])
@@ -80,6 +83,15 @@ export default function AdminDashboard() {
       .catch(() => undefined);
     loadCollection<PurchaseOrder>('purchaseOrders', [])
       .then((items) => { if (items.length) setPurchaseOrders(items); })
+      .catch(() => undefined);
+    loadCollection<StaffMember>('staff', [])
+      .then((items) => { if (items.length) setStaffMembers(items); })
+      .catch(() => undefined);
+    loadCollection<Expense>('expenses', [])
+      .then((items) => { if (items.length) setExpenses(items); })
+      .catch(() => undefined);
+    loadCollection<Recipe>('recipes', [])
+      .then((items) => { if (items.length) setRecipes(items); })
       .catch(() => undefined);
   }, []);
 
@@ -216,6 +228,60 @@ export default function AdminDashboard() {
   const inventoryValue = useMemo(() => {
     return inventory.reduce((sum, item) => sum + (item.quantity * 100), 0); // Estimated value
   }, [inventory]);
+
+  // Staff statistics
+  const totalStaff = staffMembers.length;
+  const staffByDesignation = useMemo(() => {
+    const counts: Record<string, number> = {};
+    staffMembers.forEach((staff) => {
+      counts[staff.designation] = (counts[staff.designation] || 0) + 1;
+    });
+    return Object.entries(counts).map(([name, value]) => ({ name, value }));
+  }, [staffMembers]);
+
+  const totalMonthlySalary = useMemo(() => {
+    return staffMembers.reduce((sum, staff) => sum + staff.salary, 0);
+  }, [staffMembers]);
+
+  // Expense statistics
+  const totalExpensesAmount = useMemo(() => {
+    return expenses.reduce((sum, expense) => sum + expense.amount, 0);
+  }, [expenses]);
+
+  const expensesByCategory = useMemo(() => {
+    const categories: Record<string, number> = {};
+    expenses.forEach((expense) => {
+      categories[expense.category] = (categories[expense.category] || 0) + expense.amount;
+    });
+    return Object.entries(categories)
+      .map(([name, value]) => ({ name, value }))
+      .sort((a, b) => b.value - a.value);
+  }, [expenses]);
+
+  // Net profit calculation
+  const netProfit = useMemo(() => {
+    return totalRevenue - totalExpensesAmount;
+  }, [totalRevenue, totalExpensesAmount]);
+
+  // Active recipes count
+  const activeRecipes = useMemo(() => {
+    return recipes.filter((recipe) => recipe.status === 'Active').length;
+  }, [recipes]);
+
+  // Customer statistics
+  const uniqueCustomers = useMemo(() => {
+    const customerIds = new Set(bills.map((bill) => bill.customerId).filter(Boolean));
+    return customerIds.size;
+  }, [bills]);
+
+  // Order status breakdown
+  const orderStatusBreakdown = useMemo(() => {
+    const statuses: Record<string, number> = {};
+    bills.forEach((bill) => {
+      statuses[bill.status] = (statuses[bill.status] || 0) + 1;
+    });
+    return Object.entries(statuses).map(([name, value]) => ({ name, value }));
+  }, [bills]);
 
   return (
     <AppShell title="Dashboard">

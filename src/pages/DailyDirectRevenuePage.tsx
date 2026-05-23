@@ -19,10 +19,14 @@ const initialCashCounts = {
   note1000: 0,
 };
 
-const initialCardPayment: CardPayment = {
-  id: `card-${Date.now()}`,
-  type: 'Card type 1',
-  amount: 0,
+const defaultPaymentTypes = ['Visa debit', 'Visa', 'Master debit', 'Amex debit', 'Transfer'];
+
+const createDefaultCardPayments = (): CardPayment[] => {
+  return defaultPaymentTypes.map((type, index) => ({
+    id: `card-${Date.now()}-${index}`,
+    type,
+    amount: 0,
+  }));
 };
 
 function computeCashTotal(cash: typeof initialCashCounts) {
@@ -46,7 +50,7 @@ export default function DailyDirectRevenuePage() {
     date: new Date().toISOString().slice(0, 10),
     closedBy: '',
     cashCounts: { ...initialCashCounts },
-    cardPayments: [initialCardPayment],
+    cardPayments: createDefaultCardPayments(),
   });
   const [editingId, setEditingId] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
@@ -77,11 +81,15 @@ export default function DailyDirectRevenuePage() {
   };
 
   const addCardPayment = () => {
+    // Generate a new payment type name (e.g., "Other 1", "Other 2", etc.)
+    const existingOtherPayments = form.cardPayments.filter((p) => p.type.startsWith('Other '));
+    const nextNumber = existingOtherPayments.length + 1;
+    
     setForm((current) => ({
       ...current,
       cardPayments: [
         ...current.cardPayments,
-        { id: `card-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`, type: `Card type ${current.cardPayments.length + 1}`, amount: 0 },
+        { id: `card-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`, type: `Other ${nextNumber}`, amount: 0 },
       ],
     }));
   };
@@ -131,7 +139,7 @@ export default function DailyDirectRevenuePage() {
         date: new Date().toISOString().slice(0, 10),
         closedBy: '',
         cashCounts: { ...initialCashCounts },
-        cardPayments: [initialCardPayment],
+        cardPayments: createDefaultCardPayments(),
       });
       setEditingId(null);
     } catch (error) {
@@ -143,11 +151,24 @@ export default function DailyDirectRevenuePage() {
 
   const beginEditEntry = (entry: DailyDirectRevenue) => {
     setEditingId(entry.id);
+    // Preserve existing card payments but ensure all default types are present
+    const existingPayments = entry.cardPayments || [];
+    const defaultPayments = createDefaultCardPayments();
+    
+    // Merge existing payments with defaults, updating amounts for existing types
+    const mergedPayments = defaultPayments.map((defaultPayment) => {
+      const existing = existingPayments.find((p) => p.type === defaultPayment.type);
+      return existing ? { ...existing, id: existing.id } : defaultPayment;
+    });
+    
+    // Add any extra payment types from the entry that aren't in defaults
+    const extraPayments = existingPayments.filter((p) => !defaultPaymentTypes.includes(p.type));
+    
     setForm({
       date: entry.date,
       closedBy: entry.closedBy,
       cashCounts: { ...entry.cashCounts },
-      cardPayments: entry.cardPayments.length ? entry.cardPayments : [initialCardPayment],
+      cardPayments: [...mergedPayments, ...extraPayments],
     });
   };
 
@@ -157,7 +178,7 @@ export default function DailyDirectRevenuePage() {
       date: new Date().toISOString().slice(0, 10),
       closedBy: '',
       cashCounts: { ...initialCashCounts },
-      cardPayments: [initialCardPayment],
+      cardPayments: createDefaultCardPayments(),
     });
   };
 

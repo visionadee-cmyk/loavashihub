@@ -50,6 +50,7 @@ export default function DailyDirectRevenuePage() {
   });
   const [editingId, setEditingId] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
+  const [showForm, setShowForm] = useState(false);
 
   useEffect(() => {
     if (!hasFirebaseConfig) return;
@@ -175,11 +176,22 @@ export default function DailyDirectRevenuePage() {
     <AppShell title="Daily direct revenue">
       <div className="grid gap-6 xl:grid-cols-[0.9fr_1.1fr]">
         <section className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
-          <div className="mb-6">
-            <h3 className="text-xl font-semibold text-slate-900">Daily Direct Revenue</h3>
-            <p className="text-sm text-slate-500">Record cash and card direct revenue separately for daily reporting.</p>
+          <div className="mb-6 flex items-center justify-between gap-3">
+            <div>
+              <h3 className="text-xl font-semibold text-slate-900">Daily Direct Revenue</h3>
+              <p className="text-sm text-slate-500">Record cash and card direct revenue separately for daily reporting.</p>
+            </div>
+            <button
+              type="button"
+              onClick={() => setShowForm(!showForm)}
+              className="inline-flex items-center gap-2 rounded-3xl bg-[#7c4b2e] px-4 py-3 text-sm font-semibold text-white hover:bg-[#6a4028]"
+            >
+              <Plus className="h-4 w-4" /> {showForm ? 'Cancel' : 'Add DDR'}
+            </button>
           </div>
 
+          {showForm && (
+          <>
           <div className="grid gap-4 sm:grid-cols-2">
             <label className="block text-sm text-slate-500">
               Date
@@ -338,6 +350,8 @@ export default function DailyDirectRevenuePage() {
               ) : null}
             </div>
           </div>
+          </>
+          )}
         </section>
 
         <section className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">

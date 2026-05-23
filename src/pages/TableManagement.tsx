@@ -27,6 +27,7 @@ export default function TableManagement() {
   }, []);
   const [form, setForm] = useState<Partial<TableItem>>(defaultTable);
   const [editingId, setEditingId] = useState<string | null>(null);
+  const [showForm, setShowForm] = useState(false);
 
   const submitTable = () => {
     const payload: TableItem = {
@@ -47,11 +48,14 @@ export default function TableManagement() {
       saveDocument('tables', payload.id, payload).catch((error) => console.error('Failed to save table:', error));
     }
     setForm(defaultTable);
+    setEditingId(null);
+    setShowForm(false);
   };
 
   const beginEdit = (table: TableItem) => {
     setEditingId(table.id);
     setForm({ name: table.name, seats: table.seats, section: table.section });
+    setShowForm(true);
   };
 
   const deleteTable = (id: string) => {
@@ -71,13 +75,15 @@ export default function TableManagement() {
               <p className="text-sm text-slate-600">Create new indoor, outdoor and VIP tables.</p>
             </div>
             <button
-              onClick={submitTable}
+              type="button"
+              onClick={() => setShowForm(!showForm)}
               className="inline-flex items-center gap-2 rounded-3xl bg-violet-600 px-4 py-3 text-sm font-semibold text-white hover:bg-violet-500"
             >
-              <Plus className="h-4 w-4" /> {editingId ? 'Update table' : 'Add table'}
+              <Plus className="h-4 w-4" /> {showForm ? 'Cancel' : 'Add new table'}
             </button>
           </div>
 
+          {showForm && (
           <div className="grid gap-4">
             <label className="block text-sm text-slate-600">
               Table name
@@ -112,7 +118,14 @@ export default function TableManagement() {
                 </select>
               </label>
             </div>
+            <button
+              onClick={submitTable}
+              className="inline-flex items-center gap-2 rounded-3xl bg-violet-600 px-4 py-3 text-sm font-semibold text-white hover:bg-violet-500"
+            >
+              <Plus className="h-4 w-4" /> {editingId ? 'Update table' : 'Add table'}
+            </button>
           </div>
+          )}
         </section>
 
         <section className="space-y-6">

@@ -16,6 +16,7 @@ export default function CustomersPage() {
   const [customers, setCustomers] = useState<Customer[]>([]);
   const [form, setForm] = useState<Partial<Customer>>(defaultCustomer);
   const [editingId, setEditingId] = useState<string | null>(null);
+  const [showForm, setShowForm] = useState(false);
 
   useEffect(() => {
     if (!hasFirebaseConfig) {
@@ -51,11 +52,14 @@ export default function CustomersPage() {
     }
 
     setForm(defaultCustomer);
+    setEditingId(null);
+    setShowForm(false);
   };
 
   const editCustomer = (customer: Customer) => {
     setEditingId(customer.id);
     setForm(customer);
+    setShowForm(true);
   };
 
   const removeCustomer = (id: string) => {
@@ -78,13 +82,14 @@ export default function CustomersPage() {
             </div>
             <button
               type="button"
-              onClick={saveCustomer}
+              onClick={() => setShowForm(!showForm)}
               className="inline-flex items-center gap-2 rounded-3xl bg-violet-600 px-4 py-3 text-sm font-semibold text-white hover:bg-violet-500"
             >
-              <Plus className="h-4 w-4" /> {editingId ? 'Update customer' : 'Add customer'}
+              <Plus className="h-4 w-4" /> {showForm ? 'Cancel' : 'Add new customer'}
             </button>
           </div>
 
+          {showForm && (
           <div className="grid gap-4">
             <label className="block text-sm text-slate-300">
               Name
@@ -124,7 +129,15 @@ export default function CustomersPage() {
                 placeholder="Allergies, preferences or loyalty info"
               />
             </label>
+            <button
+              type="button"
+              onClick={saveCustomer}
+              className="inline-flex items-center gap-2 rounded-3xl bg-violet-600 px-4 py-3 text-sm font-semibold text-white hover:bg-violet-500"
+            >
+              <Plus className="h-4 w-4" /> {editingId ? 'Update customer' : 'Add customer'}
+            </button>
           </div>
+          )}
         </section>
 
         <section className="space-y-6">

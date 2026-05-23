@@ -17,6 +17,7 @@ export default function InventoryManagement() {
   const { inventory: items, addInventoryItem, updateInventoryItem, deleteInventoryItem } = useInventory();
   const [form, setForm] = useState(defaultInventory);
   const [editingId, setEditingId] = useState<string | null>(null);
+  const [showForm, setShowForm] = useState(false);
 
   const saveItem = () => {
     const payload: InventoryItem = {
@@ -35,11 +36,13 @@ export default function InventoryManagement() {
       addInventoryItem(payload);
     }
     setForm(defaultInventory);
+    setShowForm(false);
   };
 
   const startEditing = (item: InventoryItem) => {
     setEditingId(item.id);
     setForm({ ...item });
+    setShowForm(true);
   };
 
   const deleteItem = (id: string) => deleteInventoryItem(id);
@@ -54,13 +57,15 @@ export default function InventoryManagement() {
               <p className="text-sm text-slate-600">Add consumables and low stock thresholds.</p>
             </div>
             <button
-              onClick={saveItem}
+              type="button"
+              onClick={() => setShowForm(!showForm)}
               className="inline-flex items-center gap-2 rounded-3xl bg-violet-600 px-4 py-3 text-sm font-semibold text-white hover:bg-violet-500"
             >
-              <Plus className="h-4 w-4" /> Save stock
+              <Plus className="h-4 w-4" /> {showForm ? 'Cancel' : 'Add stock'}
             </button>
           </div>
 
+          {showForm && (
           <div className="grid gap-4">
             <label className="block text-sm text-slate-600">
               Item name
@@ -114,7 +119,14 @@ export default function InventoryManagement() {
                 className="mt-2 w-full rounded-3xl border border-slate-300 bg-white px-4 py-3 text-slate-900 outline-none"
               />
             </label>
+            <button
+              onClick={saveItem}
+              className="inline-flex items-center gap-2 rounded-3xl bg-violet-600 px-4 py-3 text-sm font-semibold text-white hover:bg-violet-500"
+            >
+              <Plus className="h-4 w-4" /> {editingId ? 'Update stock' : 'Save stock'}
+            </button>
           </div>
+          )}
         </section>
 
         <section className="space-y-6">

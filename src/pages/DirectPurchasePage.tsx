@@ -22,6 +22,7 @@ export default function DirectPurchasePage() {
   const [form, setForm] = useState({ shopName: '', productName: '', quantity: 1, unit: 'pcs', unitCost: 0, gst: 0, date: new Date().toISOString().slice(0, 10) });
   const [newItemUnit, setNewItemUnit] = useState('pcs');
   const [editingId, setEditingId] = useState<string | null>(null);
+  const [showForm, setShowForm] = useState(false);
 
   useEffect(() => {
     if (!hasFirebaseConfig) return;
@@ -185,11 +186,22 @@ export default function DirectPurchasePage() {
     <AppShell title="Direct Purchase">
       <div className="grid gap-6 xl:grid-cols-[0.85fr_1fr]">
         <section className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
-          <div className="mb-6">
-            <h3 className="text-xl font-semibold text-slate-900">Direct Purchase Entry</h3>
-            <p className="text-sm text-slate-500">Add items directly without RFQ and track total expense.</p>
+          <div className="mb-6 flex items-center justify-between gap-3">
+            <div>
+              <h3 className="text-xl font-semibold text-slate-900">Direct Purchase Entry</h3>
+              <p className="text-sm text-slate-500">Add items directly without RFQ and track total expense.</p>
+            </div>
+            <button
+              type="button"
+              onClick={() => setShowForm(!showForm)}
+              className="inline-flex items-center gap-2 rounded-3xl bg-green-600 px-4 py-3 text-sm font-semibold text-white hover:bg-green-500"
+            >
+              <Plus className="h-4 w-4" /> {showForm ? 'Cancel' : 'Add direct purchase'}
+            </button>
           </div>
 
+          {showForm && (
+          <>
           <div className="grid gap-4 mb-6">
             <label className="block text-sm text-slate-600">
               Shop name
@@ -306,6 +318,8 @@ export default function DirectPurchasePage() {
               <Plus className="h-4 w-4 inline mr-2" /> Add item
             </button>
           </div>
+          </>
+          )}
 
           {items.length > 0 && (
             <div className="rounded-3xl border border-slate-200 bg-slate-50 p-5 space-y-3">

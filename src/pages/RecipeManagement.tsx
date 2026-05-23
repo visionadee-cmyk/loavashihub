@@ -36,6 +36,7 @@ export default function RecipeManagement() {
   }, []);
   const [form, setForm] = useState<Partial<Recipe>>(initialRecipe);
   const [ingredient, setIngredient] = useState<Partial<RecipeIngredient>>({ inventoryId: '', quantity: 1, unit: 'pcs', name: '' });
+  const [showForm, setShowForm] = useState(false);
 
   const stockWarning = useMemo(
     () => inventory.filter((item) => item.quantity <= item.lowStock).length,
@@ -129,13 +130,15 @@ export default function RecipeManagement() {
               <p className="text-sm text-slate-600">Create recipes and simulate inventory deduction in real time.</p>
             </div>
             <button
-              onClick={saveRecipe}
+              type="button"
+              onClick={() => setShowForm(!showForm)}
               className="inline-flex items-center gap-2 rounded-3xl bg-violet-600 px-4 py-3 text-sm font-semibold text-white hover:bg-violet-500"
             >
-              <Plus className="h-4 w-4" /> Save recipe
+              <Plus className="h-4 w-4" /> {showForm ? 'Cancel' : 'Add recipe'}
             </button>
           </div>
 
+          {showForm && (
           <div className="grid gap-4">
             <label className="block text-sm text-slate-600">
               Recipe name
@@ -237,7 +240,14 @@ export default function RecipeManagement() {
                 </ul>
               </div>
             ) : null}
+            <button
+              onClick={saveRecipe}
+              className="mt-4 inline-flex items-center gap-2 rounded-3xl bg-violet-600 px-4 py-3 text-sm font-semibold text-white hover:bg-violet-500"
+            >
+              <Plus className="h-4 w-4" /> Save recipe
+            </button>
           </div>
+          )}
         </section>
 
         <section className="space-y-6">

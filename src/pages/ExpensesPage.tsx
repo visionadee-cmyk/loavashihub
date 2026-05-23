@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Plus, Receipt, Upload } from 'lucide-react';
+import { Plus, Receipt } from 'lucide-react';
 import AppShell from '../components/AppShell';
 import { formatMVR } from '../lib/mvr';
 import { hasFirebaseConfig } from '../lib/firebase';
@@ -30,6 +30,8 @@ export default function ExpensesPage() {
     salaryFrequency: 'daily',
   });
   const [monthlyForm, setMonthlyForm] = useState(defaultMonthlyExpense);
+  const [showDailyForm, setShowDailyForm] = useState(false);
+  const [showMonthlyForm, setShowMonthlyForm] = useState(false);
 
   useEffect(() => {
     if (!hasFirebaseConfig) {
@@ -64,11 +66,17 @@ export default function ExpensesPage() {
               <h3 className="text-xl font-semibold text-slate-900">Daily expense tracker</h3>
               <p className="text-sm text-slate-600">Upload receipts and track purchases by staff.</p>
             </div>
-            <button className="inline-flex items-center gap-2 rounded-3xl bg-violet-600 px-4 py-3 text-sm font-semibold text-white hover:bg-violet-500">
-              <Upload className="h-4 w-4" /> Upload receipt
+            <button
+              type="button"
+              onClick={() => setShowDailyForm(!showDailyForm)}
+              className="inline-flex items-center gap-2 rounded-3xl bg-violet-600 px-4 py-3 text-sm font-semibold text-white hover:bg-violet-500"
+            >
+              <Plus className="h-4 w-4" /> {showDailyForm ? 'Cancel' : 'Add new expense'}
             </button>
           </div>
 
+          {showDailyForm && (
+          <>
           <div className="grid gap-4">
             <label className="block text-sm text-slate-600">
               Title
@@ -182,6 +190,8 @@ export default function ExpensesPage() {
               <Plus className="h-4 w-4" /> Add expense
             </button>
           </div>
+          </>
+          )}
 
           <div className="mt-6 grid gap-4">
             {expenses.map((expense) => (
@@ -206,9 +216,20 @@ export default function ExpensesPage() {
                 <h3 className="text-xl font-semibold text-slate-900">Monthly expense plan</h3>
                 <p className="text-sm text-slate-600">Record rent, salary and utilities.</p>
               </div>
-              <span className="rounded-full bg-slate-800 px-3 py-1 text-xs uppercase tracking-[0.24em] text-slate-300">{monthlyExpenses.length} entries</span>
+              <div className="flex items-center gap-3">
+                <span className="rounded-full bg-slate-800 px-3 py-1 text-xs uppercase tracking-[0.24em] text-slate-300">{monthlyExpenses.length} entries</span>
+                <button
+                  type="button"
+                  onClick={() => setShowMonthlyForm(!showMonthlyForm)}
+                  className="inline-flex items-center gap-2 rounded-3xl bg-slate-800 px-4 py-3 text-sm font-semibold text-white hover:bg-slate-700"
+                >
+                  <Plus className="h-4 w-4" /> {showMonthlyForm ? 'Cancel' : 'Add monthly'}
+                </button>
+              </div>
             </div>
 
+            {showMonthlyForm && (
+            <>
             <div className="grid gap-4">
               <label className="block text-sm text-slate-600">
                 Title
@@ -274,6 +295,8 @@ export default function ExpensesPage() {
                 <Receipt className="h-4 w-4" /> Add monthly expense
               </button>
             </div>
+            </>
+            )}
           </div>
 
           <div className="rounded-3xl border border-slate-200 bg-slate-100/80 p-6 shadow-2xl shadow-slate-300/20">

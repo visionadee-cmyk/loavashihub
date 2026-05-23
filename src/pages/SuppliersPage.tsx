@@ -16,6 +16,7 @@ export default function SuppliersPage() {
   const [suppliers, setSuppliers] = useState<Supplier[]>([]);
   const [form, setForm] = useState(defaultSupplierForm);
   const [editingId, setEditingId] = useState<string | null>(null);
+  const [showForm, setShowForm] = useState(false);
 
   useEffect(() => {
     if (!hasFirebaseConfig) {
@@ -94,7 +95,13 @@ export default function SuppliersPage() {
               <h3 className="text-xl font-semibold text-slate-900">Supplier directory</h3>
               <p className="text-sm text-slate-600">Manage supplier names and contact details for direct purchase workflows.</p>
             </div>
-            <span className="rounded-full bg-slate-800 px-3 py-1 text-xs uppercase tracking-[0.24em] text-slate-300">{suppliers.length} suppliers</span>
+            <button
+              type="button"
+              onClick={() => setShowForm(!showForm)}
+              className="inline-flex items-center gap-2 rounded-3xl bg-slate-800 px-4 py-3 text-sm font-semibold text-white hover:bg-slate-700"
+            >
+              <Plus className="h-4 w-4" /> {showForm ? 'Cancel' : 'Add new supplier'}
+            </button>
           </div>
 
           {!hasFirebaseConfig ? (
@@ -103,6 +110,7 @@ export default function SuppliersPage() {
             </div>
           ) : null}
 
+          {showForm && (
           <div className="grid gap-4">
             <label className="block text-sm text-slate-600">
               Supplier name
@@ -166,6 +174,7 @@ export default function SuppliersPage() {
               ) : null}
             </div>
           </div>
+          )}
         </section>
 
         <section className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm shadow-slate-300/20">

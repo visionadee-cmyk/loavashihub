@@ -35,9 +35,6 @@ export default function AdminDashboard() {
   const [inventory, setInventory] = useState<InventoryItem[]>([]);
   const [bills, setBills] = useState<Bill[]>([]);
   const [purchaseOrders, setPurchaseOrders] = useState<PurchaseOrder[]>([]);
-  const [staffMembers, setStaffMembers] = useState<StaffMember[]>([]);
-  const [expenses, setExpenses] = useState<Expense[]>([]);
-  const [recipes, setRecipes] = useState<Recipe[]>([]);
 
   useEffect(() => {
     loadCollection<MenuItem>('menuItems', [])
@@ -82,15 +79,6 @@ export default function AdminDashboard() {
       .catch(() => undefined);
     loadCollection<PurchaseOrder>('purchaseOrders', [])
       .then((items) => { if (items.length) setPurchaseOrders(items); })
-      .catch(() => undefined);
-    loadCollection<StaffMember>('staff', [])
-      .then((items) => { if (items.length) setStaffMembers(items); })
-      .catch(() => undefined);
-    loadCollection<Expense>('expenses', [])
-      .then((items) => { if (items.length) setExpenses(items); })
-      .catch(() => undefined);
-    loadCollection<Recipe>('recipes', [])
-      .then((items) => { if (items.length) setRecipes(items); })
       .catch(() => undefined);
   }, []);
 
@@ -228,13 +216,7 @@ export default function AdminDashboard() {
     return inventory.reduce((sum, item) => sum + (item.quantity * 100), 0); // Estimated value
   }, [inventory]);
 
-  // Staff statistics
-  // (variables removed - not used in current dashboard)
 
-  // Expense statistics
-  const totalExpensesAmount = useMemo(() => {
-    return expenses.reduce((sum, expense) => sum + expense.amount, 0);
-  }, [expenses]);
 
   return (
     <AppShell title="Dashboard">

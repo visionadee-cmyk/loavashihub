@@ -229,58 +229,12 @@ export default function AdminDashboard() {
   }, [inventory]);
 
   // Staff statistics
-  const _totalStaff = staffMembers.length;
-  const _staffByDesignation = useMemo(() => {
-    const counts: Record<string, number> = {};
-    staffMembers.forEach((staff) => {
-      counts[staff.designation] = (counts[staff.designation] || 0) + 1;
-    });
-    return Object.entries(counts).map(([name, value]) => ({ name, value }));
-  }, [staffMembers]);
-
-  const _totalMonthlySalary = useMemo(() => {
-    return staffMembers.reduce((sum, staff) => sum + staff.salary, 0);
-  }, [staffMembers]);
+  // (variables removed - not used in current dashboard)
 
   // Expense statistics
   const totalExpensesAmount = useMemo(() => {
     return expenses.reduce((sum, expense) => sum + expense.amount, 0);
   }, [expenses]);
-
-  const _expensesByCategory = useMemo(() => {
-    const categories: Record<string, number> = {};
-    expenses.forEach((expense) => {
-      categories[expense.category] = (categories[expense.category] || 0) + expense.amount;
-    });
-    return Object.entries(categories)
-      .map(([name, value]) => ({ name, value }))
-      .sort((a, b) => b.value - a.value);
-  }, [expenses]);
-
-  // Net profit calculation
-  const _netProfit = useMemo(() => {
-    return totalRevenue - totalExpensesAmount;
-  }, [totalRevenue, totalExpensesAmount]);
-
-  // Active recipes count
-  const _activeRecipes = useMemo(() => {
-    return recipes.filter((recipe) => recipe.status === 'Active').length;
-  }, [recipes]);
-
-  // Customer statistics
-  const _uniqueCustomers = useMemo(() => {
-    const customerIds = new Set(bills.map((bill) => bill.customerId).filter(Boolean));
-    return customerIds.size;
-  }, [bills]);
-
-  // Order status breakdown
-  const _orderStatusBreakdown = useMemo(() => {
-    const statuses: Record<string, number> = {};
-    bills.forEach((bill) => {
-      statuses[bill.status] = (statuses[bill.status] || 0) + 1;
-    });
-    return Object.entries(statuses).map(([name, value]) => ({ name, value }));
-  }, [bills]);
 
   return (
     <AppShell title="Dashboard">

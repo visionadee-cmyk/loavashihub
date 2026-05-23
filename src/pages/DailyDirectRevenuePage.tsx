@@ -400,7 +400,11 @@ export default function DailyDirectRevenuePage() {
                       <p className="font-semibold text-slate-900">{formattedDate}</p>
                       <p className="text-xs text-slate-500">{dayEntries.length} entry(ies)</p>
                     </div>
-                    <div className="text-right">
+                    <div className="text-right space-y-1">
+                      <div className="flex items-center gap-4 text-xs">
+                        <span className="text-slate-500">Cash: <span className="font-semibold text-slate-900">{formatMVR(dailyCashTotal)}</span></span>
+                        <span className="text-slate-500">Card: <span className="font-semibold text-slate-900">{formatMVR(dailyCardTotal)}</span></span>
+                      </div>
                       <p className="text-xs text-slate-500">Daily Total</p>
                       <p className="text-lg font-bold text-emerald-600">{formatMVR(dailyRevenue)}</p>
                     </div>

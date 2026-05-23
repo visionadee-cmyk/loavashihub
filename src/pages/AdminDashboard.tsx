@@ -9,7 +9,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { loadCollection, saveDocument } from '../lib/firestore';
 import { formatMVR } from '../lib/mvr';
 import { TrendingUp, TrendingDown, DollarSign, ShoppingCart, AlertTriangle, Package } from 'lucide-react';
-import type { Bill, MenuItem, InventoryItem, PurchaseOrder } from '../types';
+import type { Bill, MenuItem, InventoryItem, PurchaseOrder, DailyDirectRevenue } from '../types';
 
 const paymentColors = ['#16a34a', '#05093f', '#7c4b2e', '#f59e0b'];
 
@@ -35,6 +35,7 @@ export default function AdminDashboard() {
   const [inventory, setInventory] = useState<InventoryItem[]>([]);
   const [bills, setBills] = useState<Bill[]>([]);
   const [purchaseOrders, setPurchaseOrders] = useState<PurchaseOrder[]>([]);
+  const [dailyDirectRevenue, setDailyDirectRevenue] = useState<DailyDirectRevenue[]>([]);
 
   useEffect(() => {
     loadCollection<MenuItem>('menuItems', [])
@@ -79,6 +80,9 @@ export default function AdminDashboard() {
       .catch(() => undefined);
     loadCollection<PurchaseOrder>('purchaseOrders', [])
       .then((items) => { if (items.length) setPurchaseOrders(items); })
+      .catch(() => undefined);
+    loadCollection<DailyDirectRevenue>('dailyDirectRevenue', [])
+      .then((items) => { if (items.length) setDailyDirectRevenue(items); })
       .catch(() => undefined);
   }, []);
 
@@ -146,6 +150,92 @@ export default function AdminDashboard() {
     return Object.entries(breakdown).map(([method, value]) => ({ method, value }));
   }, [bills]);
 
+  const cashTotal = useMemo(() => {
+    return bills.reduce((sum, bill) => {
+      if (bill.paymentMethod === 'Cash') {
+        return sum + bill.items.reduce((itemSum, item) => itemSum + item.price * item.quantity, 0);
+      }
+      return sum;
+    }, 0);
+  }, [bills]);
+
+  const transferTotal = useMemo(() => {
+    return bills.reduce((sum, bill) => {
+      if (bill.paymentMethod === 'Bank transfer') {
+        return sum + bill.items.reduce((itemSum, item) => itemSum + item.price * item.quantity, 0);
+      }
+      return sum;
+    }, 0);
+  }, [bills]);
+
+  const cardTotal = useMemo(() => {
+    return bills.reduce((sum, bill) => {
+      if (bill.paymentMethod === 'Card') {
+        return sum + bill.items.reduce((itemSum, item) => itemSum + item.price * item.quantity, 0);
+      }
+      return sum;
+    }, 0);
+  }, [bills]);
+
+  const cashTransactions = useMemo(() => bills.filter(b => b.paymentMethod === 'Cash').length, [bills]);
+  const transferTransactions = useMemo(() => bills.filter(b => b.paymentMethod === 'Bank transfer').length, [bills]);
+  const cardTransactions = useMemo(() => bills.filter(b => b.paymentMethod === 'Card').length, [bills]);
+
+  // Daily Direct Revenue Metrics
+  const directCashTotal = useMemo(() => {
+    return dailyDirectRevenue.reduce((sum, entry) => sum + (entry.cashTotal || 0), 0);
+  }, [dailyDirectRevenue]);
+
+  const directCardTotal = useMemo(() => {
+    return dailyDirectRevenue.reduce((sum, entry) => sum + (entry.cardTotal || 0), 0);
+  }, [dailyDirectRevenue]);
+
+  const directCashBreakdown = useMemo(() => {
+    const breakdown: Record<string, number> = {
+      'Fifty Lari': 0,
+      'One Rf': 0,
+      'Two Rf': 0,
+      'Note 5': 0,
+      'Note 10': 0,
+      'Note 20': 0,
+      'Note 50': 0,
+      'Note 100': 0,
+      'Note 500': 0,
+      'Note 1000': 0,
+    };
+    
+    dailyDirectRevenue.forEach((entry) => {
+      breakdown['Fifty Lari'] += (entry.cashCounts?.fiftyLari || 0) * 50;
+      breakdown['One Rf'] += (entry.cashCounts?.oneRf || 0) * 1;
+      breakdown['Two Rf'] += (entry.cashCounts?.twoRf || 0) * 2;
+      breakdown['Note 5'] += (entry.cashCounts?.note5 || 0) * 5;
+      breakdown['Note 10'] += (entry.cashCounts?.note10 || 0) * 10;
+      breakdown['Note 20'] += (entry.cashCounts?.note20 || 0) * 20;
+      breakdown['Note 50'] += (entry.cashCounts?.note50 || 0) * 50;
+      breakdown['Note 100'] += (entry.cashCounts?.note100 || 0) * 100;
+      breakdown['Note 500'] += (entry.cashCounts?.note500 || 0) * 500;
+      breakdown['Note 1000'] += (entry.cashCounts?.note1000 || 0) * 1000;
+    });
+    
+    return Object.entries(breakdown)
+      .filter(([, value]) => value > 0)
+      .map(([name, value]) => ({ name, value }));
+  }, [dailyDirectRevenue]);
+
+  const directCardBreakdown = useMemo(() => {
+    const breakdown: Record<string, number> = {};
+    
+    dailyDirectRevenue.forEach((entry) => {
+      entry.cardPayments?.forEach((payment) => {
+        breakdown[payment.type] = (breakdown[payment.type] || 0) + (payment.amount || 0);
+      });
+    });
+    
+    return Object.entries(breakdown)
+      .sort(([, a], [, b]) => b - a)
+      .map(([type, amount]) => ({ type, amount }));
+  }, [dailyDirectRevenue]);
+
   const dailySales = useMemo(() => {
     const today = new Date();
     const days = Array.from({ length: 7 }, (_, index) => {
@@ -193,6 +283,45 @@ export default function AdminDashboard() {
     return Object.entries(totals)
       .sort(([a], [b]) => new Date(a).getTime() - new Date(b).getTime())
       .map(([month, amount]) => ({ day: month, amount }));
+  }, [bills]);
+
+  const paymentMethodTrend = useMemo(() => {
+    const today = new Date();
+    const days = Array.from({ length: 7 }, (_, index) => {
+      const day = new Date(today);
+      day.setDate(today.getDate() - (6 - index));
+      return day;
+    });
+
+    return days.map((day) => {
+      const dayStr = day.toDateString();
+      const dayBills = bills.filter((bill) => new Date(bill.createdAt).toDateString() === dayStr);
+      const cash = dayBills.reduce((sum, bill) => {
+        if (bill.paymentMethod === 'Cash') {
+          return sum + bill.items.reduce((itemSum, item) => itemSum + item.price * item.quantity, 0);
+        }
+        return sum;
+      }, 0);
+      const transfer = dayBills.reduce((sum, bill) => {
+        if (bill.paymentMethod === 'Bank transfer') {
+          return sum + bill.items.reduce((itemSum, item) => itemSum + item.price * item.quantity, 0);
+        }
+        return sum;
+      }, 0);
+      const card = dayBills.reduce((sum, bill) => {
+        if (bill.paymentMethod === 'Card') {
+          return sum + bill.items.reduce((itemSum, item) => itemSum + item.price * item.quantity, 0);
+        }
+        return sum;
+      }, 0);
+      return {
+        day: day.toLocaleDateString('en-US', { weekday: 'short' }),
+        date: day.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
+        cash,
+        transfer,
+        card
+      };
+    });
   }, [bills]);
 
   const categoryData = useMemo(() => {
@@ -294,6 +423,54 @@ export default function AdminDashboard() {
           </motion.div>
         </div>
 
+        {/* Payment Methods KPI Row */}
+        <div className="grid gap-4 sm:grid-cols-3 lg:grid-cols-3">
+          <motion.div
+            initial={{ opacity: 0, y: 18 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.5 }}
+            className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm relative overflow-hidden"
+          >
+            <div className="absolute top-0 right-0 w-24 h-24 bg-gradient-to-br from-emerald-500/10 to-transparent rounded-bl-full" />
+            <div className="flex items-center justify-between mb-2">
+              <p className="text-sm uppercase tracking-[0.24em] text-slate-500">Cash Sales</p>
+              <DollarSign className="h-5 w-5 text-emerald-600" />
+            </div>
+            <p className="text-3xl font-bold text-slate-900">{formatMVR(cashTotal)}</p>
+            <p className="mt-3 text-sm text-slate-500">{cashTransactions} transactions</p>
+          </motion.div>
+
+          <motion.div
+            initial={{ opacity: 0, y: 18 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.6 }}
+            className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm relative overflow-hidden"
+          >
+            <div className="absolute top-0 right-0 w-24 h-24 bg-gradient-to-br from-blue-500/10 to-transparent rounded-bl-full" />
+            <div className="flex items-center justify-between mb-2">
+              <p className="text-sm uppercase tracking-[0.24em] text-slate-500">Bank Transfers</p>
+              <DollarSign className="h-5 w-5 text-blue-600" />
+            </div>
+            <p className="text-3xl font-bold text-slate-900">{formatMVR(transferTotal)}</p>
+            <p className="mt-3 text-sm text-slate-500">{transferTransactions} transactions</p>
+          </motion.div>
+
+          <motion.div
+            initial={{ opacity: 0, y: 18 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.7 }}
+            className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm relative overflow-hidden"
+          >
+            <div className="absolute top-0 right-0 w-24 h-24 bg-gradient-to-br from-violet-500/10 to-transparent rounded-bl-full" />
+            <div className="flex items-center justify-between mb-2">
+              <p className="text-sm uppercase tracking-[0.24em] text-slate-500">Card Payments</p>
+              <DollarSign className="h-5 w-5 text-violet-600" />
+            </div>
+            <p className="text-3xl font-bold text-slate-900">{formatMVR(cardTotal)}</p>
+            <p className="mt-3 text-sm text-slate-500">{cardTransactions} transactions</p>
+          </motion.div>
+        </div>
+
         {/* Main Charts Row */}
         <div className="grid gap-5 lg:grid-cols-3">
           {/* Daily Sales Chart - Larger */}
@@ -373,6 +550,140 @@ export default function AdminDashboard() {
                   <span className="text-sm font-semibold">{formatMVR(item.value)}</span>
                 </div>
               ))}
+            </div>
+          </motion.section>
+        </div>
+
+        {/* Second Row - Enhanced Payment Analysis */}
+        <div className="grid gap-5 lg:grid-cols-2">
+          {/* Payment Method Trend */}
+          <motion.section
+            initial={{ opacity: 0, y: 16 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.8 }}
+            className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm"
+          >
+            <div className="mb-6">
+              <h3 className="text-xl font-semibold text-slate-900">Payment Methods Trend</h3>
+              <p className="text-sm text-slate-500">Cash vs Bank Transfer vs Card over time</p>
+            </div>
+            <div className="h-80">
+              <ResponsiveContainer width="100%" height="100%">
+                <ComposedChart data={paymentMethodTrend} margin={{ top: 10, right: 10, left: -10, bottom: 0 }}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="rgba(5, 9, 63, 0.1)" />
+                  <XAxis dataKey="day" tick={{ fill: 'rgba(5, 9, 63, 0.7)', fontSize: 12 }} />
+                  <YAxis tick={{ fill: 'rgba(5, 9, 63, 0.7)', fontSize: 12 }} />
+                  <Tooltip content={<CustomTooltip />} />
+                  <Legend />
+                  <Bar dataKey="cash" fill="#10b981" radius={[4, 4, 0, 0]} name="Cash" />
+                  <Bar dataKey="transfer" fill="#3b82f6" radius={[4, 4, 0, 0]} name="Bank Transfer" />
+                  <Bar dataKey="card" fill="#8b5cf6" radius={[4, 4, 0, 0]} name="Card" />
+                </ComposedChart>
+              </ResponsiveContainer>
+            </div>
+          </motion.section>
+
+          {/* Payment Methods Breakdown - Enhanced */}
+          <motion.section
+            initial={{ opacity: 0, y: 16 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.9 }}
+            className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm"
+          >
+            <div className="mb-6">
+              <h3 className="text-xl font-semibold text-slate-900">Payment Distribution</h3>
+              <p className="text-sm text-slate-500">Detailed breakdown by method</p>
+            </div>
+            <div className="h-64">
+              <ResponsiveContainer width="100%" height="100%">
+                <PieChart>
+                  <Pie
+                    data={paymentBreakdown}
+                    dataKey="value"
+                    nameKey="method"
+                    innerRadius={60}
+                    outerRadius={90}
+                    paddingAngle={5}
+                    label={({ name, percent }: any) => `${name} ${((percent || 0) * 100).toFixed(0)}%`}
+                    labelLine={{ stroke: 'rgba(5, 9, 63, 0.3)' }}
+                  >
+                    {paymentBreakdown.map((entry, index) => {
+                      const colors = ['#10b981', '#3b82f6', '#8b5cf6'];
+                      return <Cell key={entry.method} fill={colors[index % colors.length]} />;
+                    })}
+                  </Pie>
+                  <Tooltip content={<CustomTooltip />} />
+                </PieChart>
+              </ResponsiveContainer>
+            </div>
+            <div className="mt-4 space-y-2">
+              {paymentBreakdown.map((item, index) => {
+                const colors = ['#10b981', '#3b82f6', '#8b5cf6'];
+                return (
+                  <div key={item.method} className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <div className="h-3 w-3 rounded-full" style={{ backgroundColor: colors[index % colors.length] }} />
+                      <span className="text-sm text-slate-600">{item.method}</span>
+                    </div>
+                    <span className="text-sm font-semibold">{formatMVR(item.value)}</span>
+                  </div>
+                );
+              })}
+            </div>
+          </motion.section>
+        </div>
+
+        {/* Direct Revenue Section - Cash and Card Breakdown */}
+        <div className="grid gap-5 lg:grid-cols-2">
+          {/* Direct Cash Breakdown */}
+          <motion.section
+            initial={{ opacity: 0, y: 16 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 1.0 }}
+            className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm"
+          >
+            <div className="mb-6">
+              <h3 className="text-xl font-semibold text-slate-900">Direct Cash Breakdown</h3>
+              <p className="text-sm text-slate-500">Cash counts by denomination</p>
+              <p className="mt-2 text-2xl font-bold text-emerald-600">{formatMVR(directCashTotal)}</p>
+            </div>
+            <div className="space-y-2 max-h-64 overflow-y-auto">
+              {directCashBreakdown.length > 0 ? (
+                directCashBreakdown.map((item) => (
+                  <div key={item.name} className="flex items-center justify-between rounded-lg bg-slate-50 p-3">
+                    <span className="text-sm font-medium text-slate-700">{item.name}</span>
+                    <span className="text-sm font-semibold text-slate-900">{formatMVR(item.value)}</span>
+                  </div>
+                ))
+              ) : (
+                <p className="text-center text-sm text-slate-500 py-6">No direct cash entries yet</p>
+              )}
+            </div>
+          </motion.section>
+
+          {/* Direct Card Breakdown */}
+          <motion.section
+            initial={{ opacity: 0, y: 16 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 1.1 }}
+            className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm"
+          >
+            <div className="mb-6">
+              <h3 className="text-xl font-semibold text-slate-900">Direct Card Payments</h3>
+              <p className="text-sm text-slate-500">Card payment methods breakdown</p>
+              <p className="mt-2 text-2xl font-bold text-violet-600">{formatMVR(directCardTotal)}</p>
+            </div>
+            <div className="space-y-2 max-h-64 overflow-y-auto">
+              {directCardBreakdown.length > 0 ? (
+                directCardBreakdown.map((item) => (
+                  <div key={item.type} className="flex items-center justify-between rounded-lg bg-slate-50 p-3">
+                    <span className="text-sm font-medium text-slate-700">{item.type}</span>
+                    <span className="text-sm font-semibold text-slate-900">{formatMVR(item.amount)}</span>
+                  </div>
+                ))
+              ) : (
+                <p className="text-center text-sm text-slate-500 py-6">No direct card entries yet</p>
+              )}
             </div>
           </motion.section>
         </div>

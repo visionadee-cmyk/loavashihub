@@ -65,7 +65,7 @@ export default function AppShell({ title, children }: AppShellProps) {
           </button>
         </div>
 
-        <nav className="space-y-2">
+        <nav className="space-y-2 overflow-y-auto max-h-[calc(100vh-120px)]">
           {navItems.map((item) => {
             const Icon = item.icon;
             return (

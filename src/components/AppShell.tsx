@@ -75,7 +75,7 @@ export default function AppShell({ title, children }: AppShellProps) {
                 onClick={() => setSidebarOpen(false)}
                 className={({ isActive }) =>
                   `group flex items-center gap-3 rounded-lg px-3 py-2 text-sm transition ${
-                    isActive ? 'bg-slate-200 text-white' : 'text-[#05093f] hover:bg-slate-100'
+                    isActive ? 'bg-[rgb(22_163_74)] text-white' : 'text-[#05093f] hover:bg-slate-100'
                   }`
                 }
               >
@@ -151,7 +151,7 @@ export default function AppShell({ title, children }: AppShellProps) {
               onClick={() => setSidebarOpen(false)}
               className={({ isActive }) =>
                 `flex flex-col items-center gap-1 text-xs transition ${
-                  isActive ? 'text-slate-200' : 'text-[#05093f] hover:text-[#05093f]/80'
+                  isActive ? 'text-[rgb(22_163_74)]' : 'text-[#05093f] hover:text-[#05093f]/80'
                 }`
               }
             >

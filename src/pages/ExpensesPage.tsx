@@ -103,19 +103,23 @@ export default function ExpensesPage() {
                 </select>
               </label>
             </div>
-            {expenseForm.category === 'Salary' && staffMembers.length > 0 && (
+            {expenseForm.category === 'Salary' && (
               <div className="grid gap-4 sm:grid-cols-2 rounded-3xl border border-emerald-200 bg-emerald-50 p-4">
                 <label className="block text-sm text-slate-600">
                   Staff member
                   <select
-                    value={expenseForm.title}
+                    value={expenseForm.title || ''}
                     onChange={(event) => setExpenseForm((current) => ({ ...current, title: event.target.value }))}
                     className="mt-2 w-full rounded-3xl border border-slate-300 bg-white px-4 py-3 text-slate-900 outline-none"
                   >
                     <option value="">Select staff...</option>
-                    {staffMembers.map((staff) => (
-                      <option key={staff.id} value={staff.name}>{staff.name} ({staff.designation})</option>
-                    ))}
+                    {staffMembers.length > 0 ? (
+                      staffMembers.map((staff) => (
+                        <option key={staff.id} value={staff.name}>{staff.name} ({staff.designation})</option>
+                      ))
+                    ) : (
+                      <option value="" disabled>No staff members found</option>
+                    )}
                   </select>
                 </label>
                 <label className="block text-sm text-slate-600">

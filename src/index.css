@@ -35,24 +35,6 @@ select {
   font: inherit;
 }
 
-button {
-  background-color: #43e311 !important;
-  color: #ffffff !important;
-  border-color: transparent !important;
-}
-
-button:hover,
-button:focus {
-  background-color: #37c211 !important;
-}
-
-button:disabled,
-button[disabled] {
-  background-color: #a3e7a1 !important;
-  color: #ffffff !important;
-  cursor: not-allowed;
-}
-
 ::selection {
   background-color: #7c4b2e;
   color: #ffffff;

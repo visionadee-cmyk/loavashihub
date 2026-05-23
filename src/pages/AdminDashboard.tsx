@@ -1,6 +1,6 @@
 import { motion } from 'framer-motion';
 import {
-  LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
+  XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
   BarChart, Bar, Legend, PieChart, Pie, Cell, AreaChart, Area,
   ComposedChart, RadarChart, Radar, PolarGrid, PolarAngleAxis, PolarRadiusAxis
 } from 'recharts';
@@ -12,7 +12,6 @@ import { TrendingUp, TrendingDown, DollarSign, ShoppingCart, AlertTriangle, Pack
 import type { Bill, MenuItem, InventoryItem, PurchaseOrder, StaffMember, Expense, Recipe } from '../types';
 
 const paymentColors = ['#16a34a', '#05093f', '#7c4b2e', '#f59e0b'];
-const categoryColors = ['#16a34a', '#05093f', '#7c4b2e', '#f59e0b', '#8b5cf6', '#ec4899'];
 
 // Custom tooltip component
 const CustomTooltip = ({ active, payload, label }: any) => {
@@ -230,8 +229,8 @@ export default function AdminDashboard() {
   }, [inventory]);
 
   // Staff statistics
-  const totalStaff = staffMembers.length;
-  const staffByDesignation = useMemo(() => {
+  const _totalStaff = staffMembers.length;
+  const _staffByDesignation = useMemo(() => {
     const counts: Record<string, number> = {};
     staffMembers.forEach((staff) => {
       counts[staff.designation] = (counts[staff.designation] || 0) + 1;
@@ -239,7 +238,7 @@ export default function AdminDashboard() {
     return Object.entries(counts).map(([name, value]) => ({ name, value }));
   }, [staffMembers]);
 
-  const totalMonthlySalary = useMemo(() => {
+  const _totalMonthlySalary = useMemo(() => {
     return staffMembers.reduce((sum, staff) => sum + staff.salary, 0);
   }, [staffMembers]);
 
@@ -248,7 +247,7 @@ export default function AdminDashboard() {
     return expenses.reduce((sum, expense) => sum + expense.amount, 0);
   }, [expenses]);
 
-  const expensesByCategory = useMemo(() => {
+  const _expensesByCategory = useMemo(() => {
     const categories: Record<string, number> = {};
     expenses.forEach((expense) => {
       categories[expense.category] = (categories[expense.category] || 0) + expense.amount;
@@ -259,23 +258,23 @@ export default function AdminDashboard() {
   }, [expenses]);
 
   // Net profit calculation
-  const netProfit = useMemo(() => {
+  const _netProfit = useMemo(() => {
     return totalRevenue - totalExpensesAmount;
   }, [totalRevenue, totalExpensesAmount]);
 
   // Active recipes count
-  const activeRecipes = useMemo(() => {
+  const _activeRecipes = useMemo(() => {
     return recipes.filter((recipe) => recipe.status === 'Active').length;
   }, [recipes]);
 
   // Customer statistics
-  const uniqueCustomers = useMemo(() => {
+  const _uniqueCustomers = useMemo(() => {
     const customerIds = new Set(bills.map((bill) => bill.customerId).filter(Boolean));
     return customerIds.size;
   }, [bills]);
 
   // Order status breakdown
-  const orderStatusBreakdown = useMemo(() => {
+  const _orderStatusBreakdown = useMemo(() => {
     const statuses: Record<string, number> = {};
     bills.forEach((bill) => {
       statuses[bill.status] = (statuses[bill.status] || 0) + 1;

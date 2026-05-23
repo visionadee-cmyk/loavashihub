@@ -9,7 +9,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { loadCollection, saveDocument } from '../lib/firestore';
 import { formatMVR } from '../lib/mvr';
 import { TrendingUp, TrendingDown, DollarSign, ShoppingCart, AlertTriangle, Package } from 'lucide-react';
-import type { Bill, MenuItem, InventoryItem, PurchaseOrder, StaffMember, Expense, Recipe } from '../types';
+import type { Bill, MenuItem, InventoryItem, PurchaseOrder } from '../types';
 
 const paymentColors = ['#16a34a', '#05093f', '#7c4b2e', '#f59e0b'];
 

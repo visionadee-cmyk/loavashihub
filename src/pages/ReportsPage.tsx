@@ -133,7 +133,7 @@ export default function ReportsPage() {
     [expenses, customFilter.startDate, customFilter.endDate],
   );
 
-  // Daily revenue data
+  // Daily revenue data (including direct revenue)
   const dailyRevenueData = useMemo(() => {
     const grouped = filteredBills.reduce<Record<string, number>>((acc, bill) => {
       const date = bill.createdAt.slice(0, 10);
@@ -142,10 +142,18 @@ export default function ReportsPage() {
       return acc;
     }, {});
 
+    // Add direct revenue entries
+    const filteredDirectRevenue = directRevenueEntries.filter(
+      (entry) => entry.date >= customFilter.startDate && entry.date <= customFilter.endDate,
+    );
+    filteredDirectRevenue.forEach((entry) => {
+      grouped[entry.date] = (grouped[entry.date] ?? 0) + entry.totalDirectRevenue;
+    });
+
     return Object.entries(grouped)
       .sort(([a], [b]) => a.localeCompare(b))
       .map(([date, revenue]) => ({ date, revenue }));
-  }, [filteredBills]);
+  }, [filteredBills, directRevenueEntries, customFilter.startDate, customFilter.endDate]);
 
   const exportXlsx = () => {
     const workbook = utils.book_new();

@@ -4,7 +4,7 @@ import AppShell from '../components/AppShell';
 import { formatMVR } from '../lib/mvr';
 import { hasFirebaseConfig } from '../lib/firebase';
 import { loadCollection, saveDocument } from '../lib/firestore';
-import type { Expense, MonthlyExpense } from '../types';
+import type { Expense, MonthlyExpense, StaffMember } from '../types';
 
 const defaultExpense: Partial<Expense> = {
   title: '',
@@ -24,24 +24,33 @@ const defaultMonthlyExpense: Partial<MonthlyExpense> = {
 export default function ExpensesPage() {
   const [expenses, setExpenses] = useState<Expense[]>([]);
   const [monthlyExpenses, setMonthlyExpenses] = useState<MonthlyExpense[]>([]);
+  const [staffMembers, setStaffMembers] = useState<StaffMember[]>([]);
+  const [expenseForm, setExpenseForm] = useState<Partial<Expense> & { salaryFrequency?: 'daily' | 'monthly' }>({
+    ...defaultExpense,
+    salaryFrequency: 'daily',
+  });
+  const [monthlyForm, setMonthlyForm] = useState(defaultMonthlyExpense);
 
   useEffect(() => {
     if (!hasFirebaseConfig) {
       setExpenses([]);
       setMonthlyExpenses([]);
+      setStaffMembers([]);
       return;
     }
 
-    loadCollection<Expense>('expenses', [])
-      .then((items) => { if (items.length) setExpenses(items); })
-      .catch((error) => console.error('Failed to load expenses:', error));
-
-    loadCollection<MonthlyExpense>('monthlyExpenses', [])
-      .then((items) => { if (items.length) setMonthlyExpenses(items); })
-      .catch((error) => console.error('Failed to load monthly expenses:', error));
+    Promise.all([
+      loadCollection<Expense>('expenses', []),
+      loadCollection<MonthlyExpense>('monthlyExpenses', []),
+      loadCollection<StaffMember>('staff', []),
+    ])
+      .then(([loadedExpenses, loadedMonthlyExpenses, loadedStaff]) => {
+        if (loadedExpenses.length) setExpenses(loadedExpenses);
+        if (loadedMonthlyExpenses.length) setMonthlyExpenses(loadedMonthlyExpenses);
+        if (loadedStaff.length) setStaffMembers(loadedStaff);
+      })
+      .catch((error) => console.error('Failed to load expenses or staff:', error));
   }, []);
-  const [expenseForm, setExpenseForm] = useState(defaultExpense);
-  const [monthlyForm, setMonthlyForm] = useState(defaultMonthlyExpense);
 
   const totalDaily = useMemo(() => expenses.reduce((sum, item) => sum + item.amount, 0), [expenses]);
   const totalMonthly = useMemo(() => monthlyExpenses.reduce((sum, item) => sum + item.amount, 0), [monthlyExpenses]);
@@ -87,12 +96,41 @@ export default function ExpensesPage() {
                   className="mt-2 w-full rounded-3xl border border-slate-300 bg-white px-4 py-3 text-slate-900 outline-none"
                 >
                   <option>Daily expenses</option>
+                  <option>Salary</option>
                   <option>Purchases</option>
                   <option>Bank</option>
                   <option>Other</option>
                 </select>
               </label>
             </div>
+            {expenseForm.category === 'Salary' && staffMembers.length > 0 && (
+              <div className="grid gap-4 sm:grid-cols-2 rounded-3xl border border-emerald-200 bg-emerald-50 p-4">
+                <label className="block text-sm text-slate-600">
+                  Staff member
+                  <select
+                    value={expenseForm.title}
+                    onChange={(event) => setExpenseForm((current) => ({ ...current, title: event.target.value }))}
+                    className="mt-2 w-full rounded-3xl border border-slate-300 bg-white px-4 py-3 text-slate-900 outline-none"
+                  >
+                    <option value="">Select staff...</option>
+                    {staffMembers.map((staff) => (
+                      <option key={staff.id} value={staff.name}>{staff.name} ({staff.designation})</option>
+                    ))}
+                  </select>
+                </label>
+                <label className="block text-sm text-slate-600">
+                  Salary frequency
+                  <select
+                    value={(expenseForm as any).salaryFrequency || 'daily'}
+                    onChange={(event) => setExpenseForm((current) => ({ ...current, salaryFrequency: event.target.value as 'daily' | 'monthly' }))}
+                    className="mt-2 w-full rounded-3xl border border-slate-300 bg-white px-4 py-3 text-slate-900 outline-none"
+                  >
+                    <option value="daily">Daily salary</option>
+                    <option value="monthly">Monthly salary</option>
+                  </select>
+                </label>
+              </div>
+            )}
             <div className="grid gap-4 sm:grid-cols-2">
               <label className="block text-sm text-slate-600">
                 Paid from

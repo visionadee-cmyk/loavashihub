@@ -19,7 +19,7 @@ export default function DirectPurchasePage() {
   const [suppliers, setSuppliers] = useState<Supplier[]>([]);
   const [products, setProducts] = useState<Array<{ id?: string; name: string }>>([]);
   const [items, setItems] = useState<DirectPurchaseItem[]>([]);
-  const [form, setForm] = useState({ shopName: '', productName: '', quantity: 1, unit: 'pcs', unitCost: 0, gst: 0 });
+  const [form, setForm] = useState({ shopName: '', productName: '', quantity: 1, unit: 'pcs', unitCost: 0, gst: 0, date: new Date().toISOString().slice(0, 10) });
   const [newItemUnit, setNewItemUnit] = useState('pcs');
   const [editingId, setEditingId] = useState<string | null>(null);
 
@@ -108,7 +108,6 @@ export default function DirectPurchasePage() {
     if (!items.length || !form.shopName.trim()) return;
 
     const shopName = form.shopName.trim();
-    const existingPurchase = purchases.find((purchase) => purchase.id === editingId);
     const payload: DirectPurchase = {
       id: editingId ?? `dpurch-${Date.now()}`,
       shopName,
@@ -116,7 +115,7 @@ export default function DirectPurchasePage() {
       gst: form.gst,
       subtotal,
       total,
-      date: existingPurchase?.date ?? new Date().toISOString().slice(0, 10),
+      date: form.date || new Date().toISOString().slice(0, 10),
     };
 
     setPurchases((current) => {
@@ -139,7 +138,7 @@ export default function DirectPurchasePage() {
     }
 
     setItems([]);
-    setForm({ shopName: '', productName: '', quantity: 1, unit: 'pcs', unitCost: 0, gst: 0 });
+    setForm({ shopName: '', productName: '', quantity: 1, unit: 'pcs', unitCost: 0, gst: 0, date: new Date().toISOString().slice(0, 10) });
     setEditingId(null);
 
     if (hasFirebaseConfig) {
@@ -160,6 +159,7 @@ export default function DirectPurchasePage() {
       unit: 'pcs',
       unitCost: 0,
       gst: purchase.gst,
+      date: purchase.date,
     });
     setItems(purchase.items);
   };
@@ -178,7 +178,7 @@ export default function DirectPurchasePage() {
   const cancelPurchaseEdit = () => {
     setEditingId(null);
     setItems([]);
-    setForm({ shopName: '', productName: '', quantity: 1, unit: 'pcs', unitCost: 0, gst: 0 });
+    setForm({ shopName: '', productName: '', quantity: 1, unit: 'pcs', unitCost: 0, gst: 0, date: new Date().toISOString().slice(0, 10) });
   };
 
   return (
@@ -357,7 +357,16 @@ export default function DirectPurchasePage() {
 
           {items.length > 0 && (
             <div className="mt-6 space-y-3 rounded-3xl border border-slate-200 bg-slate-50 p-5">
-              <div className="grid gap-4 sm:grid-cols-[1fr_1fr]">
+              <div className="grid gap-4 sm:grid-cols-[1fr_1fr_1fr]">
+                <label className="block text-sm text-slate-500">
+                  Purchase date
+                  <input
+                    type="date"
+                    value={form.date}
+                    onChange={(e) => setForm({ ...form, date: e.target.value })}
+                    className="mt-2 w-full rounded-3xl border border-slate-200 bg-white px-4 py-3 text-slate-900 outline-none"
+                  />
+                </label>
                 <label className="block text-sm text-slate-500">
                   GST amount (MVR)
                   <input

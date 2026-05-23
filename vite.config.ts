@@ -14,7 +14,7 @@ export default defineConfig({
   },
   server: {
     host: '0.0.0.0',
-    port: 5173,
+    port: Number(process.env.PORT) || 5173,
     strictPort: true,
     headers: {
       // Required for service worker to work in development
@@ -23,8 +23,8 @@ export default defineConfig({
     hmr: {
       protocol: 'ws',
       host: 'localhost',
-      port: 5173,
-      clientPort: 5173,
+      port: Number(process.env.PORT) || 5173,
+      clientPort: Number(process.env.PORT) || 5173,
     },
   },
 })

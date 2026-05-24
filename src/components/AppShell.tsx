@@ -1,6 +1,6 @@
 import { Link, NavLink, useLocation } from 'react-router-dom';
 import { useEffect, useState } from 'react';
-import { LogOut, LayoutDashboard, ShoppingCart, ShoppingBag, Coffee, Table, Users2, ClipboardList, Box, Layers, BookOpen, BarChart3, Clock, CheckCircle2, ListChecks, Menu, X, DollarSign } from 'lucide-react';
+import { LogOut, LayoutDashboard, ShoppingCart, ShoppingBag, Coffee, Table, Users2, ClipboardList, Box, Layers, BookOpen, BarChart3, Clock, CheckCircle2, ListChecks, Menu, X, DollarSign, Package } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 const logo = '/logo.jpeg';
 
@@ -27,6 +27,7 @@ const cashierNav = [
   { path: '/pos', label: 'POS', icon: ShoppingCart },
   { path: '/bills/pending', label: 'Open bills', icon: Clock },
   { path: '/bills/completed', label: 'Completed bills', icon: CheckCircle2 },
+  { path: '/stock-on-hand', label: 'Stock on Hand', icon: Package },
   { path: '/admin/inventory-update', label: 'Inventory count', icon: ListChecks },
 ];
 

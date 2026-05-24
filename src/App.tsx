@@ -23,6 +23,7 @@ import CompletedBillsPage from './pages/CompletedBillsPage';
 import BillDetailsPage from './pages/BillDetailsPage';
 import CustomersPage from './pages/CustomersPage';
 import SettingsPage from './pages/SettingsPage';
+import StockOnHandPage from './pages/StockOnHandPage';
 import ProtectedRoute from './components/ProtectedRoute';
 import ServiceWorkerNotifier from './components/ServiceWorkerNotifier';
 
@@ -199,6 +200,14 @@ function App() {
               element={
                 <ProtectedRoute allowedRoles={['admin', 'cashier']}>
                   <SettingsPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/stock-on-hand"
+              element={
+                <ProtectedRoute allowedRoles={['admin', 'cashier']}>
+                  <StockOnHandPage />
                 </ProtectedRoute>
               }
             />

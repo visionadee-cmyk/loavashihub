@@ -3,7 +3,7 @@ import { TrendingUp, AlertCircle, ShoppingCart, Package, Zap } from 'lucide-reac
 import AppShell from '../components/AppShell';
 import { hasFirebaseConfig } from '../lib/firebase';
 import { loadCollection } from '../lib/firestore';
-import type { Bill, DirectPurchase, InventoryItem, OrderItem } from '../types';
+import type { Bill, DirectPurchase } from '../types';
 
 interface StockItem {
   id: string;
@@ -34,8 +34,6 @@ interface StatCard {
 
 export default function StockOnHandPage() {
   const [stockItems, setStockItems] = useState<StockItem[]>([]);
-  const [bills, setBills] = useState<Bill[]>([]);
-  const [purchases, setPurchases] = useState<DirectPurchase[]>([]);
   const [suggestions, setSuggestions] = useState<SmartSuggestion[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
@@ -56,8 +54,7 @@ export default function StockOnHandPage() {
           loadCollection<DirectPurchase>('directPurchases', []),
         ]);
 
-        setBills(loadedBills);
-        setPurchases(loadedPurchases);
+        // Load data for analysis
 
         // Calculate stock on hand
         const stockMap = new Map<string, StockItem>();
@@ -90,7 +87,7 @@ export default function StockOnHandPage() {
         // Deduct from bills (items used in POS)
         loadedBills.forEach((bill) => {
           if (bill.status === 'Served' || bill.paymentStatus === 'Paid') {
-            bill.items.forEach((billItem) => {
+            bill.items.forEach((billItem: any) => {
               const key = billItem.name.toLowerCase();
               const existing = stockMap.get(key);
               if (existing) {
@@ -332,7 +329,7 @@ export default function StockOnHandPage() {
             </h3>
             <div className="space-y-3">
               {stats.topByFrequency.length > 0 ? (
-                stats.topByFrequency.map((item, idx) => {
+                stats.topByFrequency.map((item) => {
                   const maxFreq = Math.max(...stats.topByFrequency.map(i => i.purchaseFrequency), 1);
                   const percentage = (item.purchaseFrequency / maxFreq) * 100;
                   

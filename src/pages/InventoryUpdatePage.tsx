@@ -1,5 +1,5 @@
-import { useEffect, useState } from 'react';
-import { Save } from 'lucide-react';
+import { useEffect, useState, useMemo } from 'react';
+import { Save, Search as SearchIcon } from 'lucide-react';
 import AppShell from '../components/AppShell';
 import { useInventory } from '../context/InventoryContext';
 import { hasFirebaseConfig } from '../lib/firebase';
@@ -17,6 +17,17 @@ export default function InventoryUpdatePage() {
   const [pendingUpdates, setPendingUpdates] = useState<Map<string, number>>(new Map());
   const [selectedReason, setSelectedReason] = useState<'daily-count' | 'month-end' | 'physical-count' | 'damaged' | 'other'>('daily-count');
   const [notes, setNotes] = useState('');
+  const [searchTerm, setSearchTerm] = useState('');
+  const [filterSource, setFilterSource] = useState<'all' | 'inventory' | 'purchase'>('all');
+
+  // Filter products based on search term and source
+  const filteredProducts = useMemo(() => {
+    return allProducts.filter((product) => {
+      const matchesSearch = product.name.toLowerCase().includes(searchTerm.toLowerCase());
+      const matchesSource = filterSource === 'all' || product.source === filterSource;
+      return matchesSearch && matchesSource;
+    });
+  }, [allProducts, searchTerm, filterSource]);
 
   useEffect(() => {
     if (!hasFirebaseConfig) return;
@@ -148,54 +159,92 @@ export default function InventoryUpdatePage() {
             </label>
           </div>
 
-          <div className="space-y-3 max-h-96 overflow-y-auto mb-6">
-            {allProducts.map((item) => {
-              const currentUpdate = pendingUpdates.get(item.id);
-              const displayQty = currentUpdate !== undefined ? currentUpdate : item.quantity;
-              const hasChange = currentUpdate !== undefined;
-
-              return (
-                <div
-                  key={item.id}
-                  className={`rounded-3xl border p-4 ${
-                    hasChange
-                      ? 'border-amber-600 bg-amber-50'
-                      : 'border-slate-200 bg-slate-100'
-                  }`}
+          <div className="grid gap-3 mb-6">
+            <div className="flex gap-2 items-end">
+              <div className="flex-1">
+                <label className="block text-sm text-slate-600 mb-2">
+                  Search Products
+                  <div className="relative mt-2">
+                    <SearchIcon className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+                    <input
+                      type="text"
+                      value={searchTerm}
+                      onChange={(e) => setSearchTerm(e.target.value)}
+                      placeholder="Search by product name..."
+                      className="w-full rounded-3xl border border-slate-300 bg-white px-4 py-3 pl-10 text-slate-900 outline-none"
+                    />
+                  </div>
+                </label>
+              </div>
+              <label className="block text-sm text-slate-600">
+                Filter
+                <select
+                  value={filterSource}
+                  onChange={(e) => setFilterSource(e.target.value as typeof filterSource)}
+                  className="mt-2 rounded-3xl border border-slate-300 bg-white px-4 py-3 text-slate-900 outline-none"
                 >
-                  <div className="flex items-center justify-between gap-3 mb-2">
-                    <div>
-                      <div className="flex items-center gap-2">
-                        <p className="font-semibold text-slate-900">{item.name}</p>
-                        <span className={`text-xs px-2 py-1 rounded-full ${
-                          item.source === 'inventory'
-                            ? 'bg-blue-600/20 text-blue-300'
-                            : 'bg-purple-600/20 text-purple-300'
-                        }`}>
-                          {item.source === 'inventory' ? 'Inventory' : 'Purchase'}
-                        </span>
+                  <option value="all">All</option>
+                  <option value="inventory">Inventory</option>
+                  <option value="purchase">Purchase</option>
+                </select>
+              </label>
+            </div>
+          </div>
+
+          <div className="space-y-3 max-h-96 overflow-y-auto mb-6">
+            {filteredProducts.length > 0 ? (
+              filteredProducts.map((item) => {
+                const currentUpdate = pendingUpdates.get(item.id);
+                const displayQty = currentUpdate !== undefined ? currentUpdate : item.quantity;
+                const hasChange = currentUpdate !== undefined;
+
+                return (
+                  <div
+                    key={item.id}
+                    className={`rounded-3xl border p-4 ${
+                      hasChange
+                        ? 'border-amber-600 bg-amber-50'
+                        : 'border-slate-200 bg-slate-100'
+                    }`}
+                  >
+                    <div className="flex items-center justify-between gap-3 mb-2">
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <p className="font-semibold text-slate-900">{item.name}</p>
+                          <span className={`text-xs px-2 py-1 rounded-full ${
+                            item.source === 'inventory'
+                              ? 'bg-blue-600/20 text-blue-300'
+                              : 'bg-purple-600/20 text-purple-300'
+                          }`}>
+                            {item.source === 'inventory' ? 'Inventory' : 'Purchase'}
+                          </span>
+                        </div>
+                        <p className="text-xs text-slate-400">Current: {item.quantity} {item.unit}</p>
                       </div>
-                      <p className="text-xs text-slate-400">Current: {item.quantity} {item.unit}</p>
+                      {item.source === 'inventory' && (
+                        <input
+                          type="number"
+                          min={0}
+                          value={displayQty}
+                          onChange={(e) => updateQuantity(item.id, Number(e.target.value))}
+                          className="w-20 rounded-2xl border border-slate-300 bg-white px-3 py-2 text-right text-slate-900 font-semibold outline-none"
+                          placeholder="New qty"
+                        />
+                      )}
                     </div>
-                    {item.source === 'inventory' && (
-                      <input
-                        type="number"
-                        min={0}
-                        value={displayQty}
-                        onChange={(e) => updateQuantity(item.id, Number(e.target.value))}
-                        className="w-20 rounded-2xl border border-slate-300 bg-white px-3 py-2 text-right text-slate-900 font-semibold outline-none"
-                        placeholder="New qty"
-                      />
+                    {hasChange && (
+                      <p className="text-xs text-amber-300">
+                        Change: {currentUpdate! - item.quantity > 0 ? '+' : ''}{currentUpdate! - item.quantity} {item.unit}
+                      </p>
                     )}
                   </div>
-                  {hasChange && (
-                    <p className="text-xs text-amber-300">
-                      Change: {currentUpdate! - item.quantity > 0 ? '+' : ''}{currentUpdate! - item.quantity} {item.unit}
-                    </p>
-                  )}
-                </div>
-              );
-            })}
+                );
+              })
+            ) : (
+              <div className="rounded-3xl border border-slate-200 bg-slate-100 p-4 text-center text-slate-500">
+                No products found matching your search.
+              </div>
+            )}
           </div>
 
           <button

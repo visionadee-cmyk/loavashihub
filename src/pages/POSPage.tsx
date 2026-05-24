@@ -15,6 +15,7 @@ import {
 } from 'lucide-react';
 import { NavLink, useNavigate } from 'react-router-dom';
 import AppShell from '../components/AppShell';
+import { useAuth } from '../context/AuthContext';
 import { formatMVR } from '../lib/mvr';
 import { hasFirebaseConfig } from '../lib/firebase';
 import { loadCollection, saveDocument } from '../lib/firestore';
@@ -31,7 +32,7 @@ const internalNav = [
   { path: '/pos', label: 'Home', icon: Home },
   { path: '/customers', label: 'Customers', icon: Users2 },
   { path: '/admin/tables', label: 'Tables', icon: Table },
-  { path: '/pos', label: 'Cashier', icon: CreditCard },
+  { path: '/bills/pending', label: 'Cashier', icon: CreditCard },
   { path: '/bills/pending', label: 'Orders', icon: ShoppingCart },
   { path: '/admin/reports', label: 'Reports', icon: BarChart3 },
   { path: '/settings', label: 'Settings', icon: Settings },
@@ -80,6 +81,7 @@ function createEmptyBill(tableName: string): Bill {
 }
 
 export default function POSPage() {
+  const { user } = useAuth();
   const [products, setProducts] = useState<MenuItem[]>([]);
   const [tables, setTables] = useState<TableItem[]>([]);
   const [customers, setCustomers] = useState<Customer[]>([]);
@@ -97,6 +99,17 @@ export default function POSPage() {
   const [selectedPaxForNewOrder, setSelectedPaxForNewOrder] = useState(1);
   const searchInputRef = useRef<HTMLInputElement>(null);
   const navigate = useNavigate();
+
+  // Filter navigation based on user role
+  const filteredInternalNav = useMemo(
+    () => internalNav.filter((item) => {
+      if (item.label === 'Tables' && user?.role !== 'admin') {
+        return false;
+      }
+      return true;
+    }),
+    [user?.role]
+  );
 
   const categories = useMemo(
     () => ['All', ...Array.from(new Set(products.map((product) => product.category)))],
@@ -376,7 +389,7 @@ export default function POSPage() {
           <h1 className="text-lg md:text-xl font-bold text-green-600">mPOS</h1>
         </div>
         <div className="flex items-center gap-2 md:gap-3 flex-shrink-0 overflow-x-auto">
-          {internalNav.slice(0, 4).map((item) => {
+          {filteredInternalNav.slice(0, 4).map((item) => {
             const Icon = item.icon;
             return (
               <NavLink

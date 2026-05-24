@@ -103,7 +103,12 @@ export default function ReportsPage() {
 
     // Get today's expenses
     const dayExpenses = expenses
-      .filter((expense) => expense.date === dayStart)
+      .filter((expense) => expense.date === dayStart && expense.category !== 'Salary')
+      .reduce((sum, expense) => sum + expense.amount, 0);
+
+    // Get today's salary expenses
+    const daySalary = expenses
+      .filter((expense) => expense.date === dayStart && expense.category === 'Salary')
       .reduce((sum, expense) => sum + expense.amount, 0);
 
     // Get today's direct purchases
@@ -112,7 +117,7 @@ export default function ReportsPage() {
       .reduce((sum, purchase) => sum + purchase.total, 0);
 
     const totalDayRevenue = posRevenue + (dayDirectRevenue?.totalDirectRevenue || 0);
-    const totalDayExpenses = dayExpenses + dayPurchases;
+    const totalDayExpenses = dayExpenses + dayPurchases + daySalary;
     const dailyProfit = totalDayRevenue - totalDayExpenses;
 
     // Build cash breakdown
@@ -144,6 +149,7 @@ export default function ReportsPage() {
       closingPettyCash: (dayDirectRevenue as any)?.closingPettyCash || 0,
       expenses: dayExpenses,
       purchases: dayPurchases,
+      salary: daySalary,
       totalExpenses: totalDayExpenses,
       profit: dailyProfit,
     };
@@ -190,6 +196,9 @@ export default function ReportsPage() {
     text += `📋 *EXPENSES*\n`;
     text += `Daily Expenses: ${formatMVR(report.expenses)}\n`;
     text += `Direct Purchases: ${formatMVR(report.purchases)}\n`;
+    if (report.salary > 0) {
+      text += `Daily Salary: ${formatMVR(report.salary)}\n`;
+    }
     text += `Total Expenses: ${formatMVR(report.totalExpenses)}\n\n`;
 
     text += `✅ *PROFIT/LOSS*\n`;
@@ -643,9 +652,15 @@ export default function ReportsPage() {
               <p className="mt-3 text-2xl font-bold text-slate-900">{formatMVR(dailyReport.directRevenue)}</p>
             </div>
             <div className="rounded-2xl border border-white/50 bg-white p-4">
-              <p className="text-xs uppercase tracking-widest text-slate-500">Total Expenses</p>
-              <p className="mt-3 text-2xl font-bold text-red-600">{formatMVR(dailyReport.totalExpenses)}</p>
+              <p className="text-xs uppercase tracking-widest text-slate-500">Daily Expenses</p>
+              <p className="mt-3 text-2xl font-bold text-red-600">{formatMVR(dailyReport.expenses)}</p>
             </div>
+            {dailyReport.salary > 0 && (
+              <div className="rounded-2xl border border-white/50 bg-white p-4">
+                <p className="text-xs uppercase tracking-widest text-slate-500">Daily Salary</p>
+                <p className="mt-3 text-2xl font-bold text-red-600">{formatMVR(dailyReport.salary)}</p>
+              </div>
+            )}
             <div className="rounded-2xl border border-white/50 bg-white p-4">
               <p className="text-xs uppercase tracking-widest text-slate-500">Daily Profit</p>
               <p className={`mt-3 text-2xl font-bold ${dailyReport.profit >= 0 ? 'text-green-600' : 'text-red-600'}`}>
@@ -656,71 +671,75 @@ export default function ReportsPage() {
 
           {/* Cash Drawer Details */}
           {dailyReport.cashBreakdown.length > 0 && (
-            <div className="mt-6 grid gap-4 md:grid-cols-2">
-              <div className="rounded-2xl border border-white/50 bg-white p-4">
-                <h4 className="mb-3 font-semibold text-slate-900">Cash Drawer Breakdown</h4>
-                <div className="space-y-2">
-                  {dailyReport.cashBreakdown.map((item: any) => (
-                    <div key={`${item.denomination}-${item.count}`} className="flex items-center justify-between text-sm">
-                      <span className="text-slate-600">
-                        {item.denomination}: {item.count}×
-                      </span>
-                      <span className="font-semibold text-slate-900">{formatMVR(item.amount)}</span>
-                    </div>
-                  ))}
-                  <div className="border-t border-slate-200 pt-2">
-                    <div className="flex items-center justify-between font-semibold">
-                      <span className="text-slate-700">Cash Total</span>
-                      <span className="text-slate-900">{formatMVR(dailyReport.totalCashDrawer)}</span>
-                    </div>
+            <div className="mt-6 rounded-2xl border border-white/50 bg-white p-4">
+              <h4 className="mb-3 font-semibold text-slate-900">Cash Drawer Breakdown</h4>
+              <div className="space-y-2">
+                {dailyReport.cashBreakdown.map((item: any) => (
+                  <div key={`${item.denomination}-${item.count}`} className="flex items-center justify-between text-sm">
+                    <span className="text-slate-600">
+                      {item.denomination}: {item.count}×
+                    </span>
+                    <span className="font-semibold text-slate-900">{formatMVR(item.amount)}</span>
                   </div>
-                </div>
-              </div>
-              <div className="rounded-2xl border border-white/50 bg-white p-4">
-                <h4 className="mb-3 font-semibold text-slate-900">Payment Card Types</h4>
-                <div className="space-y-2">
-                  {dailyReport.cardPayments.length > 0 ? (
-                    dailyReport.cardPayments.map((payment: any) => (
-                      payment.amount > 0 && (
-                        <div key={payment.type} className="flex items-center justify-between text-sm">
-                          <span className="text-slate-600">{payment.type}</span>
-                          <span className="font-semibold text-slate-900">{formatMVR(payment.amount)}</span>
-                        </div>
-                      )
-                    ))
-                  ) : (
-                    <p className="text-sm text-slate-400">No card payments recorded</p>
-                  )}
-                  <div className="border-t border-slate-200 pt-2">
-                    <div className="flex items-center justify-between font-semibold">
-                      <span className="text-slate-700">Card Total</span>
-                      <span className="text-slate-900">{formatMVR(dailyReport.totalCardPayments)}</span>
-                    </div>
+                ))}
+                <div className="border-t border-slate-200 pt-2">
+                  <div className="flex items-center justify-between font-semibold">
+                    <span className="text-slate-700">Cash Total</span>
+                    <span className="text-slate-900">{formatMVR(dailyReport.totalCashDrawer)}</span>
                   </div>
                 </div>
               </div>
             </div>
           )}
 
-          {/* Petty Cash (Float) */}
-          <div className="mt-6 rounded-2xl border border-amber-200 bg-amber-50 p-4">
-            <h4 className="mb-3 font-semibold text-amber-900">💰 Petty Cash (Float)</h4>
-            <div className="grid grid-cols-3 gap-4">
-              <div>
-                <p className="text-xs text-amber-700">Opening</p>
-                <p className="text-lg font-bold text-amber-900">{formatMVR(dailyReport.openingPettyCash)}</p>
+          {/* Payment Card Types - Show independently */}
+          {dailyReport.cardPayments.length > 0 && (
+            <div className="mt-6 rounded-2xl border border-white/50 bg-white p-4">
+              <h4 className="mb-3 font-semibold text-slate-900">💳 Payment Card Types</h4>
+              <div className="space-y-2">
+                {dailyReport.cardPayments.map((payment: any) => (
+                  payment.amount > 0 && (
+                    <div key={payment.type} className="flex items-center justify-between text-sm">
+                      <span className="text-slate-600">{payment.type}</span>
+                      <span className="font-semibold text-slate-900">{formatMVR(payment.amount)}</span>
+                    </div>
+                  )
+                ))}
+                <div className="border-t border-slate-200 pt-2">
+                  <div className="flex items-center justify-between font-semibold">
+                    <span className="text-slate-700">Card Total</span>
+                    <span className="text-slate-900">{formatMVR(dailyReport.totalCardPayments)}</span>
+                  </div>
+                </div>
               </div>
-              <div>
-                <p className="text-xs text-amber-700">Closing</p>
-                <p className="text-lg font-bold text-amber-900">{formatMVR(dailyReport.closingPettyCash)}</p>
+            </div>
+          )}
+
+          {/* Petty Cash (Float) - Always visible */}
+          <div className="mt-6 rounded-2xl border-2 border-amber-300 bg-amber-50 p-5">
+            <h4 className="mb-4 font-semibold text-amber-900 text-lg">💰 Petty Cash (Float)</h4>
+            <p className="text-xs text-amber-700 mb-4">Float money kept in drawer for making change to customers</p>
+            <div className="grid grid-cols-3 gap-3">
+              <div className="rounded-2xl bg-white p-4 border border-amber-200">
+                <p className="text-xs text-amber-700 uppercase tracking-widest font-semibold">Opening</p>
+                <p className="text-2xl font-bold text-amber-900 mt-2">{formatMVR(dailyReport.openingPettyCash)}</p>
               </div>
-              <div>
-                <p className="text-xs text-amber-700">Difference</p>
-                <p className={`text-lg font-bold ${dailyReport.closingPettyCash >= dailyReport.openingPettyCash ? 'text-green-600' : 'text-red-600'}`}>
+              <div className="rounded-2xl bg-white p-4 border border-amber-200">
+                <p className="text-xs text-amber-700 uppercase tracking-widest font-semibold">Closing</p>
+                <p className="text-2xl font-bold text-amber-900 mt-2">{formatMVR(dailyReport.closingPettyCash)}</p>
+              </div>
+              <div className={`rounded-2xl p-4 border-2 ${dailyReport.closingPettyCash >= dailyReport.openingPettyCash ? 'bg-green-50 border-green-300' : 'bg-red-50 border-red-300'}`}>
+                <p className={`text-xs uppercase tracking-widest font-semibold ${dailyReport.closingPettyCash >= dailyReport.openingPettyCash ? 'text-green-700' : 'text-red-700'}`}>Float Change</p>
+                <p className={`text-2xl font-bold mt-2 ${dailyReport.closingPettyCash >= dailyReport.openingPettyCash ? 'text-green-700' : 'text-red-700'}`}>
                   {formatMVR(dailyReport.closingPettyCash - dailyReport.openingPettyCash)}
                 </p>
               </div>
             </div>
+            {dailyReport.closingPettyCash < dailyReport.openingPettyCash && (
+              <p className="mt-3 text-xs text-amber-700 bg-amber-100 rounded-lg p-2">
+                ⚠️ Float decreased by {formatMVR(dailyReport.openingPettyCash - dailyReport.closingPettyCash)} - Check if this is normal from customer change transactions
+              </p>
+            )}
           </div>
         </div>
         {/* Charts Grid */}

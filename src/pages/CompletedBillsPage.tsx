@@ -94,7 +94,7 @@ export default function CompletedBillsPage() {
                       <button
                         type="button"
                         onClick={() => navigate(`/bills/${bill.id}`)}
-                        className="rounded-3xl bg-[#7c4b2e] px-4 py-3 text-sm font-semibold text-white hover:bg-[#6a4028]"
+                        className="rounded-3xl border-2 border-green-700 bg-green-600 px-4 py-3 text-sm font-semibold text-white hover:bg-green-700"
                       >
                         Edit
                       </button>

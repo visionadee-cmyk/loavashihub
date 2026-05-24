@@ -59,7 +59,7 @@ export default function InventoryManagement() {
             <button
               type="button"
               onClick={() => setShowForm(!showForm)}
-              className="inline-flex items-center gap-2 rounded-3xl bg-violet-600 px-4 py-3 text-sm font-semibold text-white hover:bg-violet-500"
+              className="inline-flex items-center gap-2 rounded-3xl border-2 border-green-700 bg-green-600 px-4 py-3 text-sm font-semibold text-white hover:bg-green-700"
             >
               <Plus className="h-4 w-4" /> {showForm ? 'Cancel' : 'Add stock'}
             </button>
@@ -121,7 +121,7 @@ export default function InventoryManagement() {
             </label>
             <button
               onClick={saveItem}
-              className="inline-flex items-center gap-2 rounded-3xl bg-violet-600 px-4 py-3 text-sm font-semibold text-white hover:bg-violet-500"
+              className="inline-flex items-center gap-2 rounded-3xl border-2 border-green-700 bg-green-600 px-4 py-3 text-sm font-semibold text-white hover:bg-green-700"
             >
               <Plus className="h-4 w-4" /> {editingId ? 'Update stock' : 'Save stock'}
             </button>
@@ -148,7 +148,7 @@ export default function InventoryManagement() {
                       <p className="text-sm text-slate-600">Product ID: {item.productId ?? item.id} • Product no: {item.productNumber ?? 'N/A'}</p>
                     </div>
                     <div className="flex items-center gap-2">
-                      <button onClick={() => startEditing(item)} className="rounded-2xl bg-slate-800 px-3 py-2 text-slate-300 hover:bg-slate-700">
+                      <button onClick={() => startEditing(item)} className="rounded-2xl border-2 border-green-700 bg-green-600 px-3 py-2 text-white hover:bg-green-700">
                         <Edit3 className="h-4 w-4" />
                       </button>
                       <button onClick={() => deleteItem(item.id)} className="rounded-2xl bg-rose-600 px-3 py-2 text-white hover:bg-rose-500">

@@ -105,14 +105,14 @@ export default function PendingBillsPage() {
                       <button
                         type="button"
                         onClick={() => navigate(`/bills/${bill.id}`)}
-                        className="rounded-3xl border border-slate-200 bg-slate-100 px-4 py-3 text-sm font-semibold text-[#05093f] hover:bg-slate-200"
+                        className="rounded-3xl border-2 border-green-700 bg-green-600 px-4 py-3 text-sm font-semibold text-white hover:bg-green-700"
                       >
                         Edit
                       </button>
                       <button
                         type="button"
                         onClick={() => updateBill({ ...bill, status: 'Served', paymentStatus: 'Paid' })}
-                        className="rounded-3xl bg-violet-600 px-4 py-3 text-sm font-semibold text-white hover:bg-violet-500"
+                        className="rounded-3xl border-2 border-green-700 bg-green-600 px-4 py-3 text-sm font-semibold text-white hover:bg-green-700"
                       >
                         Mark served
                       </button>

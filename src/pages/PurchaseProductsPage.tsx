@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Plus, CheckCircle2 } from 'lucide-react';
+import { Plus, CheckCircle2, Edit3, Trash2, X, Check } from 'lucide-react';
 import AppShell from '../components/AppShell';
 import { useInventory } from '../context/InventoryContext';
 import { hasFirebaseConfig } from '../lib/firebase';
@@ -46,6 +46,8 @@ export default function PurchaseProductsPage() {
   const [form, setForm] = useState<Partial<PurchaseOrder>>(defaultPurchase);
   const [rfqItems, setRfqItems] = useState<RFQItem[]>([]);
   const [rfqForm, setRfqForm] = useState<Partial<RFQItem>>({ productName: '', quantity: 1, unit: 'pcs' });
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [showForm, setShowForm] = useState(false);
 
   const rfqProductName = rfqForm.productName?.trim();
   const rfqProductExists = rfqProductName
@@ -270,7 +272,7 @@ export default function PurchaseProductsPage() {
   const saveOrder = async () => {
     const selectedProduct = products.find((product) => product.name === form.productName) ?? products[0];
     const payload: PurchaseOrder = {
-      id: `purchase-${Date.now()}`,
+      id: editingId || `purchase-${Date.now()}`,
       menuItemId: selectedProduct?.id,
       productName: selectedProduct?.name ?? (form.productName?.trim() || 'New item'),
       vendor: form.vendor?.trim() || 'Unknown vendor',
@@ -282,8 +284,15 @@ export default function PurchaseProductsPage() {
       date: form.date || new Date().toISOString().slice(0, 10),
     };
 
-    setOrders((current) => [payload, ...current]);
+    setOrders((current) => {
+      if (editingId) {
+        return current.map((o) => (o.id === editingId ? payload : o));
+      }
+      return [payload, ...current];
+    });
     setForm(defaultPurchase);
+    setEditingId(null);
+    setShowForm(false);
 
     if (hasFirebaseConfig) {
       try {
@@ -292,6 +301,37 @@ export default function PurchaseProductsPage() {
         console.error('Failed to save purchase order to Firestore:', error);
       }
     }
+  };
+
+  const beginEditOrder = (order: PurchaseOrder) => {
+    setEditingId(order.id);
+    setForm({
+      productName: order.productName,
+      vendor: order.vendor,
+      quantity: order.quantity,
+      unit: order.unit,
+      unitCost: order.unitCost,
+      status: order.status,
+      date: order.date,
+    });
+    setShowForm(true);
+  };
+
+  const deleteOrder = async (id: string) => {
+    setOrders((current) => current.filter((o) => o.id !== id));
+    if (hasFirebaseConfig) {
+      try {
+        await deleteDocument('purchaseOrders', id);
+      } catch (error) {
+        console.error('Failed to delete purchase order:', error);
+      }
+    }
+  };
+
+  const cancelEdit = () => {
+    setEditingId(null);
+    setForm(defaultPurchase);
+    setShowForm(false);
   };
 
   return (
@@ -472,14 +512,23 @@ export default function PurchaseProductsPage() {
                 <p className="text-sm text-slate-600">Create new purchase orders for consumables and supplies.</p>
               </div>
               <button
-                onClick={saveOrder}
+                onClick={() => {
+                  if (!showForm) {
+                    setShowForm(true);
+                    setEditingId(null);
+                    setForm(defaultPurchase);
+                  } else {
+                    cancelEdit();
+                  }
+                }}
                 disabled={!products.length}
                 className="inline-flex items-center gap-2 rounded-3xl bg-violet-600 px-4 py-3 text-sm font-semibold text-white hover:bg-violet-500 disabled:cursor-not-allowed disabled:opacity-50"
               >
-                <Plus className="h-4 w-4" /> Add purchase
+                <Plus className="h-4 w-4" /> {showForm ? 'Cancel' : 'Add purchase'}
               </button>
             </div>
 
+            {showForm && (
             <div className="grid gap-4">
             <label className="block text-sm text-slate-600">
               Product name
@@ -572,8 +621,27 @@ export default function PurchaseProductsPage() {
                 <option value="Pending">Pending</option>
               </select>
             </label>
+
+            <div className="flex gap-2 mt-4">
+              <button
+                onClick={saveOrder}
+                disabled={!products.length}
+                className="flex-1 inline-flex items-center justify-center gap-2 rounded-3xl bg-violet-600 px-4 py-3 text-sm font-semibold text-white hover:bg-violet-500 disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                <Check className="h-4 w-4" /> {editingId ? 'Update Order' : 'Save Purchase'}
+              </button>
+              {editingId && (
+                <button
+                  onClick={cancelEdit}
+                  className="flex-1 inline-flex items-center justify-center gap-2 rounded-3xl bg-slate-300 px-4 py-3 text-sm font-semibold text-slate-900 hover:bg-slate-200"
+                >
+                  <X className="h-4 w-4" /> Cancel
+                </button>
+              )}
+            </div>
           </div>
-        </div>
+            )}
+          </div>
         </section>
 
         <section className="space-y-6">
@@ -588,11 +656,27 @@ export default function PurchaseProductsPage() {
             <div className="grid gap-3">
               {orders.map((order) => (
                 <div key={order.id} className="rounded-3xl border border-slate-200 bg-slate-100 p-4">
-                  <div className="flex flex-wrap items-center justify-between gap-3">
+                  <div className="flex flex-wrap items-center justify-between gap-3 mb-3">
                     <div>
                       <p className="font-semibold text-slate-900">{order.productName}</p>
                       <p className="text-sm text-slate-600">{order.vendor} • {order.quantity} {order.unit}</p>
                     </div>
+                    <div className="flex items-center gap-2">
+                      <button
+                        onClick={() => beginEditOrder(order)}
+                        className="inline-flex items-center gap-1 rounded-full bg-yellow-400 px-3 py-2 text-xs font-bold text-slate-900 hover:bg-yellow-300"
+                      >
+                        <Edit3 className="h-3 w-3" /> Edit
+                      </button>
+                      <button
+                        onClick={() => deleteOrder(order.id)}
+                        className="inline-flex items-center gap-1 rounded-3xl bg-red-50 px-3 py-2 text-red-600 hover:bg-red-100"
+                      >
+                        <Trash2 className="h-3 w-3" />
+                      </button>
+                    </div>
+                  </div>
+                  <div className="flex flex-wrap items-center justify-between gap-3">
                     <div className="text-right">
                       <p className="text-sm text-slate-600">{order.status}</p>
                       <p className="text-lg font-semibold text-slate-900">{formatMVR(order.totalCost)}</p>

@@ -386,7 +386,7 @@ export default function POSPage() {
       <div className="mx-auto max-w-[1700px] px-4 py-5 sm:px-6 lg:px-8">
         <div className="grid min-h-[calc(100vh-160px)] grid-cols-1 lg:grid-cols-[minmax(0,1fr)_420px] gap-4 md:gap-6 bg-slate-50 px-3 md:px-4 py-3 md:py-4 rounded-[32px] shadow-[0_20px_80px_rgba(5,9,63,0.08)]">
           {/* Left Sidebar - Hidden on mobile/tablet, shown on lg screens */}
-          <aside className="hidden lg:flex h-full flex-col justify-between rounded-[32px] border border-slate-200 bg-white px-4 py-6 shadow-sm hidden">
+          <aside className="hidden lg:flex h-full flex-col justify-between rounded-[32px] border border-slate-200 bg-white px-4 py-6 shadow-sm">
             <div className="space-y-10">
               <div>
                 <p className="text-sm font-semibold uppercase tracking-[0.24em] text-slate-400">Restro</p>

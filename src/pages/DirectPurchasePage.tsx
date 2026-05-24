@@ -96,6 +96,7 @@ export default function DirectPurchasePage() {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [showForm, setShowForm] = useState(false);
   const [isShopDropdownOpen, setIsShopDropdownOpen] = useState(false);
+  const [isProductDropdownOpen, setIsProductDropdownOpen] = useState(false);
 
   useEffect(() => {
     if (!hasFirebaseConfig) return;
@@ -157,6 +158,11 @@ export default function DirectPurchasePage() {
     if (!query) return suppliers.slice(0, 6);
     return suppliers.filter((supplier) => supplier.name.toLowerCase().includes(query)).slice(0, 6);
   }, [suppliers, form.shopName]);
+  const productSuggestions = useMemo(() => {
+    const query = form.productName.trim().toLowerCase();
+    if (!query) return products.slice(0, 6);
+    return products.filter((product) => product.name.toLowerCase().includes(query)).slice(0, 6);
+  }, [products, form.productName]);
   const shopAlreadySaved = suppliers.some((supplier) => supplier.name.toLowerCase() === form.shopName.trim().toLowerCase());
 
   const subtotal = useMemo(() => items.reduce((sum, item) => sum + item.totalCost, 0), [items]);
@@ -342,18 +348,33 @@ export default function DirectPurchasePage() {
 
             <label className="block text-sm text-slate-500">
               Product name
-              <input
-                list="product-list"
-                value={form.productName}
-                onChange={(e) => setForm({ ...form, productName: e.target.value })}
-                placeholder="Start typing to search"
-                className="mt-2 w-full rounded-3xl border border-slate-200 bg-slate-50 px-4 py-3 text-slate-900 outline-none"
-              />
-              <datalist id="product-list">
-                {products.map((product) => (
-                  <option key={product.id} value={product.name} />
-                ))}
-              </datalist>
+              <div className="relative mt-2">
+                <input
+                  value={form.productName}
+                  onChange={(e) => setForm({ ...form, productName: e.target.value })}
+                  onFocus={() => setIsProductDropdownOpen(true)}
+                  onBlur={() => setTimeout(() => setIsProductDropdownOpen(false), 200)}
+                  placeholder="Start typing to search"
+                  className="w-full rounded-3xl border border-slate-200 bg-slate-50 px-4 py-3 text-slate-900 outline-none"
+                />
+                {productSuggestions.length > 0 && form.productName.trim() && isProductDropdownOpen && (
+                  <div className="absolute left-0 right-0 z-10 mt-1 max-h-52 overflow-auto rounded-3xl border border-slate-200 bg-white shadow-xl">
+                    {productSuggestions.map((product) => (
+                      <button
+                        key={product.id}
+                        type="button"
+                        onClick={() => {
+                          setForm((current) => ({ ...current, productName: product.name }));
+                          setIsProductDropdownOpen(false);
+                        }}
+                        className="w-full cursor-pointer border-b border-slate-200 px-4 py-3 text-left text-sm text-slate-700 transition hover:bg-slate-100 last:border-b-0"
+                      >
+                        {product.name}
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
             </label>
 
             {form.productName.trim() && !itemExists && (

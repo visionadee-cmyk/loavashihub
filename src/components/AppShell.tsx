@@ -1,6 +1,6 @@
 import { Link, NavLink, useLocation } from 'react-router-dom';
 import { useEffect, useState } from 'react';
-import { LogOut, LayoutDashboard, ShoppingCart, ShoppingBag, Coffee, Table, Users2, ClipboardList, Box, Layers, BookOpen, BarChart3, Clock, CheckCircle2, ListChecks, Menu, X, DollarSign, Package } from 'lucide-react';
+import { LogOut, LayoutDashboard, ShoppingCart, ShoppingBag, Coffee, Table, Users2, ClipboardList, Box, Layers, BookOpen, BarChart3, Clock, CheckCircle2, ListChecks, Menu, X, DollarSign, Package, Brain } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 const logo = '/logo.jpeg';
 
@@ -21,6 +21,7 @@ const adminNav = [
   { path: '/admin/assets', label: 'Assets', icon: Layers },
   { path: '/admin/expenses', label: 'Expenses', icon: ClipboardList },
   { path: '/admin/reports', label: 'Reports', icon: BarChart3 },
+  { path: '/admin/smart-analytics', label: 'Smart Analytics', icon: Brain },
 ];
 
 const cashierNav = [

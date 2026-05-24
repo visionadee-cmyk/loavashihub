@@ -10,6 +10,7 @@ import StaffManagement from './pages/StaffManagement';
 import InventoryManagement from './pages/InventoryManagement';
 import ExpensesPage from './pages/ExpensesPage';
 import ReportsPage from './pages/ReportsPage';
+import SmartAnalyticsPage from './pages/SmartAnalyticsPage';
 import PurchaseProductsPage from './pages/PurchaseProductsPage';
 import DirectPurchasePage from './pages/DirectPurchasePage';
 import DailyDirectRevenuePage from './pages/DailyDirectRevenuePage';
@@ -120,6 +121,14 @@ function App() {
               element={
                 <ProtectedRoute allowedRoles={['admin']}>
                   <ReportsPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/admin/smart-analytics"
+              element={
+                <ProtectedRoute allowedRoles={['admin']}>
+                  <SmartAnalyticsPage />
                 </ProtectedRoute>
               }
             />

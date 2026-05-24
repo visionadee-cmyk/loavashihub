@@ -384,9 +384,9 @@ export default function POSPage() {
       </nav>
 
       <div className="mx-auto max-w-[1700px] px-4 py-5 sm:px-6 lg:px-8">
-        <div className="grid min-h-[calc(100vh-160px)] grid-cols-1 lg:grid-cols-[96px_minmax(0,1fr)_420px] gap-4 md:gap-6 bg-slate-50 px-3 md:px-4 py-3 md:py-4 rounded-[32px] shadow-[0_20px_80px_rgba(5,9,63,0.08)]">
+        <div className="grid min-h-[calc(100vh-160px)] grid-cols-1 lg:grid-cols-[minmax(0,1fr)_420px] gap-4 md:gap-6 bg-slate-50 px-3 md:px-4 py-3 md:py-4 rounded-[32px] shadow-[0_20px_80px_rgba(5,9,63,0.08)]">
           {/* Left Sidebar - Hidden on mobile/tablet, shown on lg screens */}
-          <aside className="hidden lg:flex h-full flex-col justify-between rounded-[32px] border border-slate-200 bg-white px-4 py-6 shadow-sm">
+          <aside className="hidden lg:flex h-full flex-col justify-between rounded-[32px] border border-slate-200 bg-white px-4 py-6 shadow-sm hidden">
             <div className="space-y-10">
               <div>
                 <p className="text-sm font-semibold uppercase tracking-[0.24em] text-slate-400">Restro</p>
@@ -505,7 +505,7 @@ export default function POSPage() {
               </div>
             </section>
 
-            <section className="flex flex-wrap gap-1.5 md:gap-2">{categories.map((tab) => {
+            <section className="flex flex-wrap gap-1 md:gap-1.5">{categories.map((tab) => {
                 const isActive = tab === activeCategory;
                 return (
                   <button
@@ -524,7 +524,7 @@ export default function POSPage() {
               })}
             </section>
 
-            <section className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-4 gap-2 sm:gap-3 md:gap-4">
+            <section className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-2 sm:gap-3 md:gap-4">
               {filteredProducts.length ? (
                 filteredProducts.slice(0, 12).map((product) => (
                   <article key={product.id} className="rounded-[24px] border border-slate-200 bg-white p-2 sm:p-3 md:p-4 text-center shadow-sm transition hover:-translate-y-1 hover:shadow-lg">

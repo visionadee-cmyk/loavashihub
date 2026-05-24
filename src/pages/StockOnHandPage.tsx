@@ -161,27 +161,37 @@ export default function StockOnHandPage() {
 
   // Calculate statistics
   const stats = useMemo(() => {
-    const topPurchased = [...stockItems]
+    // Filter items with actual data for top purchased
+    const itemsWithPurchases = stockItems.filter(item => item.totalPurchased > 0);
+    const topPurchased = [...itemsWithPurchases]
       .sort((a, b) => b.totalPurchased - a.totalPurchased)
       .slice(0, 3);
 
-    const mostUsed = [...stockItems]
+    // Filter items with actual usage for most used
+    const itemsWithUsage = stockItems.filter(item => item.totalUsedInBills > 0);
+    const mostUsed = [...itemsWithUsage]
       .sort((a, b) => b.totalUsedInBills - a.totalUsedInBills)
       .slice(0, 3);
 
-    const lowStockCount = stockItems.filter((item) => item.currentStock < 10).length;
+    const lowStockCount = stockItems.filter((item) => item.currentStock < 10 && item.currentStock > 0).length;
 
-    // Group by unit for proper totals
+    // Group by unit for proper totals - only count items with stock
     const unitGroups = new Map<string, number>();
     stockItems.forEach((item) => {
-      const current = unitGroups.get(item.unit) || 0;
-      unitGroups.set(item.unit, current + item.currentStock);
+      if (item.currentStock > 0) {
+        const current = unitGroups.get(item.unit) || 0;
+        unitGroups.set(item.unit, current + item.currentStock);
+      }
     });
 
     // Create readable unit totals
-    const unitTotals = Array.from(unitGroups.entries())
-      .map(([unit, qty]) => `${qty} ${unit}`)
-      .join(' | ');
+    const unitTotalsArray = Array.from(unitGroups.entries())
+      .map(([unit, qty]) => {
+        const roundedQty = Math.round(qty * 100) / 100;
+        return `${roundedQty} ${unit}`;
+      });
+    
+    const unitTotals = unitTotalsArray.length > 0 ? unitTotalsArray.join(' | ') : 'No stock';
 
     return { topPurchased, mostUsed, lowStockCount, unitTotals };
   }, [stockItems]);
@@ -301,27 +311,30 @@ export default function StockOnHandPage() {
             </h3>
             <div className="space-y-3">
               {stats.topPurchased.length > 0 ? (
-                stats.topPurchased.map((item, idx) => (
-                  <div key={item.id} className="rounded-2xl border border-slate-200 bg-slate-100 p-3">
-                    <div className="flex items-center justify-between mb-2">
-                      <div className="flex-1">
-                        <p className="font-semibold text-slate-900">{item.name}</p>
-                        <p className="text-xs text-slate-500">Purchased {item.purchaseFrequency}x | Currently: {item.currentStock} {item.unit}</p>
+                stats.topPurchased.map((item, idx) => {
+                  const maxPurchased = Math.max(...stats.topPurchased.map(i => i.totalPurchased), 1);
+                  const percentage = (item.totalPurchased / maxPurchased) * 100;
+                  
+                  return (
+                    <div key={item.id} className="rounded-2xl border border-slate-200 bg-slate-100 p-3">
+                      <div className="flex items-center justify-between mb-2">
+                        <div className="flex-1 min-w-0">
+                          <p className="font-semibold text-slate-900">{item.name}</p>
+                          <p className="text-xs text-slate-500">Purchased {item.purchaseFrequency}x | Currently: {item.currentStock} {item.unit}</p>
+                        </div>
+                        <span className="text-xs font-bold bg-green-200 text-green-900 px-2 py-1 rounded-full whitespace-nowrap ml-2">
+                          {item.totalPurchased} {item.unit}
+                        </span>
                       </div>
-                      <span className="text-xs font-bold bg-green-200 text-green-900 px-2 py-1 rounded-full whitespace-nowrap ml-2">
-                        {item.totalPurchased} {item.unit}
-                      </span>
+                      <div className="w-full bg-slate-300 rounded-full h-2">
+                        <div
+                          className="bg-green-600 h-2 rounded-full"
+                          style={{ width: `${Math.min(100, percentage)}%` }}
+                        />
+                      </div>
                     </div>
-                    <div className="w-full bg-slate-300 rounded-full h-2">
-                      <div
-                        className="bg-green-600 h-2 rounded-full"
-                        style={{
-                          width: `${Math.min(100, (item.totalPurchased / Math.max(...stats.topPurchased.map(i => i.totalPurchased), 1)) * 100)}%`,
-                        }}
-                      />
-                    </div>
-                  </div>
-                ))
+                  );
+                })
               ) : (
                 <p className="text-sm text-slate-500">No purchase data available</p>
               )}
@@ -336,29 +349,32 @@ export default function StockOnHandPage() {
             </h3>
             <div className="space-y-3">
               {stats.mostUsed.length > 0 ? (
-                stats.mostUsed.map((item) => (
-                  <div key={item.id} className="rounded-2xl border border-slate-200 bg-slate-100 p-3">
-                    <div className="flex items-center justify-between mb-2">
-                      <div className="flex-1">
-                        <p className="font-semibold text-slate-900">{item.name}</p>
-                        <p className="text-xs text-slate-500">Stock: {item.currentStock} {item.unit}</p>
+                stats.mostUsed.map((item) => {
+                  const maxUsed = Math.max(...stats.mostUsed.map(i => i.totalUsedInBills), 1);
+                  const percentage = (item.totalUsedInBills / maxUsed) * 100;
+                  
+                  return (
+                    <div key={item.id} className="rounded-2xl border border-slate-200 bg-slate-100 p-3">
+                      <div className="flex items-center justify-between mb-2">
+                        <div className="flex-1 min-w-0">
+                          <p className="font-semibold text-slate-900">{item.name}</p>
+                          <p className="text-xs text-slate-500">Stock: {item.currentStock} {item.unit}</p>
+                        </div>
+                        <span className="text-xs font-bold bg-blue-200 text-blue-900 px-2 py-1 rounded-full whitespace-nowrap ml-2">
+                          {item.totalUsedInBills} {item.unit}
+                        </span>
                       </div>
-                      <span className="text-xs font-bold bg-blue-200 text-blue-900 px-2 py-1 rounded-full whitespace-nowrap ml-2">
-                        {item.totalUsedInBills} {item.unit}
-                      </span>
+                      <div className="w-full bg-slate-300 rounded-full h-2">
+                        <div
+                          className="bg-blue-600 h-2 rounded-full"
+                          style={{ width: `${Math.min(100, percentage)}%` }}
+                        />
+                      </div>
                     </div>
-                    <div className="w-full bg-slate-300 rounded-full h-2">
-                      <div
-                        className="bg-blue-600 h-2 rounded-full"
-                        style={{
-                          width: `${Math.min(100, (item.totalUsedInBills / Math.max(...stats.mostUsed.map(i => i.totalUsedInBills), 1)) * 100)}%`,
-                        }}
-                      />
-                    </div>
-                  </div>
-                ))
+                  );
+                })
               ) : (
-                <p className="text-sm text-slate-500">No usage data available</p>
+                <p className="text-sm text-slate-500">No usage data available yet</p>
               )}
             </div>
           </section>

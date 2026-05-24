@@ -579,6 +579,33 @@ export default function POSPage() {
               </div>
             </section>
 
+            {/* Occupied Tables Section */}
+            {bills.filter((bill) => bill.status !== 'Served').length > 0 && (
+              <section className="rounded-[24px] border-2 border-red-400 bg-red-50 p-3 md:p-4 shadow-sm">
+                <div className="mb-3 flex items-center justify-between gap-2">
+                  <p className="text-xs md:text-sm font-bold text-red-600">🔴 OCCUPIED TABLES: {bills.filter((bill) => bill.status !== 'Served').length}</p>
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  {bills
+                    .filter((bill) => bill.status !== 'Served')
+                    .map((bill) => (
+                      <button
+                        key={bill.id}
+                        type="button"
+                        onClick={() => setActiveBillId(bill.id)}
+                        className={`rounded-[16px] border-2 px-3 py-2 text-xs font-semibold transition ${
+                          activeBillId === bill.id
+                            ? 'border-green-700 bg-green-600 text-white shadow-md'
+                            : 'border-red-400 bg-white text-red-600 hover:bg-red-100'
+                        }`}
+                      >
+                        {bill.table} {bill.items.length > 0 && `(${bill.items.length})`}
+                      </button>
+                    ))}
+                </div>
+              </section>
+            )}
+
             <section className="flex flex-wrap gap-1.5 md:gap-2">{categories.map((tab) => {
                 const isActive = tab === activeCategory;
                 return (

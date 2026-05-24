@@ -101,6 +101,7 @@ export default function POSPage() {
   const [newCustomer, setNewCustomer] = useState<Partial<Customer>>(defaultCustomer);
   const [statusMessage, setStatusMessage] = useState<string | null>(null);
   const [isOnline, setIsOnline] = useState(typeof navigator !== 'undefined' ? navigator.onLine : true);
+  const [cartSidebarOpen, setCartSidebarOpen] = useState(false);
   const searchInputRef = useRef<HTMLInputElement>(null);
   const navigate = useNavigate();
 
@@ -360,9 +361,10 @@ export default function POSPage() {
   return (
     <AppShell title="Restro POS">
 
-      <div className="mx-auto min-w-[1024px] max-w-[1700px] px-4 py-5 sm:px-6 lg:px-8">
-        <div className="grid min-h-[calc(100vh-160px)] grid-cols-[96px_minmax(0,1fr)_420px] gap-6 bg-slate-50 px-4 py-4 rounded-[32px] shadow-[0_20px_80px_rgba(5,9,63,0.08)]">
-          <aside className="flex h-full flex-col justify-between rounded-[32px] border border-slate-200 bg-white px-4 py-6 shadow-sm">
+      <div className="mx-auto max-w-[1700px] px-4 py-5 sm:px-6 lg:px-8">
+        <div className="grid min-h-[calc(100vh-160px)] grid-cols-1 lg:grid-cols-[96px_minmax(0,1fr)_420px] gap-4 md:gap-6 bg-slate-50 px-3 md:px-4 py-3 md:py-4 rounded-[32px] shadow-[0_20px_80px_rgba(5,9,63,0.08)]">
+          {/* Left Sidebar - Hidden on mobile/tablet, shown on lg screens */}
+          <aside className="hidden lg:flex h-full flex-col justify-between rounded-[32px] border border-slate-200 bg-white px-4 py-6 shadow-sm">
             <div className="space-y-10">
               <div>
                 <p className="text-sm font-semibold uppercase tracking-[0.24em] text-slate-400">Restro</p>
@@ -396,63 +398,95 @@ export default function POSPage() {
             </button>
           </aside>
 
-          <main className="flex flex-col gap-6">
-            <section className="rounded-[32px] bg-white p-5 shadow-sm">
-              <div className="flex flex-wrap items-center gap-4">
-                <div className="flex-1 min-w-[320px]">
-                  <div className="relative rounded-[28px] border border-slate-200 bg-slate-50 px-4 py-3">
-                    <Search className="absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-slate-400" />
-                    <input
-                      ref={searchInputRef}
-                      value={search}
-                      onChange={(event) => setSearch(event.target.value)}
-                      placeholder="Search products..."
-                      className="w-full bg-transparent pl-12 text-sm font-medium text-slate-900 outline-none placeholder:text-slate-400"
-                    />
+          {/* Mobile/Tablet Bottom Navigation */}
+          <nav className="lg:hidden fixed bottom-0 left-0 right-0 z-40 flex items-center justify-around border-t border-slate-200 bg-white px-2 py-2 shadow-lg">
+            {internalNav.slice(0, 5).map((item) => {
+              const Icon = item.icon;
+              return (
+                <NavLink
+                  key={item.label}
+                  to={item.path}
+                  className={({ isActive }) =>
+                    `flex flex-col items-center gap-1 rounded-xl px-3 py-2 transition ${
+                      isActive
+                        ? 'bg-slate-100 text-slate-900'
+                        : 'text-slate-500 hover:bg-slate-50'
+                    }`
+                  }
+                >
+                  <Icon className="h-5 w-5" />
+                  <span className="text-[10px] uppercase tracking-wide">{item.label}</span>
+                </NavLink>
+              );
+            })}
+          </nav>
+
+          <main className="flex flex-col gap-4 md:gap-6 lg:col-span-1 pb-20 md:pb-0 lg:pb-0">
+            <section className="rounded-[32px] bg-white p-4 md:p-5 shadow-sm">
+              <div className="flex flex-col gap-3 sm:gap-4">
+                <div className="flex flex-wrap items-center gap-2 md:gap-3">
+                  <div className="flex-1 min-w-[150px]">
+                    <div className="relative rounded-[28px] border border-slate-200 bg-slate-50 px-3 md:px-4 py-2 md:py-3">
+                      <Search className="absolute left-3 md:left-4 top-1/2 h-4 w-4 md:h-5 md:w-5 -translate-y-1/2 text-slate-400" />
+                      <input
+                        ref={searchInputRef}
+                        value={search}
+                        onChange={(event) => setSearch(event.target.value)}
+                        placeholder="Search products..."
+                        className="w-full bg-transparent pl-9 md:pl-12 text-xs md:text-sm font-medium text-slate-900 outline-none placeholder:text-slate-400"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="flex flex-wrap items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={refreshData}
+                      className="inline-flex h-9 w-9 md:h-11 md:w-11 items-center justify-center rounded-2xl border border-slate-200 bg-white text-slate-600 shadow-sm transition hover:bg-slate-50"
+                    >
+                      <RotateCcw className="h-4 w-4 md:h-5 md:w-5" />
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setStatusMessage(isOnline ? 'Online and ready to sync with Firestore.' : 'Offline mode: local changes only.')}
+                      className="inline-flex h-9 w-9 md:h-11 md:w-11 items-center justify-center rounded-2xl border border-slate-200 bg-white text-slate-600 shadow-sm transition hover:bg-slate-50"
+                    >
+                      <Wifi className="h-4 w-4 md:h-5 md:w-5" />
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setTableMenuOpen((current) => !current)}
+                      className="hidden sm:inline-flex items-center gap-2 rounded-[28px] bg-slate-200 px-3 md:px-4 py-2 md:py-3 text-xs md:text-sm font-semibold text-slate-900 shadow-lg shadow-slate-900/20 transition hover:bg-slate-300"
+                    >
+                      <GridIcon className="h-3 w-3 md:h-4 md:w-4" />
+                      Table
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setCartSidebarOpen((current) => !current)}
+                      className="md:hidden inline-flex items-center gap-2 rounded-[28px] bg-blue-600 px-3 py-2 text-xs font-semibold text-white shadow-lg shadow-blue-900/20 transition hover:bg-blue-500"
+                    >
+                      <ShoppingCart className="h-3 w-3" />
+                      Cart ({activeBill?.items.length ?? 0})
+                    </button>
                   </div>
                 </div>
 
-                <div className="flex flex-wrap items-center gap-3">
-                  <button
-                    type="button"
-                    onClick={refreshData}
-                    className="inline-flex h-11 w-11 items-center justify-center rounded-2xl border border-slate-200 bg-white text-slate-600 shadow-sm transition hover:bg-slate-50"
-                  >
-                    <RotateCcw className="h-5 w-5" />
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setStatusMessage(isOnline ? 'Online and ready to sync with Firestore.' : 'Offline mode: local changes only.')}
-                    className="inline-flex h-11 w-11 items-center justify-center rounded-2xl border border-slate-200 bg-white text-slate-600 shadow-sm transition hover:bg-slate-50"
-                  >
-                    <Wifi className="h-5 w-5" />
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setTableMenuOpen((current) => !current)}
-                    className="inline-flex items-center gap-2 rounded-[28px] bg-slate-200 px-4 py-3 text-sm font-semibold text-slate-900 shadow-lg shadow-slate-900/20 transition hover:bg-slate-300"
-                  >
-                    <GridIcon className="h-4 w-4" />
-                    Select Table
-                  </button>
-                </div>
-              </div>
-
               {statusMessage ? (
-                <div className="mt-4 rounded-3xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-900">
+                <div className="mt-2 md:mt-3 rounded-3xl border border-slate-200 bg-slate-50 px-3 md:px-4 py-2 md:py-3 text-xs md:text-sm text-slate-900">
                   {statusMessage}
                 </div>
               ) : null}
 
               {tableMenuOpen ? (
-                <div className="mt-4 grid gap-3 rounded-[28px] border border-slate-200 bg-slate-50 p-4">
+                <div className="mt-2 md:mt-3 grid gap-3 rounded-[28px] border border-slate-200 bg-slate-50 p-3 md:p-4">
                   <div className="grid gap-3 sm:grid-cols-2">
-                    <label className="block text-sm text-slate-600">
+                    <label className="block text-xs md:text-sm text-slate-600">
                       Assign table
                       <select
                         value={tables.find((table) => table.name === activeBill?.table)?.id ?? ''}
                         onChange={(event) => selectTable(event.target.value)}
-                        className="mt-2 w-full rounded-[20px] border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 outline-none"
+                        className="mt-1.5 w-full rounded-[20px] border border-slate-300 bg-white px-3 md:px-4 py-2 md:py-3 text-xs md:text-sm text-slate-900 outline-none"
                       >
                         <option value="">Select a table</option>
                         {tables.map((table) => (
@@ -462,24 +496,24 @@ export default function POSPage() {
                         ))}
                       </select>
                     </label>
-                    <div className="rounded-[24px] border border-slate-300 bg-white p-4 text-sm text-slate-600">
+                    <div className="rounded-[24px] border border-slate-300 bg-white p-3 md:p-4 text-xs md:text-sm text-slate-600">
                       <p className="font-semibold text-slate-900">Current table</p>
-                      <p className="mt-2">{activeBill?.table || 'Not assigned'}</p>
+                      <p className="mt-1 md:mt-2">{activeBill?.table || 'Not assigned'}</p>
                     </div>
                   </div>
                 </div>
               ) : null}
+              </div>
             </section>
 
-            <section className="grid gap-4 xl:grid-cols-4">
-              {categories.map((tab) => {
+            <section className="flex flex-wrap gap-1.5 md:gap-2">{categories.map((tab) => {
                 const isActive = tab === activeCategory;
                 return (
                   <button
                     key={tab}
                     type="button"
                     onClick={() => setActiveCategory(tab)}
-                    className={`rounded-full border px-4 py-2 text-sm font-semibold transition ${
+                    className={`rounded-full border px-2 md:px-3 py-1 md:py-1.5 text-xs font-semibold transition ${
                       isActive
                         ? 'border-slate-200 bg-slate-50 text-slate-900 shadow-sm'
                         : 'border-transparent bg-slate-100 text-slate-600 hover:bg-slate-200'
@@ -491,19 +525,19 @@ export default function POSPage() {
               })}
             </section>
 
-            <section className="grid gap-4 xl:grid-cols-4">
+            <section className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-4 gap-2 sm:gap-3 md:gap-4">
               {filteredProducts.length ? (
                 filteredProducts.slice(0, 12).map((product) => (
-                  <article key={product.id} className="rounded-[32px] border border-slate-200 bg-white p-5 text-center shadow-sm transition hover:-translate-y-1 hover:shadow-lg">
-                    <button type="button" onClick={() => handleAddItem(product)} className="flex h-full w-full flex-col items-center gap-4 text-left">
-                      <div className="flex h-28 w-28 items-center justify-center rounded-full bg-slate-100 shadow-sm">
-                        <img src={product.image} alt={product.name} className="h-24 w-24 rounded-full object-cover" />
+                  <article key={product.id} className="rounded-[24px] border border-slate-200 bg-white p-2 sm:p-3 md:p-4 text-center shadow-sm transition hover:-translate-y-1 hover:shadow-lg">
+                    <button type="button" onClick={() => handleAddItem(product)} className="flex h-full w-full flex-col items-center gap-1.5 sm:gap-2 md:gap-3 text-left">
+                      <div className="flex h-16 w-16 sm:h-20 sm:w-20 md:h-24 md:w-24 items-center justify-center rounded-full bg-slate-100 shadow-sm">
+                        <img src={product.image} alt={product.name} className="h-12 w-12 sm:h-16 sm:w-16 md:h-20 md:w-20 rounded-full object-cover" />
                       </div>
-                      <div className="space-y-2">
-                        <p className="text-sm font-semibold text-slate-900">{product.name}</p>
-                        <p className="text-sm text-slate-500">{product.category}</p>
+                      <div className="space-y-0.5 sm:space-y-1">
+                        <p className="text-xs sm:text-sm md:text-sm font-semibold text-slate-900 line-clamp-2">{product.name}</p>
+                        <p className="text-[10px] sm:text-xs text-slate-500">{product.category}</p>
                       </div>
-                      <p className="mt-auto text-lg font-bold text-slate-900">{formatMVR(product.price)}</p>
+                      <p className="mt-auto text-sm sm:text-base md:text-lg font-bold text-slate-900">{formatMVR(product.price)}</p>
                     </button>
                   </article>
                 ))
@@ -515,38 +549,41 @@ export default function POSPage() {
             </section>
           </main>
 
-          <aside className="flex flex-col gap-6 rounded-[32px] border border-slate-200 bg-white p-5 shadow-sm">
-            <div className="rounded-[32px] border border-slate-200 bg-slate-50 p-4">
-              <div className="flex flex-wrap items-center justify-between gap-3">
+          {/* Right Cart Panel - Full width on mobile, side panel on lg, collapsible on md */}
+          <aside className={`lg:col-span-1 flex flex-col gap-4 md:gap-6 rounded-[32px] border border-slate-200 bg-white p-4 md:p-5 shadow-sm fixed md:static bottom-0 left-0 right-0 z-30 md:z-auto max-h-[70vh] md:max-h-full overflow-y-auto md:overflow-visible transition-transform duration-300 ${
+            cartSidebarOpen ? 'translate-y-0' : 'translate-y-full md:translate-y-0'
+          } lg:translate-y-0`}>
+            <div className="rounded-[32px] border border-slate-200 bg-slate-50 p-3 md:p-4">
+              <div className="flex flex-wrap items-center justify-between gap-2 md:gap-3">
                 <button
                   type="button"
                   onClick={() => setCustomerPanelOpen((current) => !current)}
-                  className="inline-flex items-center gap-2 rounded-[24px] border border-slate-200 bg-white px-4 py-3 text-sm font-semibold text-slate-700 shadow-sm hover:bg-slate-50"
+                  className="inline-flex items-center gap-2 rounded-[24px] border border-slate-200 bg-white px-2 md:px-4 py-2 md:py-3 text-xs md:text-sm font-semibold text-slate-700 shadow-sm hover:bg-slate-50"
                 >
-                  <Plus className="h-4 w-4 text-slate-900" />
+                  <Plus className="h-3 w-3 md:h-4 md:w-4 text-slate-900" />
                   Add Customer
                 </button>
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-1 md:gap-2">
                   <button
                     type="button"
                     onClick={() => setShowCustomItemForm((current) => !current)}
-                    className="inline-flex h-11 w-11 items-center justify-center rounded-2xl border border-slate-200 bg-white text-slate-700 shadow-sm hover:bg-slate-50"
+                    className="inline-flex h-9 w-9 md:h-11 md:w-11 items-center justify-center rounded-2xl border border-slate-200 bg-white text-slate-700 shadow-sm hover:bg-slate-50 text-xs md:text-sm"
                   >
                     +
                   </button>
                   <button
                     type="button"
                     onClick={togglePaymentStatus}
-                    className="inline-flex h-11 w-11 items-center justify-center rounded-2xl border border-slate-200 bg-white text-slate-700 shadow-sm hover:bg-slate-50"
+                    className="inline-flex h-9 w-9 md:h-11 md:w-11 items-center justify-center rounded-2xl border border-slate-200 bg-white text-slate-700 shadow-sm hover:bg-slate-50"
                   >
                     <span className="h-2.5 w-2.5 rounded-full bg-slate-900" />
                   </button>
                   <button
                     type="button"
                     onClick={focusSearch}
-                    className="inline-flex h-11 w-11 items-center justify-center rounded-2xl border border-slate-200 bg-white text-slate-700 shadow-sm hover:bg-slate-50"
+                    className="inline-flex h-9 w-9 md:h-11 md:w-11 items-center justify-center rounded-2xl border border-slate-200 bg-white text-slate-700 shadow-sm hover:bg-slate-50"
                   >
-                    <Search className="h-4 w-4" />
+                    <Search className="h-4 w-4 md:h-5 md:w-5" />
                   </button>
                 </div>
               </div>
@@ -648,50 +685,50 @@ export default function POSPage() {
               ) : null}
             </div>
 
-            <div className="space-y-4 overflow-hidden rounded-[32px] border border-slate-200 bg-white p-4 shadow-sm">
-              <div className="flex items-center justify-between gap-3">
+            <div className="space-y-3 md:space-y-4 overflow-hidden rounded-[32px] border border-slate-200 bg-white p-3 md:p-4 shadow-sm">
+              <div className="flex items-center justify-between gap-2 md:gap-3">
                 <div>
-                  <p className="text-sm font-semibold text-slate-900">Order summary</p>
-                  <p className="text-sm text-slate-500">Review and manage items</p>
+                  <p className="text-xs md:text-sm font-semibold text-slate-900">Order summary</p>
+                  <p className="text-xs md:text-sm text-slate-500">Review and manage items</p>
                 </div>
-                <span className="rounded-full bg-slate-50 px-3 py-2 text-xs font-semibold uppercase tracking-[0.24em] text-slate-500">{activeBill?.items.length ?? 0} items</span>
+                <span className="rounded-full bg-slate-50 px-2 md:px-3 py-1.5 md:py-2 text-[10px] md:text-xs font-semibold uppercase tracking-[0.24em] text-slate-500">{activeBill?.items.length ?? 0} items</span>
               </div>
 
-              <div className="space-y-3 overflow-y-auto max-h-[320px] pr-1">
+              <div className="space-y-2 md:space-y-3 overflow-y-auto max-h-[200px] md:max-h-[320px] pr-1">
                 {activeBill?.items.map((item, index) => {
                   const isActive = item.productId === activeBill.items[0]?.productId && item.id === activeBill.items[0]?.id;
                   return (
                     <div
                       key={item.id}
                       onClick={() => setActiveBillId(activeBill.id)}
-                      className={`cursor-pointer rounded-[28px] border p-4 ${isActive ? 'border-slate-200 bg-slate-50' : 'border-slate-200 bg-white'}`}
+                      className={`cursor-pointer rounded-[28px] border p-2 md:p-4 ${isActive ? 'border-slate-200 bg-slate-50' : 'border-slate-200 bg-white'}`}
                     >
-                      <div className="flex items-center justify-between gap-3">
-                        <div className="flex items-center gap-3">
-                          <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-slate-100 text-sm font-semibold text-slate-700">{index + 1}</div>
-                          <div>
-                            <p className="font-semibold text-slate-900">{item.name}</p>
-                            <p className="text-sm text-slate-500">{formatMVR(item.price * item.quantity)}</p>
+                      <div className="flex items-center justify-between gap-2 md:gap-3">
+                        <div className="flex items-center gap-2 md:gap-3">
+                          <div className="flex h-8 w-8 md:h-10 md:w-10 items-center justify-center rounded-2xl bg-slate-100 text-xs md:text-sm font-semibold text-slate-700">{index + 1}</div>
+                          <div className="min-w-0">
+                            <p className="text-xs md:text-sm font-semibold text-slate-900 truncate">{item.name}</p>
+                            <p className="text-xs text-slate-500">{formatMVR(item.price * item.quantity)}</p>
                           </div>
                         </div>
-                        <button type="button" onClick={() => removeItem(item.id)} className="rounded-full bg-slate-100 p-2 text-slate-600 hover:bg-slate-200">
-                          <X className="h-4 w-4" />
+                        <button type="button" onClick={() => removeItem(item.id)} className="rounded-full bg-slate-100 p-1.5 md:p-2 text-slate-600 hover:bg-slate-200 flex-shrink-0">
+                          <X className="h-3 w-3 md:h-4 md:w-4" />
                         </button>
                       </div>
 
                       {isActive ? (
-                        <div className="mt-4 grid gap-3 sm:grid-cols-2">
-                          <label className="rounded-[24px] border border-slate-200 bg-white p-3 text-sm text-slate-500">
+                        <div className="mt-3 md:mt-4 grid gap-2 md:gap-3 sm:grid-cols-2">
+                          <label className="rounded-[24px] border border-slate-200 bg-white p-2 md:p-3 text-xs md:text-sm text-slate-500">
                             Quantity
                             <input
                               type="number"
                               min={1}
                               value={item.quantity}
                               onChange={(event) => updateQuantity(item.id, Number(event.target.value))}
-                              className="mt-2 w-full rounded-[20px] border border-slate-200 bg-slate-50 px-3 py-3 text-slate-900 outline-none"
+                              className="mt-1 md:mt-2 w-full rounded-[20px] border border-slate-200 bg-slate-50 px-2 md:px-3 py-2 md:py-3 text-xs md:text-sm text-slate-900 outline-none"
                             />
                           </label>
-                          <label className="rounded-[24px] border border-slate-200 bg-white p-3 text-sm text-slate-500">
+                          <label className="rounded-[24px] border border-slate-200 bg-white p-2 md:p-3 text-xs md:text-sm text-slate-500">
                             Notes
                             <input
                               value={item.notes}
@@ -704,7 +741,7 @@ export default function POSPage() {
                                   ),
                                 });
                               }}
-                              className="mt-2 w-full rounded-[20px] border border-slate-200 bg-slate-50 px-3 py-3 text-slate-900 outline-none"
+                              className="mt-1 md:mt-2 w-full rounded-[20px] border border-slate-200 bg-slate-50 px-2 md:px-3 py-2 md:py-3 text-xs md:text-sm text-slate-900 outline-none"
                               placeholder="Item notes"
                             />
                           </label>
@@ -714,46 +751,46 @@ export default function POSPage() {
                   );
                 })}
                 {!activeBill?.items.length ? (
-                  <p className="text-sm text-slate-500">No items in this bill yet. Tap a menu item to add it to the order.</p>
+                  <p className="text-xs md:text-sm text-slate-500">No items in this bill yet. Tap a menu item to add it to the order.</p>
                 ) : null}
               </div>
             </div>
 
-            <div className="rounded-[32px] border border-slate-200 bg-slate-50 p-4 shadow-sm">
-              <div className="flex flex-wrap items-center gap-3">
+            <div className="rounded-[32px] border border-slate-200 bg-slate-50 p-3 md:p-4 shadow-sm">
+              <div className="flex flex-wrap items-center gap-1.5 md:gap-3">
                 {['Add', 'Discount', 'Coupon Code', 'Note'].map((action) => (
-                  <button key={action} type="button" className="rounded-3xl border border-slate-200 bg-white px-4 py-3 text-sm font-semibold text-slate-700 shadow-sm hover:bg-slate-100">
+                  <button key={action} type="button" className="rounded-3xl border border-slate-200 bg-white px-2 md:px-4 py-2 md:py-3 text-xs md:text-sm font-semibold text-slate-700 shadow-sm hover:bg-slate-100">
                     {action}
                   </button>
                 ))}
               </div>
             </div>
 
-            <div className="rounded-[32px] border border-slate-200 bg-white p-5 shadow-sm">
-              <div className="grid gap-3">
-                <div className="flex items-center justify-between text-sm text-slate-500">
+            <div className="rounded-[32px] border border-slate-200 bg-white p-4 md:p-5 shadow-sm">
+              <div className="grid gap-2 md:gap-3">
+                <div className="flex items-center justify-between text-xs md:text-sm text-slate-500">
                   <span>Subtotal</span>
                   <span>{formatMVR(subtotal)}</span>
                 </div>
-                <div className="flex items-center justify-between text-sm text-slate-500">
+                <div className="flex items-center justify-between text-xs md:text-sm text-slate-500">
                   <span>Tax</span>
                   <span>{formatMVR(taxAmount)}</span>
                 </div>
-                <div className="flex items-center justify-between border-t border-slate-200 pt-4 text-xl font-semibold text-slate-900">
+                <div className="flex items-center justify-between border-t border-slate-200 pt-2 md:pt-4 text-lg md:text-xl font-semibold text-slate-900">
                   <span>Payable Amount</span>
                   <span>{formatMVR(payable)}</span>
                 </div>
               </div>
             </div>
 
-            <div className="grid gap-3 sm:grid-cols-2">
-              <button type="button" onClick={holdOrder} className="inline-flex items-center justify-center gap-2 rounded-[28px] bg-slate-200/10 px-5 py-4 text-sm font-semibold text-slate-900 shadow-sm hover:bg-slate-300/15">
-                <Pause className="h-4 w-4" />
+            <div className="grid gap-2 md:gap-3 sm:grid-cols-2">
+              <button type="button" onClick={holdOrder} className="inline-flex items-center justify-center gap-2 rounded-[28px] bg-slate-200/10 px-4 md:px-5 py-3 md:py-4 text-xs md:text-sm font-semibold text-slate-900 shadow-sm hover:bg-slate-300/15">
+                <Pause className="h-3 w-3 md:h-4 md:w-4" />
                 Hold Order
               </button>
-              <button type="button" onClick={saveCurrentBill} className="inline-flex items-center justify-center gap-2 rounded-[28px] bg-slate-900 px-5 py-4 text-sm font-semibold text-white shadow-lg hover:bg-slate-700">
+              <button type="button" onClick={saveCurrentBill} className="inline-flex items-center justify-center gap-2 rounded-[28px] bg-slate-900 px-4 md:px-5 py-3 md:py-4 text-xs md:text-sm font-semibold text-white shadow-lg hover:bg-slate-700">
                 Save order
-                <ArrowRight className="h-4 w-4" />
+                <ArrowRight className="h-3 w-3 md:h-4 md:w-4" />
               </button>
             </div>
           </aside>

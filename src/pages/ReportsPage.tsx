@@ -737,7 +737,7 @@ export default function ReportsPage() {
                     <YAxis tick={{ fill: 'rgba(5, 9, 63, 0.7)' }} />
                     <Tooltip
                       contentStyle={{ backgroundColor: '#ffffff', borderRadius: 16, border: '1px solid rgba(5, 9, 63, 0.2)', color: '#05093f' }}
-                      formatter={(value: number) => formatMVR(value)}
+                      formatter={(value: any) => formatMVR(value)}
                     />
                     <Bar dataKey="revenue" fill="#7c4b2e" radius={[12, 12, 0, 0]} />
                   </BarChart>
@@ -762,7 +762,7 @@ export default function ReportsPage() {
                     <YAxis tick={{ fill: 'rgba(5, 9, 63, 0.7)' }} />
                     <Tooltip
                       contentStyle={{ backgroundColor: '#ffffff', borderRadius: 16, border: '1px solid rgba(5, 9, 63, 0.2)', color: '#05093f' }}
-                      formatter={(value: number) => formatMVR(value)}
+                      formatter={(value: any) => formatMVR(value)}
                     />
                     <Line type="monotone" dataKey="revenue" stroke="#05093f" strokeWidth={2} dot={{ fill: '#7c4b2e', r: 4 }} />
                   </LineChart>
@@ -815,7 +815,7 @@ export default function ReportsPage() {
                     </Pie>
                     <Tooltip
                       contentStyle={{ backgroundColor: '#ffffff', borderRadius: 16, border: '1px solid rgba(5, 9, 63, 0.2)', color: '#05093f' }}
-                      formatter={(value: number) => formatMVR(value)}
+                      formatter={(value: any) => formatMVR(value)}
                     />
                     <Legend />
                   </PieChart>

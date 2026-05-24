@@ -29,6 +29,28 @@ export default function InventoryUpdatePage() {
     });
   }, [allProducts, searchTerm, filterSource]);
 
+  // Get top 10 purchases
+  const top10Purchases = useMemo(() => {
+    const purchaseMap = new Map<string, number>();
+    allProducts.forEach((product) => {
+      if (product.source === 'purchase') {
+        const current = purchaseMap.get(product.name) || 0;
+        purchaseMap.set(product.name, current + product.quantity);
+      }
+    });
+    return Array.from(purchaseMap.entries())
+      .map(([name, quantity]) => ({ name, quantity }))
+      .sort((a, b) => b.quantity - a.quantity)
+      .slice(0, 10);
+  }, [allProducts]);
+
+  // Get top 10 inventory items
+  const top10Inventory = useMemo(() => {
+    return inventory
+      .sort((a, b) => b.quantity - a.quantity)
+      .slice(0, 10);
+  }, [inventory]);
+
   useEffect(() => {
     if (!hasFirebaseConfig) return;
 
@@ -280,6 +302,71 @@ export default function InventoryUpdatePage() {
                 {adj.notes && <p className="text-xs text-slate-500 italic">{adj.notes}</p>}
               </div>
             ))}
+          </div>
+        </section>
+      </div>
+
+      <div className="grid gap-6 mt-6 xl:grid-cols-2">
+        {/* Top 10 Purchases Section */}
+        <section className="rounded-3xl border border-slate-200 bg-slate-50/70 p-6 shadow-2xl shadow-slate-300/20">
+          <div className="mb-4">
+            <h3 className="text-lg font-semibold text-slate-900">📊 Top 10 Purchases</h3>
+            <p className="text-xs text-slate-600">Most purchased products by quantity</p>
+          </div>
+          <div className="space-y-2 max-h-80 overflow-y-auto">
+            {top10Purchases.length > 0 ? (
+              top10Purchases.map((item, index) => (
+                <div
+                  key={`${item.name}-${index}`}
+                  className="rounded-2xl border border-blue-200 bg-blue-50/50 p-3 flex items-center justify-between"
+                >
+                  <div className="flex items-center gap-3">
+                    <span className="inline-flex items-center justify-center w-6 h-6 rounded-full bg-blue-600 text-white text-xs font-bold">
+                      {index + 1}
+                    </span>
+                    <p className="font-medium text-slate-900 text-sm">{item.name}</p>
+                  </div>
+                  <span className="text-sm font-semibold text-blue-600">{item.quantity}</span>
+                </div>
+              ))
+            ) : (
+              <div className="rounded-2xl border border-slate-200 bg-slate-100 p-4 text-center text-slate-500 text-sm">
+                No purchase data available
+              </div>
+            )}
+          </div>
+        </section>
+
+        {/* Top 10 Inventory Items Section */}
+        <section className="rounded-3xl border border-slate-200 bg-slate-50/70 p-6 shadow-2xl shadow-slate-300/20">
+          <div className="mb-4">
+            <h3 className="text-lg font-semibold text-slate-900">📦 Top 10 Inventory</h3>
+            <p className="text-xs text-slate-600">Items with highest stock levels</p>
+          </div>
+          <div className="space-y-2 max-h-80 overflow-y-auto">
+            {top10Inventory.length > 0 ? (
+              top10Inventory.map((item, index) => (
+                <div
+                  key={item.id}
+                  className="rounded-2xl border border-emerald-200 bg-emerald-50/50 p-3 flex items-center justify-between"
+                >
+                  <div className="flex items-center gap-3">
+                    <span className="inline-flex items-center justify-center w-6 h-6 rounded-full bg-emerald-600 text-white text-xs font-bold">
+                      {index + 1}
+                    </span>
+                    <div>
+                      <p className="font-medium text-slate-900 text-sm">{item.name}</p>
+                      <p className="text-xs text-slate-500">{item.unit}</p>
+                    </div>
+                  </div>
+                  <span className="text-sm font-semibold text-emerald-600">{item.quantity}</span>
+                </div>
+              ))
+            ) : (
+              <div className="rounded-2xl border border-slate-200 bg-slate-100 p-4 text-center text-slate-500 text-sm">
+                No inventory data available
+              </div>
+            )}
           </div>
         </section>
       </div>

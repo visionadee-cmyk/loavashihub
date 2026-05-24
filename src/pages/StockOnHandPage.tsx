@@ -301,11 +301,14 @@ export default function StockOnHandPage() {
             </h3>
             <div className="space-y-3">
               {stats.topPurchased.length > 0 ? (
-                stats.topPurchased.map((item) => (
+                stats.topPurchased.map((item, idx) => (
                   <div key={item.id} className="rounded-2xl border border-slate-200 bg-slate-100 p-3">
                     <div className="flex items-center justify-between mb-2">
-                      <p className="font-semibold text-slate-900">{item.name}</p>
-                      <span className="text-xs font-bold bg-green-200 text-green-900 px-2 py-1 rounded-full">
+                      <div className="flex-1">
+                        <p className="font-semibold text-slate-900">{item.name}</p>
+                        <p className="text-xs text-slate-500">Purchased {item.purchaseFrequency}x | Currently: {item.currentStock} {item.unit}</p>
+                      </div>
+                      <span className="text-xs font-bold bg-green-200 text-green-900 px-2 py-1 rounded-full whitespace-nowrap ml-2">
                         {item.totalPurchased} {item.unit}
                       </span>
                     </div>
@@ -336,8 +339,11 @@ export default function StockOnHandPage() {
                 stats.mostUsed.map((item) => (
                   <div key={item.id} className="rounded-2xl border border-slate-200 bg-slate-100 p-3">
                     <div className="flex items-center justify-between mb-2">
-                      <p className="font-semibold text-slate-900">{item.name}</p>
-                      <span className="text-xs font-bold bg-blue-200 text-blue-900 px-2 py-1 rounded-full">
+                      <div className="flex-1">
+                        <p className="font-semibold text-slate-900">{item.name}</p>
+                        <p className="text-xs text-slate-500">Stock: {item.currentStock} {item.unit}</p>
+                      </div>
+                      <span className="text-xs font-bold bg-blue-200 text-blue-900 px-2 py-1 rounded-full whitespace-nowrap ml-2">
                         {item.totalUsedInBills} {item.unit}
                       </span>
                     </div>

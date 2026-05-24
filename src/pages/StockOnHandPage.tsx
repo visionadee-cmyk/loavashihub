@@ -14,6 +14,8 @@ interface StockItem {
   unit: string;
   lastPurchaseDate?: string;
   purchaseFrequency: number;
+  totalCost?: number;
+  estimatedValue?: number;
 }
 
 interface SmartSuggestion {
@@ -72,11 +74,15 @@ export default function StockOnHandPage() {
               currentStock: 0,
               unit: item.unit || 'units',
               purchaseFrequency: 0,
+              totalCost: 0,
+              estimatedValue: 0,
             };
             existing.totalPurchased += item.quantity;
             existing.currentStock += item.quantity;
             existing.lastPurchaseDate = purchase.date;
             existing.purchaseFrequency += 1;
+            existing.totalCost = (existing.totalCost || 0) + (item.totalCost || 0);
+            existing.estimatedValue = existing.currentStock * (existing.totalCost && existing.totalPurchased > 0 ? existing.totalCost / existing.totalPurchased : 0);
             stockMap.set(key, existing);
           });
         });
@@ -90,6 +96,7 @@ export default function StockOnHandPage() {
               if (existing) {
                 existing.totalUsedInBills += billItem.quantity;
                 existing.currentStock = Math.max(0, existing.currentStock - billItem.quantity);
+                existing.estimatedValue = existing.currentStock * (existing.totalCost && existing.totalPurchased > 0 ? existing.totalCost / existing.totalPurchased : 0);
               }
             });
           }
@@ -163,7 +170,14 @@ export default function StockOnHandPage() {
   const stats = useMemo(() => {
     // Filter items with actual data for top purchased
     const itemsWithPurchases = stockItems.filter(item => item.totalPurchased > 0);
-    const topPurchased = [...itemsWithPurchases]
+    
+    // Sort by purchase frequency (most ordered)
+    const topByFrequency = [...itemsWithPurchases]
+      .sort((a, b) => b.purchaseFrequency - a.purchaseFrequency)
+      .slice(0, 3);
+
+    // Sort by total quantity purchased (top volume)
+    const topByVolume = [...itemsWithPurchases]
       .sort((a, b) => b.totalPurchased - a.totalPurchased)
       .slice(0, 3);
 
@@ -173,7 +187,14 @@ export default function StockOnHandPage() {
       .sort((a, b) => b.totalUsedInBills - a.totalUsedInBills)
       .slice(0, 3);
 
+    // Top items by estimated value
+    const topByValue = [...stockItems]
+      .filter(item => (item.estimatedValue || 0) > 0)
+      .sort((a, b) => (b.estimatedValue || 0) - (a.estimatedValue || 0))
+      .slice(0, 3);
+
     const lowStockCount = stockItems.filter((item) => item.currentStock < 10 && item.currentStock > 0).length;
+    const totalInventoryValue = stockItems.reduce((sum, item) => sum + (item.estimatedValue || 0), 0);
 
     // Group by unit for proper totals - only count items with stock
     const unitGroups = new Map<string, number>();
@@ -193,7 +214,7 @@ export default function StockOnHandPage() {
     
     const unitTotals = unitTotalsArray.length > 0 ? unitTotalsArray.join(' | ') : 'No stock';
 
-    return { topPurchased, mostUsed, lowStockCount, unitTotals };
+    return { topByFrequency, topByVolume, mostUsed, topByValue, lowStockCount, unitTotals, totalInventoryValue };
   }, [stockItems]);
 
   // Filter stock items
@@ -223,8 +244,8 @@ export default function StockOnHandPage() {
       color: 'green',
     },
     {
-      label: 'Pending Suggestions',
-      value: suggestions.length,
+      label: 'Inventory Value',
+      value: `${Math.round(stats.totalInventoryValue)} MVR`,
       icon: <Zap className="h-6 w-6" />,
       color: 'amber',
     },
@@ -302,28 +323,28 @@ export default function StockOnHandPage() {
         )}
 
         {/* Top Items Overview */}
-        <div className="grid gap-6 lg:grid-cols-2">
-          {/* Top Purchased Items */}
+        <div className="grid gap-6 lg:grid-cols-3">
+          {/* Top Purchased Items - By Frequency */}
           <section className="rounded-3xl border border-slate-200 bg-slate-50/70 p-6 shadow-2xl shadow-slate-300/20">
             <h3 className="text-lg font-semibold text-slate-900 mb-4 flex items-center gap-2">
               <TrendingUp className="h-5 w-5 text-green-600" />
-              Top Purchased Items
+              Most Frequently Ordered
             </h3>
             <div className="space-y-3">
-              {stats.topPurchased.length > 0 ? (
-                stats.topPurchased.map((item, idx) => {
-                  const maxPurchased = Math.max(...stats.topPurchased.map(i => i.totalPurchased), 1);
-                  const percentage = (item.totalPurchased / maxPurchased) * 100;
+              {stats.topByFrequency.length > 0 ? (
+                stats.topByFrequency.map((item, idx) => {
+                  const maxFreq = Math.max(...stats.topByFrequency.map(i => i.purchaseFrequency), 1);
+                  const percentage = (item.purchaseFrequency / maxFreq) * 100;
                   
                   return (
                     <div key={item.id} className="rounded-2xl border border-slate-200 bg-slate-100 p-3">
                       <div className="flex items-center justify-between mb-2">
                         <div className="flex-1 min-w-0">
                           <p className="font-semibold text-slate-900">{item.name}</p>
-                          <p className="text-xs text-slate-500">Purchased {item.purchaseFrequency}x | Currently: {item.currentStock} {item.unit}</p>
+                          <p className="text-xs text-slate-500">Total: {item.totalPurchased} {item.unit} | Stock: {item.currentStock} {item.unit}</p>
                         </div>
                         <span className="text-xs font-bold bg-green-200 text-green-900 px-2 py-1 rounded-full whitespace-nowrap ml-2">
-                          {item.totalPurchased} {item.unit}
+                          {item.purchaseFrequency}x orders
                         </span>
                       </div>
                       <div className="w-full bg-slate-300 rounded-full h-2">
@@ -375,6 +396,44 @@ export default function StockOnHandPage() {
                 })
               ) : (
                 <p className="text-sm text-slate-500">No usage data available yet</p>
+              )}
+            </div>
+          </section>
+
+          {/* Top by Inventory Value */}
+          <section className="rounded-3xl border border-slate-200 bg-slate-50/70 p-6 shadow-2xl shadow-slate-300/20">
+            <h3 className="text-lg font-semibold text-slate-900 mb-4 flex items-center gap-2">
+              <TrendingUp className="h-5 w-5 text-purple-600" />
+              Top by Stock Value
+            </h3>
+            <div className="space-y-3">
+              {stats.topByValue.length > 0 ? (
+                stats.topByValue.map((item) => {
+                  const maxValue = Math.max(...stats.topByValue.map(i => i.estimatedValue || 0), 1);
+                  const percentage = ((item.estimatedValue || 0) / maxValue) * 100;
+                  
+                  return (
+                    <div key={item.id} className="rounded-2xl border border-slate-200 bg-slate-100 p-3">
+                      <div className="flex items-center justify-between mb-2">
+                        <div className="flex-1 min-w-0">
+                          <p className="font-semibold text-slate-900">{item.name}</p>
+                          <p className="text-xs text-slate-500">Qty: {item.currentStock} {item.unit}</p>
+                        </div>
+                        <span className="text-xs font-bold bg-purple-200 text-purple-900 px-2 py-1 rounded-full whitespace-nowrap ml-2">
+                          {Math.round(item.estimatedValue || 0)} MVR
+                        </span>
+                      </div>
+                      <div className="w-full bg-slate-300 rounded-full h-2">
+                        <div
+                          className="bg-purple-600 h-2 rounded-full"
+                          style={{ width: `${Math.min(100, percentage)}%` }}
+                        />
+                      </div>
+                    </div>
+                  );
+                })
+              ) : (
+                <p className="text-sm text-slate-500">No value data available</p>
               )}
             </div>
           </section>

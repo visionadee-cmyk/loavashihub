@@ -169,10 +169,21 @@ export default function StockOnHandPage() {
       .sort((a, b) => b.totalUsedInBills - a.totalUsedInBills)
       .slice(0, 3);
 
-    const totalValue = stockItems.reduce((sum, item) => sum + item.currentStock, 0);
     const lowStockCount = stockItems.filter((item) => item.currentStock < 10).length;
 
-    return { topPurchased, mostUsed, totalValue, lowStockCount };
+    // Group by unit for proper totals
+    const unitGroups = new Map<string, number>();
+    stockItems.forEach((item) => {
+      const current = unitGroups.get(item.unit) || 0;
+      unitGroups.set(item.unit, current + item.currentStock);
+    });
+
+    // Create readable unit totals
+    const unitTotals = Array.from(unitGroups.entries())
+      .map(([unit, qty]) => `${qty} ${unit}`)
+      .join(' | ');
+
+    return { topPurchased, mostUsed, lowStockCount, unitTotals };
   }, [stockItems]);
 
   // Filter stock items
@@ -196,8 +207,8 @@ export default function StockOnHandPage() {
       color: 'red',
     },
     {
-      label: 'Total Units on Hand',
-      value: stats.totalValue,
+      label: 'Total on Hand',
+      value: stats.unitTotals || '0',
       icon: <ShoppingCart className="h-6 w-6" />,
       color: 'green',
     },
@@ -227,14 +238,16 @@ export default function StockOnHandPage() {
                 key={idx}
                 className={`rounded-3xl border-2 p-4 ${colorClasses[card.color as keyof typeof colorClasses]}`}
               >
-                <div className="flex items-center justify-between gap-3">
-                  <div>
+                <div className="flex items-start justify-between gap-3">
+                  <div className="flex-1">
                     <p className="text-xs font-semibold uppercase tracking-widest opacity-75">
                       {card.label}
                     </p>
-                    <p className="text-2xl font-bold mt-2">{card.value}</p>
+                    <p className={`font-bold mt-2 ${typeof card.value === 'string' ? 'text-lg break-words' : 'text-2xl'}`}>
+                      {card.value}
+                    </p>
                   </div>
-                  <div className="opacity-50">{card.icon}</div>
+                  <div className="opacity-50 flex-shrink-0">{card.icon}</div>
                 </div>
               </div>
             );

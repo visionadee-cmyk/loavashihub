@@ -4,7 +4,7 @@ import { saveAs } from 'file-saver';
 import { utils, write } from 'xlsx';
 import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
-import { Download, Filter, X } from 'lucide-react';
+import { Download, Filter, X, Share2 } from 'lucide-react';
 import AppShell from '../components/AppShell';
 import { loadCollection } from '../lib/firestore';
 import { formatMVR } from '../lib/mvr';
@@ -40,6 +40,7 @@ export default function ReportsPage() {
   const [directPurchases, setDirectPurchases] = useState<DirectPurchase[]>([]);
   const [directRevenueEntries, setDirectRevenueEntries] = useState<DailyDirectRevenue[]>([]);
   const [showCustomReport, setShowCustomReport] = useState(false);
+  const [selectedDailyDate, setSelectedDailyDate] = useState<string>(new Date().toISOString().slice(0, 10));
   const [customFilter, setCustomFilter] = useState<CustomReportFilter>({
     startDate: new Date(new Date().setDate(new Date().getDate() - 30)).toISOString().slice(0, 10),
     endDate: new Date().toISOString().slice(0, 10),
@@ -88,6 +89,113 @@ export default function ReportsPage() {
   );
 
   const profit = totalSales - totalExpenses;
+
+  // Daily Report Data
+  const dailyReport = useMemo(() => {
+    const dayStart = selectedDailyDate;
+
+    // Get today's revenue from POS
+    const dayBills = bills.filter((bill) => bill.createdAt.slice(0, 10) === dayStart);
+    const posRevenue = dayBills.reduce((sum, bill) => sum + bill.items.reduce((itemSum, item) => itemSum + item.price * item.quantity, 0), 0);
+
+    // Get today's direct revenue
+    const dayDirectRevenue = directRevenueEntries.find((entry) => entry.date === dayStart);
+
+    // Get today's expenses
+    const dayExpenses = expenses
+      .filter((expense) => expense.date === dayStart)
+      .reduce((sum, expense) => sum + expense.amount, 0);
+
+    // Get today's direct purchases
+    const dayPurchases = directPurchases
+      .filter((purchase) => purchase.date === dayStart)
+      .reduce((sum, purchase) => sum + purchase.total, 0);
+
+    const totalDayRevenue = posRevenue + (dayDirectRevenue?.totalDirectRevenue || 0);
+    const totalDayExpenses = dayExpenses + dayPurchases;
+    const dailyProfit = totalDayRevenue - totalDayExpenses;
+
+    // Build cash breakdown
+    const cashBreakdown = [];
+    if (dayDirectRevenue) {
+      const { cashCounts } = dayDirectRevenue;
+      if (cashCounts.fiftyLari > 0) cashBreakdown.push({ denomination: '50 Laari', count: cashCounts.fiftyLari, amount: 0.5 * cashCounts.fiftyLari });
+      if (cashCounts.oneRf > 0) cashBreakdown.push({ denomination: '1 Rf', count: cashCounts.oneRf, amount: 1 * cashCounts.oneRf });
+      if (cashCounts.twoRf > 0) cashBreakdown.push({ denomination: '2 Rf', count: cashCounts.twoRf, amount: 2 * cashCounts.twoRf });
+      if (cashCounts.note5 > 0) cashBreakdown.push({ denomination: '5 Note', count: cashCounts.note5, amount: 5 * cashCounts.note5 });
+      if (cashCounts.note10 > 0) cashBreakdown.push({ denomination: '10 Note', count: cashCounts.note10, amount: 10 * cashCounts.note10 });
+      if (cashCounts.note20 > 0) cashBreakdown.push({ denomination: '20 Note', count: cashCounts.note20, amount: 20 * cashCounts.note20 });
+      if (cashCounts.note50 > 0) cashBreakdown.push({ denomination: '50 Note', count: cashCounts.note50, amount: 50 * cashCounts.note50 });
+      if (cashCounts.note100 > 0) cashBreakdown.push({ denomination: '100 Note', count: cashCounts.note100, amount: 100 * cashCounts.note100 });
+      if (cashCounts.note500 > 0) cashBreakdown.push({ denomination: '500 Note', count: cashCounts.note500, amount: 500 * cashCounts.note500 });
+      if (cashCounts.note1000 > 0) cashBreakdown.push({ denomination: '1000 Note', count: cashCounts.note1000, amount: 1000 * cashCounts.note1000 });
+    }
+
+    return {
+      date: dayStart,
+      posRevenue,
+      directRevenue: dayDirectRevenue?.totalDirectRevenue || 0,
+      totalRevenue: totalDayRevenue,
+      cashBreakdown,
+      cardPayments: dayDirectRevenue?.cardPayments || [],
+      totalCashDrawer: dayDirectRevenue?.cashTotal || 0,
+      totalCardPayments: dayDirectRevenue?.cardTotal || 0,
+      expenses: dayExpenses,
+      purchases: dayPurchases,
+      totalExpenses: totalDayExpenses,
+      profit: dailyProfit,
+    };
+  }, [selectedDailyDate, bills, directRevenueEntries, expenses, directPurchases]);
+
+  // Generate shareable report text
+  const generateReportText = (): string => {
+    const report = dailyReport;
+    const dateObj = new Date(report.date);
+    const dateStr = dateObj.toLocaleDateString('en-US', { weekday: 'short', year: 'numeric', month: 'short', day: 'numeric' });
+
+    let text = `📊 *Loavashi Cafe - Daily Report*\n`;
+    text += `📅 ${dateStr}\n\n`;
+
+    text += `💰 *REVENUE*\n`;
+    text += `POS Sales: ${formatMVR(report.posRevenue)}\n`;
+    text += `Direct Revenue: ${formatMVR(report.directRevenue)}\n`;
+    text += `━━━━━━━━━━━━━━━━\n`;
+    text += `Total Revenue: ${formatMVR(report.totalRevenue)}\n\n`;
+
+    if (report.cashBreakdown.length > 0) {
+      text += `💵 *CASH DRAWER*\n`;
+      report.cashBreakdown.forEach((item: any) => {
+        text += `${item.denomination}: ${item.count} = ${formatMVR(item.amount)}\n`;
+      });
+      text += `Cash Total: ${formatMVR(report.totalCashDrawer)}\n`;
+      text += `Card Payments: ${formatMVR(report.totalCardPayments)}\n\n`;
+    }
+
+    text += `📋 *EXPENSES*\n`;
+    text += `Daily Expenses: ${formatMVR(report.expenses)}\n`;
+    text += `Direct Purchases: ${formatMVR(report.purchases)}\n`;
+    text += `Total Expenses: ${formatMVR(report.totalExpenses)}\n\n`;
+
+    text += `✅ *PROFIT/LOSS*\n`;
+    text += `Net: ${formatMVR(report.profit)}\n`;
+    text += `Margin: ${report.totalRevenue > 0 ? ((report.profit / report.totalRevenue) * 100).toFixed(1) : 0}%\n`;
+
+    return text;
+  };
+
+  const shareToWhatsApp = () => {
+    const reportText = generateReportText();
+    const encodedText = encodeURIComponent(reportText);
+    const whatsappUrl = `https://wa.me/?text=${encodedText}`;
+    window.open(whatsappUrl, '_blank');
+  };
+
+  const shareToViber = () => {
+    const reportText = generateReportText();
+    const encodedText = encodeURIComponent(reportText);
+    const viberUrl = `viber://send?text=${encodedText}`;
+    window.location.href = viberUrl;
+  };
 
   // Additional statistics
   const totalTransactions = useMemo(() => bills.length, [bills]);
@@ -448,7 +556,105 @@ export default function ReportsPage() {
             </div>
           ))}
         </div>
+        {/* Daily Report Generator */}
+        <div className="rounded-3xl border border-slate-200 bg-gradient-to-br from-blue-50 to-indigo-50 p-6 shadow-sm">
+          <div className="mb-6 flex flex-wrap items-center justify-between gap-4">
+            <div>
+              <h3 className="text-lg font-semibold text-slate-900">Daily Direct Revenue Report</h3>
+              <p className="text-sm text-slate-600">Generate and share today's revenue summary</p>
+            </div>
+            <div className="flex flex-wrap gap-2">
+              <input
+                type="date"
+                value={selectedDailyDate}
+                onChange={(e) => setSelectedDailyDate(e.target.value)}
+                max={new Date().toISOString().slice(0, 10)}
+                className="rounded-2xl border border-slate-300 px-3 py-2 text-sm text-slate-900"
+              />
+              <button
+                type="button"
+                onClick={shareToWhatsApp}
+                className="inline-flex items-center gap-2 rounded-3xl bg-emerald-600 px-4 py-3 text-sm font-semibold text-white hover:bg-emerald-500"
+              >
+                <Share2 size={16} />
+                WhatsApp
+              </button>
+              <button
+                type="button"
+                onClick={shareToViber}
+                className="inline-flex items-center gap-2 rounded-3xl bg-violet-600 px-4 py-3 text-sm font-semibold text-white hover:bg-violet-500"
+              >
+                <Share2 size={16} />
+                Viber
+              </button>
+            </div>
+          </div>
 
+          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+            <div className="rounded-2xl border border-white/50 bg-white p-4">
+              <p className="text-xs uppercase tracking-widest text-slate-500">POS Revenue</p>
+              <p className="mt-3 text-2xl font-bold text-slate-900">{formatMVR(dailyReport.posRevenue)}</p>
+            </div>
+            <div className="rounded-2xl border border-white/50 bg-white p-4">
+              <p className="text-xs uppercase tracking-widest text-slate-500">Direct Revenue</p>
+              <p className="mt-3 text-2xl font-bold text-slate-900">{formatMVR(dailyReport.directRevenue)}</p>
+            </div>
+            <div className="rounded-2xl border border-white/50 bg-white p-4">
+              <p className="text-xs uppercase tracking-widest text-slate-500">Total Expenses</p>
+              <p className="mt-3 text-2xl font-bold text-red-600">{formatMVR(dailyReport.totalExpenses)}</p>
+            </div>
+            <div className="rounded-2xl border border-white/50 bg-white p-4">
+              <p className="text-xs uppercase tracking-widest text-slate-500">Daily Profit</p>
+              <p className={`mt-3 text-2xl font-bold ${dailyReport.profit >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                {formatMVR(dailyReport.profit)}
+              </p>
+            </div>
+          </div>
+
+          {/* Cash Drawer Details */}
+          {dailyReport.cashBreakdown.length > 0 && (
+            <div className="mt-6 grid gap-4 md:grid-cols-2">
+              <div className="rounded-2xl border border-white/50 bg-white p-4">
+                <h4 className="mb-3 font-semibold text-slate-900">Cash Drawer Breakdown</h4>
+                <div className="space-y-2">
+                  {dailyReport.cashBreakdown.map((item: any) => (
+                    <div key={`${item.denomination}-${item.count}`} className="flex items-center justify-between text-sm">
+                      <span className="text-slate-600">
+                        {item.denomination}: {item.count}×
+                      </span>
+                      <span className="font-semibold text-slate-900">{formatMVR(item.amount)}</span>
+                    </div>
+                  ))}
+                  <div className="border-t border-slate-200 pt-2">
+                    <div className="flex items-center justify-between font-semibold">
+                      <span className="text-slate-700">Cash Total</span>
+                      <span className="text-slate-900">{formatMVR(dailyReport.totalCashDrawer)}</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div className="rounded-2xl border border-white/50 bg-white p-4">
+                <h4 className="mb-3 font-semibold text-slate-900">Payment Methods</h4>
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between text-sm">
+                    <span className="text-slate-600">Cash Payments</span>
+                    <span className="font-semibold text-slate-900">{formatMVR(dailyReport.totalCashDrawer)}</span>
+                  </div>
+                  <div className="flex items-center justify-between text-sm">
+                    <span className="text-slate-600">Card Payments</span>
+                    <span className="font-semibold text-slate-900">{formatMVR(dailyReport.totalCardPayments)}</span>
+                  </div>
+                  <div className="border-t border-slate-200 pt-2">
+                    <div className="flex items-center justify-between font-semibold">
+                      <span className="text-slate-700">Direct Total</span>
+                      <span className="text-slate-900">{formatMVR(dailyReport.directRevenue)}</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
         {/* Charts Grid */}
         <div className="grid gap-5 xl:grid-cols-2">
           <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm shadow-slate-300/20">

@@ -738,15 +738,23 @@ export default function AdminDashboard() {
               <p className="text-sm text-slate-500">Revenue distribution across 24 hours</p>
             </div>
             <div className="h-72">
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={hourlySales.filter(h => h.revenue > 0)} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="rgba(5, 9, 63, 0.1)" />
-                  <XAxis dataKey="hour" tick={{ fill: 'rgba(5, 9, 63, 0.7)', fontSize: 10 }} interval={3} />
-                  <YAxis tick={{ fill: 'rgba(5, 9, 63, 0.7)', fontSize: 12 }} />
-                  <Tooltip content={<CustomTooltip />} />
-                  <Bar dataKey="revenue" fill="#16a34a" radius={[6, 6, 0, 0]} />
-                </BarChart>
-              </ResponsiveContainer>
+              {hourlySales.some(h => h.revenue > 0) ? (
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart data={hourlySales.filter(h => h.revenue > 0)} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="rgba(5, 9, 63, 0.1)" />
+                    <XAxis dataKey="hour" tick={{ fill: 'rgba(5, 9, 63, 0.7)', fontSize: 10 }} interval={3} />
+                    <YAxis tick={{ fill: 'rgba(5, 9, 63, 0.7)', fontSize: 12 }} />
+                    <Tooltip content={<CustomTooltip />} />
+                    <Bar dataKey="revenue" fill="#16a34a" radius={[6, 6, 0, 0]} />
+                  </BarChart>
+                </ResponsiveContainer>
+              ) : (
+                <div className="flex flex-col items-center justify-center h-full text-slate-400">
+                  <BarChart className="h-12 w-12 mb-2" />
+                  <p className="text-sm font-medium">No hourly revenue yet</p>
+                  <p className="text-xs">Hourly breakdown will appear once sales are recorded</p>
+                </div>
+              )}
             </div>
           </motion.section>
 
@@ -834,21 +842,29 @@ export default function AdminDashboard() {
               <p className="text-sm text-slate-500">Revenue performance over time</p>
             </div>
             <div className="h-72">
-              <ResponsiveContainer width="100%" height="100%">
-                <AreaChart data={monthlySales} margin={{ top: 10, right: 10, left: -10, bottom: 0 }}>
-                  <defs>
-                    <linearGradient id="colorMonthly" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="#05093f" stopOpacity={0.8}/>
-                      <stop offset="95%" stopColor="#05093f" stopOpacity={0.1}/>
-                    </linearGradient>
-                  </defs>
-                  <CartesianGrid strokeDasharray="3 3" stroke="rgba(5, 9, 63, 0.1)" />
-                  <XAxis dataKey="day" tick={{ fill: 'rgba(5, 9, 63, 0.7)', fontSize: 10 }} />
-                  <YAxis tick={{ fill: 'rgba(5, 9, 63, 0.7)', fontSize: 12 }} />
-                  <Tooltip content={<CustomTooltip />} />
-                  <Area type="monotone" dataKey="amount" stroke="#05093f" fillOpacity={1} fill="url(#colorMonthly)" name="Revenue" />
-                </AreaChart>
-              </ResponsiveContainer>
+              {monthlySales && monthlySales.length > 0 ? (
+                <ResponsiveContainer width="100%" height="100%">
+                  <AreaChart data={monthlySales} margin={{ top: 10, right: 10, left: -10, bottom: 0 }}>
+                    <defs>
+                      <linearGradient id="colorMonthly" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="5%" stopColor="#05093f" stopOpacity={0.8}/>
+                        <stop offset="95%" stopColor="#05093f" stopOpacity={0.1}/>
+                      </linearGradient>
+                    </defs>
+                    <CartesianGrid strokeDasharray="3 3" stroke="rgba(5, 9, 63, 0.1)" />
+                    <XAxis dataKey="day" tick={{ fill: 'rgba(5, 9, 63, 0.7)', fontSize: 10 }} />
+                    <YAxis tick={{ fill: 'rgba(5, 9, 63, 0.7)', fontSize: 12 }} />
+                    <Tooltip content={<CustomTooltip />} />
+                    <Area type="monotone" dataKey="amount" stroke="#05093f" fillOpacity={1} fill="url(#colorMonthly)" name="Revenue" />
+                  </AreaChart>
+                </ResponsiveContainer>
+              ) : (
+                <div className="flex flex-col items-center justify-center h-full text-slate-400">
+                  <BarChart className="h-12 w-12 mb-2" />
+                  <p className="text-sm font-medium">No monthly data yet</p>
+                  <p className="text-xs">Monthly trends will appear once bills are created</p>
+                </div>
+              )}
             </div>
           </motion.section>
         </div>

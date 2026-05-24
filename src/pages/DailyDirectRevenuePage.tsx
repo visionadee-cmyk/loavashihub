@@ -4,7 +4,7 @@ import AppShell from '../components/AppShell';
 import { hasFirebaseConfig } from '../lib/firebase';
 import { loadCollection, saveDocument, deleteDocument } from '../lib/firestore';
 import { formatMVR } from '../lib/mvr';
-import type { CardPayment, DailyDirectRevenue } from '../types';
+import type { CardPayment, DailyDirectRevenue, DirectPurchase, DirectPurchaseItem } from '../types';
 
 const initialCashCounts = {
   fiftyLari: 0,
@@ -51,6 +51,12 @@ export default function DailyDirectRevenuePage() {
     closedBy: '',
     cashCounts: { ...initialCashCounts },
     cardPayments: createDefaultCardPayments(),
+    cashDrawerPurchases: [] as Array<{
+      id: string;
+      shopName: string;
+      items: DirectPurchaseItem[];
+      amount: number;
+    }>,
   });
   const [editingId, setEditingId] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
@@ -110,6 +116,100 @@ export default function DailyDirectRevenuePage() {
     }));
   };
 
+  const addCashDrawerPurchase = () => {
+    setForm((current) => ({
+      ...current,
+      cashDrawerPurchases: [
+        ...current.cashDrawerPurchases,
+        {
+          id: `cashpurch-${Date.now()}`,
+          shopName: '',
+          items: [],
+          amount: 0,
+        },
+      ],
+    }));
+  };
+
+  const removeCashDrawerPurchase = (id: string) => {
+    setForm((current) => ({
+      ...current,
+      cashDrawerPurchases: current.cashDrawerPurchases.filter((p) => p.id !== id),
+    }));
+  };
+
+  const updateCashDrawerPurchase = (
+    id: string,
+    field: 'shopName' | 'amount',
+    value: string | number,
+  ) => {
+    setForm((current) => ({
+      ...current,
+      cashDrawerPurchases: current.cashDrawerPurchases.map((p) =>
+        p.id !== id ? p : { ...p, [field]: value },
+      ),
+    }));
+  };
+
+  const addItemToPurchase = (purchaseId: string) => {
+    setForm((current) => ({
+      ...current,
+      cashDrawerPurchases: current.cashDrawerPurchases.map((p) =>
+        p.id !== purchaseId
+          ? p
+          : {
+              ...p,
+              items: [
+                ...p.items,
+                {
+                  id: `item-${Date.now()}`,
+                  productName: '',
+                  quantity: 1,
+                  unit: 'pcs',
+                  unitCost: 0,
+                  totalCost: 0,
+                },
+              ],
+            },
+        ),
+    }));
+  };
+
+  const updatePurchaseItem = (
+    purchaseId: string,
+    itemId: string,
+    field: 'productName' | 'quantity' | 'unit' | 'unitCost',
+    value: string | number,
+  ) => {
+    setForm((current) => ({
+      ...current,
+      cashDrawerPurchases: current.cashDrawerPurchases.map((p) =>
+        p.id !== purchaseId
+          ? p
+          : {
+              ...p,
+              items: p.items.map((item) => {
+                if (item.id !== itemId) return item;
+                const updated = { ...item, [field]: value };
+                if (field === 'quantity' || field === 'unitCost') {
+                  updated.totalCost = (updated.quantity as number) * (updated.unitCost as number);
+                }
+                return updated;
+              }),
+            },
+        ),
+    }));
+  };
+
+  const removeItemFromPurchase = (purchaseId: string, itemId: string) => {
+    setForm((current) => ({
+      ...current,
+      cashDrawerPurchases: current.cashDrawerPurchases.map((p) =>
+        p.id !== purchaseId ? p : { ...p, items: p.items.filter((i) => i.id !== itemId) },
+      ),
+    }));
+  };
+
   const saveRevenue = async () => {
     if (!form.closedBy.trim() || totalDirectRevenue <= 0) return;
 
@@ -129,6 +229,27 @@ export default function DailyDirectRevenuePage() {
     setSaving(true);
     try {
       await saveDocument('dailyDirectRevenue', payload.id, payload);
+      
+      // Save cash drawer purchases as DirectPurchase entries
+      for (const purchase of form.cashDrawerPurchases) {
+        if (purchase.shopName.trim() && purchase.items.length > 0) {
+          const directPurchasePayload: DirectPurchase = {
+            id: `directpurch-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
+            shopName: purchase.shopName.trim(),
+            items: purchase.items.filter((item) => item.productName.trim() && item.totalCost > 0),
+            gst: 0,
+            subtotal: purchase.items.reduce((sum, item) => sum + (item.totalCost || 0), 0),
+            total: purchase.items.reduce((sum, item) => sum + (item.totalCost || 0), 0),
+            date: form.date,
+          };
+          try {
+            await saveDocument('directPurchases', directPurchasePayload.id, directPurchasePayload);
+          } catch (error) {
+            console.error('Failed to save direct purchase:', error);
+          }
+        }
+      }
+
       setEntries((current) => {
         if (editingId) {
           return current.map((entry) => (entry.id === editingId ? payload : entry));
@@ -140,6 +261,7 @@ export default function DailyDirectRevenuePage() {
         closedBy: '',
         cashCounts: { ...initialCashCounts },
         cardPayments: createDefaultCardPayments(),
+        cashDrawerPurchases: [],
       });
       setEditingId(null);
     } catch (error) {
@@ -169,6 +291,7 @@ export default function DailyDirectRevenuePage() {
       closedBy: entry.closedBy,
       cashCounts: { ...entry.cashCounts },
       cardPayments: [...mergedPayments, ...extraPayments],
+      cashDrawerPurchases: [],
     });
   };
 
@@ -179,6 +302,7 @@ export default function DailyDirectRevenuePage() {
       closedBy: '',
       cashCounts: { ...initialCashCounts },
       cardPayments: createDefaultCardPayments(),
+      cashDrawerPurchases: [],
     });
   };
 
@@ -352,6 +476,131 @@ export default function DailyDirectRevenuePage() {
                   </button>
                 </div>
               ))}
+            </div>
+          </div>
+
+          <div className="mt-8 rounded-3xl border border-slate-200 bg-slate-50 p-5">
+            <div className="flex items-center justify-between gap-3">
+              <div>
+                <h4 className="text-lg font-semibold text-slate-900">Cash Drawer Purchases</h4>
+                <p className="text-sm text-slate-500">Record purchases made from cash drawer (will be added to Direct Purchases).</p>
+              </div>
+              <button
+                type="button"
+                onClick={addCashDrawerPurchase}
+                className="inline-flex items-center gap-2 rounded-full bg-purple-600 px-4 py-2 text-sm font-semibold text-white hover:bg-purple-500"
+              >
+                <Plus className="h-4 w-4" /> Add purchase
+              </button>
+            </div>
+
+            <div className="mt-5 space-y-5">
+              {form.cashDrawerPurchases.map((purchase) => {
+                const purchaseTotal = purchase.items.reduce((sum, item) => sum + (item.totalCost || 0), 0);
+                return (
+                  <div key={purchase.id} className="rounded-2xl border border-purple-200 bg-white p-4 space-y-3">
+                    <div className="grid gap-3 sm:grid-cols-[1fr_1fr_48px]">
+                      <label className="block text-sm text-slate-500">
+                        Shop name
+                        <input
+                          type="text"
+                          value={purchase.shopName}
+                          onChange={(e) => updateCashDrawerPurchase(purchase.id, 'shopName', e.target.value)}
+                          placeholder="e.g., Local Supplies"
+                          className="mt-2 w-full rounded-3xl border border-slate-200 bg-white px-4 py-3 text-slate-900 outline-none"
+                        />
+                      </label>
+                      <label className="block text-sm text-slate-500">
+                        Total amount
+                        <input
+                          type="number"
+                          value={purchase.amount}
+                          onChange={(e) => updateCashDrawerPurchase(purchase.id, 'amount', Number(e.target.value))}
+                          className="mt-2 w-full rounded-3xl border border-slate-200 bg-white px-4 py-3 text-slate-900 outline-none"
+                        />
+                      </label>
+                      <button
+                        type="button"
+                        onClick={() => removeCashDrawerPurchase(purchase.id)}
+                        className="mt-8 inline-flex h-12 w-12 items-center justify-center rounded-full bg-red-500 text-white hover:bg-red-600 transition"
+                        aria-label="Remove purchase"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </button>
+                    </div>
+
+                    {/* Items in this purchase */}
+                    <div className="rounded-lg bg-purple-50 p-3 border border-purple-100">
+                      <div className="flex items-center justify-between mb-3">
+                        <p className="text-sm font-semibold text-purple-900">Items ({purchase.items.length})</p>
+                        <button
+                          type="button"
+                          onClick={() => addItemToPurchase(purchase.id)}
+                          className="inline-flex items-center gap-1 rounded-full bg-purple-600 px-3 py-1 text-xs font-semibold text-white hover:bg-purple-500"
+                        >
+                          <Plus className="h-3 w-3" /> Item
+                        </button>
+                      </div>
+
+                      <div className="space-y-2">
+                        {purchase.items.map((item) => (
+                          <div key={item.id} className="grid gap-2 sm:grid-cols-[1fr_1fr_1fr_1fr_40px]">
+                            <input
+                              type="text"
+                              value={item.productName}
+                              onChange={(e) => updatePurchaseItem(purchase.id, item.id, 'productName', e.target.value)}
+                              placeholder="Product name"
+                              className="rounded-2xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 outline-none"
+                            />
+                            <input
+                              type="number"
+                              value={item.quantity}
+                              onChange={(e) => updatePurchaseItem(purchase.id, item.id, 'quantity', Number(e.target.value))}
+                              placeholder="Qty"
+                              min="1"
+                              className="rounded-2xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 outline-none"
+                            />
+                            <input
+                              type="number"
+                              value={item.unitCost}
+                              onChange={(e) => updatePurchaseItem(purchase.id, item.id, 'unitCost', Number(e.target.value))}
+                              placeholder="Unit cost"
+                              min="0"
+                              className="rounded-2xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 outline-none"
+                            />
+                            <input
+                              type="text"
+                              value={formatMVR(item.totalCost)}
+                              disabled
+                              className="rounded-2xl border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-900 cursor-not-allowed"
+                            />
+                            <button
+                              type="button"
+                              onClick={() => removeItemFromPurchase(purchase.id, item.id)}
+                              className="inline-flex h-10 w-10 items-center justify-center rounded-full bg-red-500 text-white hover:bg-red-600 transition text-xs"
+                              aria-label="Remove item"
+                            >
+                              <Trash2 className="h-3 w-3" />
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+
+                      {purchase.items.length > 0 && (
+                        <div className="mt-2 text-right">
+                          <p className="text-xs text-purple-600">
+                            Subtotal: <span className="font-semibold">{formatMVR(purchaseTotal)}</span>
+                          </p>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
+
+              {form.cashDrawerPurchases.length === 0 && (
+                <p className="text-center text-sm text-slate-400 py-6">No cash drawer purchases recorded</p>
+              )}
             </div>
           </div>
 

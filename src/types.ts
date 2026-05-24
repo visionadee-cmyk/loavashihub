@@ -123,6 +123,8 @@ export interface DailyDirectRevenue {
   id: string;
   date: string;
   closedBy: string;
+  openingPettyCash?: number;
+  closingPettyCash?: number;
   cashCounts: {
     fiftyLari: number;
     oneRf: number;

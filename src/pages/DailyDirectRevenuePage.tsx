@@ -49,6 +49,8 @@ export default function DailyDirectRevenuePage() {
   const [form, setForm] = useState({
     date: new Date().toISOString().slice(0, 10),
     closedBy: '',
+    openingPettyCash: 0,
+    closingPettyCash: 0,
     cashCounts: { ...initialCashCounts },
     cardPayments: createDefaultCardPayments(),
     cashDrawerPurchases: [] as Array<{
@@ -218,6 +220,8 @@ export default function DailyDirectRevenuePage() {
       id: editingId ?? `directrev-${Date.now()}`,
       date: form.date,
       closedBy: form.closedBy.trim(),
+      openingPettyCash: form.openingPettyCash,
+      closingPettyCash: form.closingPettyCash,
       cashCounts: { ...form.cashCounts },
       cardPayments: form.cardPayments.filter((payment) => payment.amount > 0),
       cashTotal,
@@ -259,6 +263,8 @@ export default function DailyDirectRevenuePage() {
       setForm({
         date: new Date().toISOString().slice(0, 10),
         closedBy: '',
+        openingPettyCash: 0,
+        closingPettyCash: 0,
         cashCounts: { ...initialCashCounts },
         cardPayments: createDefaultCardPayments(),
         cashDrawerPurchases: [],
@@ -289,6 +295,8 @@ export default function DailyDirectRevenuePage() {
     setForm({
       date: entry.date,
       closedBy: entry.closedBy,
+      openingPettyCash: (entry as any).openingPettyCash || 0,
+      closingPettyCash: (entry as any).closingPettyCash || 0,
       cashCounts: { ...entry.cashCounts },
       cardPayments: [...mergedPayments, ...extraPayments],
       cashDrawerPurchases: [],
@@ -300,6 +308,8 @@ export default function DailyDirectRevenuePage() {
     setForm({
       date: new Date().toISOString().slice(0, 10),
       closedBy: '',
+      openingPettyCash: 0,
+      closingPettyCash: 0,
       cashCounts: { ...initialCashCounts },
       cardPayments: createDefaultCardPayments(),
       cashDrawerPurchases: [],
@@ -376,6 +386,57 @@ export default function DailyDirectRevenuePage() {
                 className="mt-2 w-full rounded-3xl border border-slate-200 bg-slate-50 px-4 py-3 text-slate-900 outline-none"
               />
             </label>
+          </div>
+
+          <div className="mt-6 rounded-3xl border-2 border-amber-300 bg-amber-50 p-5">
+            <h4 className="text-lg font-semibold text-amber-900">💰 Petty Cash (Float)</h4>
+            <p className="text-sm text-amber-800 mt-1">Track the float money kept in drawer for making change to customers</p>
+            
+            <div className="grid gap-4 sm:grid-cols-2 mt-4">
+              <label className="block text-sm text-amber-900">
+                Opening petty cash amount (Start of day)
+                <input
+                  type="number"
+                  value={form.openingPettyCash}
+                  onChange={(e) => setForm({ ...form, openingPettyCash: Number(e.target.value) })}
+                  placeholder="e.g., 1000"
+                  min="0"
+                  step="0.01"
+                  className="mt-2 w-full rounded-3xl border border-amber-300 bg-white px-4 py-3 text-slate-900 outline-none"
+                />
+              </label>
+              <label className="block text-sm text-amber-900">
+                Closing petty cash amount (End of day)
+                <input
+                  type="number"
+                  value={form.closingPettyCash}
+                  onChange={(e) => setForm({ ...form, closingPettyCash: Number(e.target.value) })}
+                  placeholder="e.g., 1000"
+                  min="0"
+                  step="0.01"
+                  className="mt-2 w-full rounded-3xl border border-amber-300 bg-white px-4 py-3 text-slate-900 outline-none"
+                />
+              </label>
+            </div>
+            
+            <div className="mt-4 p-3 bg-white rounded-2xl border border-amber-200">
+              <div className="grid grid-cols-3 gap-2 text-sm">
+                <div>
+                  <p className="text-amber-700 text-xs">Opening</p>
+                  <p className="font-bold text-amber-900">{formatMVR(form.openingPettyCash)}</p>
+                </div>
+                <div>
+                  <p className="text-amber-700 text-xs">Closing</p>
+                  <p className="font-bold text-amber-900">{formatMVR(form.closingPettyCash)}</p>
+                </div>
+                <div>
+                  <p className="text-amber-700 text-xs">Difference</p>
+                  <p className={`font-bold ${form.closingPettyCash >= form.openingPettyCash ? 'text-green-600' : 'text-red-600'}`}>
+                    {formatMVR(form.closingPettyCash - form.openingPettyCash)}
+                  </p>
+                </div>
+              </div>
+            </div>
           </div>
 
           <div className="mt-8 rounded-3xl border border-slate-200 bg-slate-50 p-5">
@@ -713,7 +774,7 @@ export default function DailyDirectRevenuePage() {
                             </button>
                           </div>
                         </div>
-                        <div className="grid gap-2 sm:grid-cols-3 text-xs">
+                        <div className="grid gap-2 sm:grid-cols-3 text-xs mb-3">
                           <div className="rounded-2xl border border-slate-200 bg-slate-50 p-2">
                             <p className="text-slate-500">Cash:</p>
                             <p className="font-semibold text-slate-900">{formatMVR(entry.cashTotal)}</p>
@@ -727,6 +788,34 @@ export default function DailyDirectRevenuePage() {
                             <p className="font-semibold text-emerald-700">{formatMVR(entry.totalDirectRevenue)}</p>
                           </div>
                         </div>
+                        {(entry.openingPettyCash !== undefined || entry.closingPettyCash !== undefined) && (
+                          <div className="grid gap-2 sm:grid-cols-3 text-xs">
+                            <div className="rounded-2xl border border-amber-200 bg-amber-50 p-2">
+                              <p className="text-amber-700 text-xs font-semibold">Opening Float</p>
+                              <p className="font-bold text-amber-900">{formatMVR(entry.openingPettyCash || 0)}</p>
+                            </div>
+                            <div className="rounded-2xl border border-amber-200 bg-amber-50 p-2">
+                              <p className="text-amber-700 text-xs font-semibold">Closing Float</p>
+                              <p className="font-bold text-amber-900">{formatMVR(entry.closingPettyCash || 0)}</p>
+                            </div>
+                            <div className={`rounded-2xl border-2 p-2 ${
+                              ((entry.closingPettyCash || 0) >= (entry.openingPettyCash || 0)) 
+                                ? 'border-green-200 bg-green-50' 
+                                : 'border-red-200 bg-red-50'
+                            }`}>
+                              <p className={`text-xs font-semibold ${
+                                ((entry.closingPettyCash || 0) >= (entry.openingPettyCash || 0)) 
+                                  ? 'text-green-700' 
+                                  : 'text-red-700'
+                              }`}>Float Change</p>
+                              <p className={`font-bold ${
+                                ((entry.closingPettyCash || 0) >= (entry.openingPettyCash || 0)) 
+                                  ? 'text-green-900' 
+                                  : 'text-red-900'
+                              }`}>{formatMVR((entry.closingPettyCash || 0) - (entry.openingPettyCash || 0))}</p>
+                            </div>
+                          </div>
+                        )}
                       </div>
                     ))}
                   </div>

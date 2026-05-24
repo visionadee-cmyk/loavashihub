@@ -487,24 +487,32 @@ export default function AdminDashboard() {
               </div>
             </div>
             <div className="h-80">
-              <ResponsiveContainer width="100%" height="100%">
-                <ComposedChart data={dailySales} margin={{ top: 10, right: 10, left: -10, bottom: 0 }}>
-                  <defs>
-                    <linearGradient id="colorRevenue" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="#16a34a" stopOpacity={0.8}/>
-                      <stop offset="95%" stopColor="#16a34a" stopOpacity={0.1}/>
-                    </linearGradient>
-                  </defs>
-                  <CartesianGrid strokeDasharray="3 3" stroke="rgba(5, 9, 63, 0.1)" />
-                  <XAxis dataKey="day" tick={{ fill: 'rgba(5, 9, 63, 0.7)', fontSize: 12 }} />
-                  <YAxis yAxisId="left" tick={{ fill: 'rgba(5, 9, 63, 0.7)', fontSize: 12 }} />
-                  <YAxis yAxisId="right" orientation="right" tick={{ fill: 'rgba(5, 9, 63, 0.7)', fontSize: 12 }} />
-                  <Tooltip content={<CustomTooltip />} />
-                  <Legend />
-                  <Area yAxisId="left" type="monotone" dataKey="revenue" stroke="#16a34a" fillOpacity={1} fill="url(#colorRevenue)" name="Revenue" />
-                  <Bar yAxisId="right" dataKey="orders" fill="#05093f" radius={[4, 4, 0, 0]} name="Orders" />
-                </ComposedChart>
-              </ResponsiveContainer>
+              {bills.length > 0 ? (
+                <ResponsiveContainer width="100%" height="100%">
+                  <ComposedChart data={dailySales} margin={{ top: 10, right: 10, left: -10, bottom: 0 }}>
+                    <defs>
+                      <linearGradient id="colorRevenue" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="5%" stopColor="#16a34a" stopOpacity={0.8}/>
+                        <stop offset="95%" stopColor="#16a34a" stopOpacity={0.1}/>
+                      </linearGradient>
+                    </defs>
+                    <CartesianGrid strokeDasharray="3 3" stroke="rgba(5, 9, 63, 0.1)" />
+                    <XAxis dataKey="day" tick={{ fill: 'rgba(5, 9, 63, 0.7)', fontSize: 12 }} />
+                    <YAxis yAxisId="left" tick={{ fill: 'rgba(5, 9, 63, 0.7)', fontSize: 12 }} />
+                    <YAxis yAxisId="right" orientation="right" tick={{ fill: 'rgba(5, 9, 63, 0.7)', fontSize: 12 }} />
+                    <Tooltip content={<CustomTooltip />} />
+                    <Legend />
+                    <Area yAxisId="left" type="monotone" dataKey="revenue" stroke="#16a34a" fillOpacity={1} fill="url(#colorRevenue)" name="Revenue" />
+                    <Bar yAxisId="right" dataKey="orders" fill="#05093f" radius={[4, 4, 0, 0]} name="Orders" />
+                  </ComposedChart>
+                </ResponsiveContainer>
+              ) : (
+                <div className="flex flex-col items-center justify-center h-full text-slate-400">
+                  <BarChart className="h-12 w-12 mb-2" />
+                  <p className="text-sm font-medium">No sales data yet</p>
+                  <p className="text-xs">Revenue data will appear here once bills are created</p>
+                </div>
+              )}
             </div>
           </motion.section>
 
@@ -520,37 +528,47 @@ export default function AdminDashboard() {
               <p className="text-sm text-slate-500">Revenue distribution by payment type</p>
             </div>
             <div className="h-64">
-              <ResponsiveContainer width="100%" height="100%">
-                <PieChart>
-                  <Pie
-                    data={paymentBreakdown}
-                    dataKey="value"
-                    nameKey="method"
-                    innerRadius={60}
-                    outerRadius={90}
-                    paddingAngle={5}
-                    label={({ name, percent }: any) => `${name} ${((percent || 0) * 100).toFixed(0)}%`}
-                    labelLine={{ stroke: 'rgba(5, 9, 63, 0.3)' }}
-                  >
-                    {paymentBreakdown.map((entry, index) => (
-                      <Cell key={entry.method} fill={paymentColors[index % paymentColors.length]} />
-                    ))}
-                  </Pie>
-                  <Tooltip content={<CustomTooltip />} />
-                </PieChart>
-              </ResponsiveContainer>
-            </div>
-            <div className="mt-4 space-y-2">
-              {paymentBreakdown.map((item, index) => (
-                <div key={item.method} className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <div className="h-3 w-3 rounded-full" style={{ backgroundColor: paymentColors[index % paymentColors.length] }} />
-                    <span className="text-sm text-slate-600">{item.method}</span>
-                  </div>
-                  <span className="text-sm font-semibold">{formatMVR(item.value)}</span>
+              {paymentBreakdown.length > 0 ? (
+                <ResponsiveContainer width="100%" height="100%">
+                  <PieChart>
+                    <Pie
+                      data={paymentBreakdown}
+                      dataKey="value"
+                      nameKey="method"
+                      innerRadius={60}
+                      outerRadius={90}
+                      paddingAngle={5}
+                      label={({ name, percent }: any) => `${name} ${((percent || 0) * 100).toFixed(0)}%`}
+                      labelLine={{ stroke: 'rgba(5, 9, 63, 0.3)' }}
+                    >
+                      {paymentBreakdown.map((entry, index) => (
+                        <Cell key={entry.method} fill={paymentColors[index % paymentColors.length]} />
+                      ))}
+                    </Pie>
+                    <Tooltip content={<CustomTooltip />} />
+                  </PieChart>
+                </ResponsiveContainer>
+              ) : (
+                <div className="flex flex-col items-center justify-center h-full text-slate-400">
+                  <DollarSign className="h-12 w-12 mb-2" />
+                  <p className="text-sm font-medium">No payment data yet</p>
+                  <p className="text-xs">Payment methods will appear here once bills are created</p>
                 </div>
-              ))}
+              )}
             </div>
+            {paymentBreakdown.length > 0 && (
+              <div className="mt-4 space-y-2">
+                {paymentBreakdown.map((item, index) => (
+                  <div key={item.method} className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <div className="h-3 w-3 rounded-full" style={{ backgroundColor: paymentColors[index % paymentColors.length] }} />
+                      <span className="text-sm text-slate-600">{item.method}</span>
+                    </div>
+                    <span className="text-sm font-semibold">{formatMVR(item.value)}</span>
+                  </div>
+                ))}
+              </div>
+            )}
           </motion.section>
         </div>
 
@@ -568,18 +586,26 @@ export default function AdminDashboard() {
               <p className="text-sm text-slate-500">Cash vs Bank Transfer vs Card over time</p>
             </div>
             <div className="h-80">
-              <ResponsiveContainer width="100%" height="100%">
-                <ComposedChart data={paymentMethodTrend} margin={{ top: 10, right: 10, left: -10, bottom: 0 }}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="rgba(5, 9, 63, 0.1)" />
-                  <XAxis dataKey="day" tick={{ fill: 'rgba(5, 9, 63, 0.7)', fontSize: 12 }} />
-                  <YAxis tick={{ fill: 'rgba(5, 9, 63, 0.7)', fontSize: 12 }} />
-                  <Tooltip content={<CustomTooltip />} />
-                  <Legend />
-                  <Bar dataKey="cash" fill="#10b981" radius={[4, 4, 0, 0]} name="Cash" />
-                  <Bar dataKey="transfer" fill="#3b82f6" radius={[4, 4, 0, 0]} name="Bank Transfer" />
-                  <Bar dataKey="card" fill="#8b5cf6" radius={[4, 4, 0, 0]} name="Card" />
-                </ComposedChart>
-              </ResponsiveContainer>
+              {bills.length > 0 ? (
+                <ResponsiveContainer width="100%" height="100%">
+                  <ComposedChart data={paymentMethodTrend} margin={{ top: 10, right: 10, left: -10, bottom: 0 }}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="rgba(5, 9, 63, 0.1)" />
+                    <XAxis dataKey="day" tick={{ fill: 'rgba(5, 9, 63, 0.7)', fontSize: 12 }} />
+                    <YAxis tick={{ fill: 'rgba(5, 9, 63, 0.7)', fontSize: 12 }} />
+                    <Tooltip content={<CustomTooltip />} />
+                    <Legend />
+                    <Bar dataKey="cash" fill="#10b981" radius={[4, 4, 0, 0]} name="Cash" />
+                    <Bar dataKey="transfer" fill="#3b82f6" radius={[4, 4, 0, 0]} name="Bank Transfer" />
+                    <Bar dataKey="card" fill="#8b5cf6" radius={[4, 4, 0, 0]} name="Card" />
+                  </ComposedChart>
+                </ResponsiveContainer>
+              ) : (
+                <div className="flex flex-col items-center justify-center h-full text-slate-400">
+                  <BarChart className="h-12 w-12 mb-2" />
+                  <p className="text-sm font-medium">No payment trends yet</p>
+                  <p className="text-xs">Payment trends will appear here once bills are created</p>
+                </div>
+              )}
             </div>
           </motion.section>
 
@@ -595,41 +621,51 @@ export default function AdminDashboard() {
               <p className="text-sm text-slate-500">Detailed breakdown by method</p>
             </div>
             <div className="h-64">
-              <ResponsiveContainer width="100%" height="100%">
-                <PieChart>
-                  <Pie
-                    data={paymentBreakdown}
-                    dataKey="value"
-                    nameKey="method"
-                    innerRadius={60}
-                    outerRadius={90}
-                    paddingAngle={5}
-                    label={({ name, percent }: any) => `${name} ${((percent || 0) * 100).toFixed(0)}%`}
-                    labelLine={{ stroke: 'rgba(5, 9, 63, 0.3)' }}
-                  >
-                    {paymentBreakdown.map((entry, index) => {
-                      const colors = ['#10b981', '#3b82f6', '#8b5cf6'];
-                      return <Cell key={entry.method} fill={colors[index % colors.length]} />;
-                    })}
-                  </Pie>
-                  <Tooltip content={<CustomTooltip />} />
-                </PieChart>
-              </ResponsiveContainer>
+              {paymentBreakdown.length > 0 ? (
+                <ResponsiveContainer width="100%" height="100%">
+                  <PieChart>
+                    <Pie
+                      data={paymentBreakdown}
+                      dataKey="value"
+                      nameKey="method"
+                      innerRadius={60}
+                      outerRadius={90}
+                      paddingAngle={5}
+                      label={({ name, percent }: any) => `${name} ${((percent || 0) * 100).toFixed(0)}%`}
+                      labelLine={{ stroke: 'rgba(5, 9, 63, 0.3)' }}
+                    >
+                      {paymentBreakdown.map((entry, index) => {
+                        const colors = ['#10b981', '#3b82f6', '#8b5cf6'];
+                        return <Cell key={entry.method} fill={colors[index % colors.length]} />;
+                      })}
+                    </Pie>
+                    <Tooltip content={<CustomTooltip />} />
+                  </PieChart>
+                </ResponsiveContainer>
+              ) : (
+                <div className="flex flex-col items-center justify-center h-full text-slate-400">
+                  <PieChart className="h-12 w-12 mb-2" />
+                  <p className="text-sm font-medium">No payment methods yet</p>
+                  <p className="text-xs">Breakdown will appear here once bills are created</p>
+                </div>
+              )}
             </div>
-            <div className="mt-4 space-y-2">
-              {paymentBreakdown.map((item, index) => {
-                const colors = ['#10b981', '#3b82f6', '#8b5cf6'];
-                return (
-                  <div key={item.method} className="flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      <div className="h-3 w-3 rounded-full" style={{ backgroundColor: colors[index % colors.length] }} />
-                      <span className="text-sm text-slate-600">{item.method}</span>
+            {paymentBreakdown.length > 0 && (
+              <div className="mt-4 space-y-2">
+                {paymentBreakdown.map((item, index) => {
+                  const colors = ['#10b981', '#3b82f6', '#8b5cf6'];
+                  return (
+                    <div key={item.method} className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <div className="h-3 w-3 rounded-full" style={{ backgroundColor: colors[index % colors.length] }} />
+                        <span className="text-sm text-slate-600">{item.method}</span>
+                      </div>
+                      <span className="text-sm font-semibold">{formatMVR(item.value)}</span>
                     </div>
-                    <span className="text-sm font-semibold">{formatMVR(item.value)}</span>
-                  </div>
-                );
-              })}
-            </div>
+                  );
+                })}
+              </div>
+            )}
           </motion.section>
         </div>
 

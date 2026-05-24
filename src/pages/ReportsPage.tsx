@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, LineChart, Line } from 'recharts';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, LineChart, Line, Legend } from 'recharts';
 import { saveAs } from 'file-saver';
 import { utils, write } from 'xlsx';
 import jsPDF from 'jspdf';
@@ -140,6 +140,8 @@ export default function ReportsPage() {
       cardPayments: dayDirectRevenue?.cardPayments || [],
       totalCashDrawer: dayDirectRevenue?.cashTotal || 0,
       totalCardPayments: dayDirectRevenue?.cardTotal || 0,
+      openingPettyCash: (dayDirectRevenue as any)?.openingPettyCash || 0,
+      closingPettyCash: (dayDirectRevenue as any)?.closingPettyCash || 0,
       expenses: dayExpenses,
       purchases: dayPurchases,
       totalExpenses: totalDayExpenses,
@@ -167,9 +169,23 @@ export default function ReportsPage() {
       report.cashBreakdown.forEach((item: any) => {
         text += `${item.denomination}: ${item.count} = ${formatMVR(item.amount)}\n`;
       });
-      text += `Cash Total: ${formatMVR(report.totalCashDrawer)}\n`;
-      text += `Card Payments: ${formatMVR(report.totalCardPayments)}\n\n`;
+      text += `Cash Total: ${formatMVR(report.totalCashDrawer)}\n\n`;
     }
+
+    if (report.cardPayments.length > 0) {
+      text += `💳 *PAYMENT CARD TYPES*\n`;
+      report.cardPayments.forEach((payment: any) => {
+        if (payment.amount > 0) {
+          text += `${payment.type}: ${formatMVR(payment.amount)}\n`;
+        }
+      });
+      text += `Card Total: ${formatMVR(report.totalCardPayments)}\n\n`;
+    }
+
+    text += `💰 *PETTY CASH (FLOAT)*\n`;
+    text += `Opening: ${formatMVR(report.openingPettyCash)}\n`;
+    text += `Closing: ${formatMVR(report.closingPettyCash)}\n`;
+    text += `Difference: ${formatMVR(report.closingPettyCash - report.openingPettyCash)}\n\n`;
 
     text += `📋 *EXPENSES*\n`;
     text += `Daily Expenses: ${formatMVR(report.expenses)}\n`;
@@ -346,7 +362,7 @@ export default function ReportsPage() {
   };
 
   const revenueByMonth = useMemo(() => {
-    if (!bills.length) {
+    if (!bills.length && !directRevenueEntries.length) {
       return [];
     }
 
@@ -357,21 +373,39 @@ export default function ReportsPage() {
       return acc;
     }, {});
 
+    // Add direct revenue to monthly totals
+    directRevenueEntries.forEach((entry) => {
+      const key = monthKey(entry.date);
+      grouped[key] = (grouped[key] ?? 0) + entry.totalDirectRevenue;
+    });
+
     return Object.entries(grouped)
       .sort(([a], [b]) => a.localeCompare(b))
       .map(([key, revenue]) => ({ name: formatMonthLabel(key), revenue }));
-  }, [bills]);
+  }, [bills, directRevenueEntries]);
 
   const paymentBreakdown = useMemo(() => {
-    if (!filteredBills.length) return [];
+    const counts: Record<string, number> = {};
 
-    const counts = filteredBills.reduce<Record<string, number>>((acc, bill) => {
-      acc[bill.paymentMethod] = (acc[bill.paymentMethod] ?? 0) + 1;
-      return acc;
-    }, {});
+    // Add POS payment methods
+    filteredBills.forEach((bill) => {
+      counts[bill.paymentMethod] = (counts[bill.paymentMethod] ?? 0) + 1;
+    });
+
+    // Add direct revenue card payment types
+    const filteredDirectRevenue = directRevenueEntries.filter(
+      (entry) => entry.date >= customFilter.startDate && entry.date <= customFilter.endDate,
+    );
+    filteredDirectRevenue.forEach((entry) => {
+      entry.cardPayments.forEach((payment) => {
+        if (payment.amount > 0) {
+          counts[payment.type] = (counts[payment.type] ?? 0) + 1;
+        }
+      });
+    });
 
     return Object.entries(counts).map(([method, value]) => ({ method, value }));
-  }, [filteredBills]);
+  }, [filteredBills, directRevenueEntries, customFilter.startDate, customFilter.endDate]);
 
   const topProducts = useMemo(() => {
     if (!filteredBills.length) return [];
@@ -395,19 +429,28 @@ export default function ReportsPage() {
   }, [filteredBills]);
 
   const categoryRevenue = useMemo(() => {
-    if (!filteredBills.length) return [];
+    const grouped: Record<string, number> = {};
 
-    const grouped = filteredBills.reduce<Record<string, number>>((acc, bill) => {
+    // Add POS items revenue
+    filteredBills.forEach((bill) => {
       bill.items.forEach((item) => {
-        acc['POS Items'] = (acc['POS Items'] ?? 0) + item.price * item.quantity;
+        grouped['POS Items'] = (grouped['POS Items'] ?? 0) + item.price * item.quantity;
       });
-      return acc;
-    }, {});
+    });
+
+    // Add direct revenue as a separate category
+    const filteredDirectRevenue = directRevenueEntries.filter(
+      (entry) => entry.date >= customFilter.startDate && entry.date <= customFilter.endDate,
+    );
+    const directRevenueTotal = filteredDirectRevenue.reduce((sum, entry) => sum + entry.totalDirectRevenue, 0);
+    if (directRevenueTotal > 0) {
+      grouped['Direct Revenue'] = directRevenueTotal;
+    }
 
     return Object.entries(grouped)
       .map(([category, revenue]) => ({ name: category, value: revenue }))
       .sort((a, b) => b.value - a.value);
-  }, [filteredBills]);
+  }, [filteredBills, directRevenueEntries, customFilter.startDate, customFilter.endDate]);
 
   return (
     <AppShell title="Reports & analytics">
@@ -634,26 +677,51 @@ export default function ReportsPage() {
                 </div>
               </div>
               <div className="rounded-2xl border border-white/50 bg-white p-4">
-                <h4 className="mb-3 font-semibold text-slate-900">Payment Methods</h4>
+                <h4 className="mb-3 font-semibold text-slate-900">Payment Card Types</h4>
                 <div className="space-y-2">
-                  <div className="flex items-center justify-between text-sm">
-                    <span className="text-slate-600">Cash Payments</span>
-                    <span className="font-semibold text-slate-900">{formatMVR(dailyReport.totalCashDrawer)}</span>
-                  </div>
-                  <div className="flex items-center justify-between text-sm">
-                    <span className="text-slate-600">Card Payments</span>
-                    <span className="font-semibold text-slate-900">{formatMVR(dailyReport.totalCardPayments)}</span>
-                  </div>
+                  {dailyReport.cardPayments.length > 0 ? (
+                    dailyReport.cardPayments.map((payment: any) => (
+                      payment.amount > 0 && (
+                        <div key={payment.type} className="flex items-center justify-between text-sm">
+                          <span className="text-slate-600">{payment.type}</span>
+                          <span className="font-semibold text-slate-900">{formatMVR(payment.amount)}</span>
+                        </div>
+                      )
+                    ))
+                  ) : (
+                    <p className="text-sm text-slate-400">No card payments recorded</p>
+                  )}
                   <div className="border-t border-slate-200 pt-2">
                     <div className="flex items-center justify-between font-semibold">
-                      <span className="text-slate-700">Direct Total</span>
-                      <span className="text-slate-900">{formatMVR(dailyReport.directRevenue)}</span>
+                      <span className="text-slate-700">Card Total</span>
+                      <span className="text-slate-900">{formatMVR(dailyReport.totalCardPayments)}</span>
                     </div>
                   </div>
                 </div>
               </div>
             </div>
           )}
+
+          {/* Petty Cash (Float) */}
+          <div className="mt-6 rounded-2xl border border-amber-200 bg-amber-50 p-4">
+            <h4 className="mb-3 font-semibold text-amber-900">💰 Petty Cash (Float)</h4>
+            <div className="grid grid-cols-3 gap-4">
+              <div>
+                <p className="text-xs text-amber-700">Opening</p>
+                <p className="text-lg font-bold text-amber-900">{formatMVR(dailyReport.openingPettyCash)}</p>
+              </div>
+              <div>
+                <p className="text-xs text-amber-700">Closing</p>
+                <p className="text-lg font-bold text-amber-900">{formatMVR(dailyReport.closingPettyCash)}</p>
+              </div>
+              <div>
+                <p className="text-xs text-amber-700">Difference</p>
+                <p className={`text-lg font-bold ${dailyReport.closingPettyCash >= dailyReport.openingPettyCash ? 'text-green-600' : 'text-red-600'}`}>
+                  {formatMVR(dailyReport.closingPettyCash - dailyReport.openingPettyCash)}
+                </p>
+              </div>
+            </div>
+          </div>
         </div>
         {/* Charts Grid */}
         <div className="grid gap-5 xl:grid-cols-2">
@@ -661,17 +729,24 @@ export default function ReportsPage() {
             <h3 className="text-lg font-semibold text-slate-900">Monthly Revenue Trend</h3>
             <p className="text-sm text-[#05093f]">Revenue comparison across months</p>
             <div className="mt-4 h-72">
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={revenueByMonth} margin={{ top: 8, right: 0, left: -20, bottom: 0 }}>
-                  <CartesianGrid stroke="rgba(5, 9, 63, 0.15)" strokeDasharray="3 3" />
-                  <XAxis dataKey="name" tick={{ fill: 'rgba(5, 9, 63, 0.7)' }} />
-                  <YAxis tick={{ fill: 'rgba(5, 9, 63, 0.7)' }} />
-                  <Tooltip
-                    contentStyle={{ backgroundColor: '#ffffff', borderRadius: 16, border: '1px solid rgba(5, 9, 63, 0.2)', color: '#05093f' }}
-                  />
-                  <Bar dataKey="revenue" fill="#7c4b2e" radius={[12, 12, 0, 0]} />
-                </BarChart>
-              </ResponsiveContainer>
+              {revenueByMonth.length > 0 ? (
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart data={revenueByMonth} margin={{ top: 8, right: 0, left: -20, bottom: 0 }}>
+                    <CartesianGrid stroke="rgba(5, 9, 63, 0.15)" strokeDasharray="3 3" />
+                    <XAxis dataKey="name" tick={{ fill: 'rgba(5, 9, 63, 0.7)' }} />
+                    <YAxis tick={{ fill: 'rgba(5, 9, 63, 0.7)' }} />
+                    <Tooltip
+                      contentStyle={{ backgroundColor: '#ffffff', borderRadius: 16, border: '1px solid rgba(5, 9, 63, 0.2)', color: '#05093f' }}
+                      formatter={(value: number) => formatMVR(value)}
+                    />
+                    <Bar dataKey="revenue" fill="#7c4b2e" radius={[12, 12, 0, 0]} />
+                  </BarChart>
+                </ResponsiveContainer>
+              ) : (
+                <div className="flex h-full items-center justify-center text-slate-400">
+                  <p>No revenue data available</p>
+                </div>
+              )}
             </div>
           </div>
 
@@ -679,17 +754,24 @@ export default function ReportsPage() {
             <h3 className="text-lg font-semibold text-slate-900">Daily Revenue</h3>
             <p className="text-sm text-[#05093f]">Revenue trend for selected period</p>
             <div className="mt-4 h-72">
-              <ResponsiveContainer width="100%" height="100%">
-                <LineChart data={dailyRevenueData} margin={{ top: 8, right: 0, left: -20, bottom: 0 }}>
-                  <CartesianGrid stroke="rgba(5, 9, 63, 0.15)" strokeDasharray="3 3" />
-                  <XAxis dataKey="date" tick={{ fill: 'rgba(5, 9, 63, 0.7)' }} />
-                  <YAxis tick={{ fill: 'rgba(5, 9, 63, 0.7)' }} />
-                  <Tooltip
-                    contentStyle={{ backgroundColor: '#ffffff', borderRadius: 16, border: '1px solid rgba(5, 9, 63, 0.2)', color: '#05093f' }}
-                  />
-                  <Line type="monotone" dataKey="revenue" stroke="#05093f" strokeWidth={2} dot={{ fill: '#7c4b2e', r: 4 }} />
-                </LineChart>
-              </ResponsiveContainer>
+              {dailyRevenueData.length > 0 ? (
+                <ResponsiveContainer width="100%" height="100%">
+                  <LineChart data={dailyRevenueData} margin={{ top: 8, right: 0, left: -20, bottom: 0 }}>
+                    <CartesianGrid stroke="rgba(5, 9, 63, 0.15)" strokeDasharray="3 3" />
+                    <XAxis dataKey="date" tick={{ fill: 'rgba(5, 9, 63, 0.7)' }} />
+                    <YAxis tick={{ fill: 'rgba(5, 9, 63, 0.7)' }} />
+                    <Tooltip
+                      contentStyle={{ backgroundColor: '#ffffff', borderRadius: 16, border: '1px solid rgba(5, 9, 63, 0.2)', color: '#05093f' }}
+                      formatter={(value: number) => formatMVR(value)}
+                    />
+                    <Line type="monotone" dataKey="revenue" stroke="#05093f" strokeWidth={2} dot={{ fill: '#7c4b2e', r: 4 }} />
+                  </LineChart>
+                </ResponsiveContainer>
+              ) : (
+                <div className="flex h-full items-center justify-center text-slate-400">
+                  <p>No daily revenue data available</p>
+                </div>
+              )}
             </div>
           </div>
 
@@ -697,15 +779,25 @@ export default function ReportsPage() {
             <h3 className="text-lg font-semibold text-slate-900">Payment Methods</h3>
             <p className="text-sm text-[#05093f]">Revenue distribution</p>
             <div className="mt-4 h-72">
-              <ResponsiveContainer width="100%" height="100%">
-                <PieChart>
-                  <Pie data={paymentBreakdown} dataKey="value" nameKey="method" innerRadius={48} outerRadius={88} paddingAngle={4}>
-                    {paymentBreakdown.map((entry, index) => (
-                      <Cell key={entry.method} fill={colors[index % colors.length]} />
-                    ))}
-                  </Pie>
-                </PieChart>
-              </ResponsiveContainer>
+              {paymentBreakdown.length > 0 ? (
+                <ResponsiveContainer width="100%" height="100%">
+                  <PieChart>
+                    <Pie data={paymentBreakdown} dataKey="value" nameKey="method" innerRadius={48} outerRadius={88} paddingAngle={4}>
+                      {paymentBreakdown.map((entry, index) => (
+                        <Cell key={entry.method} fill={colors[index % colors.length]} />
+                      ))}
+                    </Pie>
+                    <Tooltip
+                      contentStyle={{ backgroundColor: '#ffffff', borderRadius: 16, border: '1px solid rgba(5, 9, 63, 0.2)', color: '#05093f' }}
+                    />
+                    <Legend />
+                  </PieChart>
+                </ResponsiveContainer>
+              ) : (
+                <div className="flex h-full items-center justify-center text-slate-400">
+                  <p>No payment method data available</p>
+                </div>
+              )}
             </div>
           </div>
 
@@ -713,15 +805,26 @@ export default function ReportsPage() {
             <h3 className="text-lg font-semibold text-slate-900">Category Revenue</h3>
             <p className="text-sm text-[#05093f]">Revenue by category</p>
             <div className="mt-4 h-72">
-              <ResponsiveContainer width="100%" height="100%">
-                <PieChart>
-                  <Pie data={categoryRevenue} dataKey="value" nameKey="name" innerRadius={48} outerRadius={88} paddingAngle={4}>
-                    {categoryRevenue.map((entry, index) => (
-                      <Cell key={entry.name} fill={colors[index % colors.length]} />
-                    ))}
-                  </Pie>
-                </PieChart>
-              </ResponsiveContainer>
+              {categoryRevenue.length > 0 ? (
+                <ResponsiveContainer width="100%" height="100%">
+                  <PieChart>
+                    <Pie data={categoryRevenue} dataKey="value" nameKey="name" innerRadius={48} outerRadius={88} paddingAngle={4}>
+                      {categoryRevenue.map((entry, index) => (
+                        <Cell key={entry.name} fill={colors[index % colors.length]} />
+                      ))}
+                    </Pie>
+                    <Tooltip
+                      contentStyle={{ backgroundColor: '#ffffff', borderRadius: 16, border: '1px solid rgba(5, 9, 63, 0.2)', color: '#05093f' }}
+                      formatter={(value: number) => formatMVR(value)}
+                    />
+                    <Legend />
+                  </PieChart>
+                </ResponsiveContainer>
+              ) : (
+                <div className="flex h-full items-center justify-center text-slate-400">
+                  <p>No category revenue data available</p>
+                </div>
+              )}
             </div>
           </div>
         </div>

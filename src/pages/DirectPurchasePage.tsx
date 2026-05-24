@@ -182,6 +182,22 @@ export default function DirectPurchasePage() {
       unit: newItemUnit,
       lowStock: 5,
     });
+
+    // Automatically add this item to the current purchase
+    const newItem: DirectPurchaseItem = {
+      id: `dpurch-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+      productName: name,
+      quantity: form.quantity,
+      unit: newItemUnit,
+      unitCost: form.unitCost,
+      totalCost: form.quantity * form.unitCost,
+    };
+
+    setItems((current) => [newItem, ...current]);
+    
+    // Reset the product form to add another item
+    setForm({ ...form, productName: '', quantity: 1, unit: 'pcs', unitCost: 0 });
+    setIsProductDropdownOpen(false);
   };
 
   const savePurchase = async () => {

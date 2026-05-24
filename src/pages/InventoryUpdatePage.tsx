@@ -6,8 +6,13 @@ import { hasFirebaseConfig } from '../lib/firebase';
 import { loadCollection, saveDocument } from '../lib/firestore';
 import type { InventoryAdjustment, InventoryItem } from '../types';
 
+interface ProductDisplay extends InventoryItem {
+  source: 'inventory' | 'purchase';
+}
+
 export default function InventoryUpdatePage() {
   const { inventory, updateInventoryItem } = useInventory();
+  const [allProducts, setAllProducts] = useState<ProductDisplay[]>([]);
   const [adjustments, setAdjustments] = useState<InventoryAdjustment[]>([]);
   const [pendingUpdates, setPendingUpdates] = useState<Map<string, number>>(new Map());
   const [selectedReason, setSelectedReason] = useState<'daily-count' | 'month-end' | 'physical-count' | 'damaged' | 'other'>('daily-count');
@@ -15,10 +20,40 @@ export default function InventoryUpdatePage() {
 
   useEffect(() => {
     if (!hasFirebaseConfig) return;
-    loadCollection<InventoryAdjustment>('inventoryAdjustments', [])
-      .then((loaded) => setAdjustments(loaded))
-      .catch((error) => console.error('Failed to load adjustments:', error));
-  }, []);
+
+    const loadData = async () => {
+      try {
+        // Load adjustments
+        const loaded = await loadCollection<InventoryAdjustment>('inventoryAdjustments', []);
+        setAdjustments(loaded);
+
+        // Load products from inventory
+        const inventoryProducts = inventory.map((item) => ({
+          ...item,
+          source: 'inventory' as const,
+        }));
+
+        // Load products from directPurchases
+        const purchases = await loadCollection<any>('directPurchases', []);
+        const purchaseProducts = purchases.flatMap((purchase) =>
+          purchase.items.map((item: any) => ({
+            id: `purchase-${purchase.id}-${item.id}`,
+            name: item.productName,
+            quantity: item.quantity,
+            unit: item.unit || 'units',
+            source: 'purchase' as const,
+          }))
+        );
+
+        // Combine and display all products
+        setAllProducts([...inventoryProducts, ...purchaseProducts]);
+      } catch (error) {
+        console.error('Failed to load data:', error);
+      }
+    };
+
+    loadData();
+  }, [inventory]);
 
   const updateQuantity = (inventoryId: string, newQuantity: number) => {
     setPendingUpdates((current) => {
@@ -114,7 +149,7 @@ export default function InventoryUpdatePage() {
           </div>
 
           <div className="space-y-3 max-h-96 overflow-y-auto mb-6">
-            {inventory.map((item) => {
+            {allProducts.map((item) => {
               const currentUpdate = pendingUpdates.get(item.id);
               const displayQty = currentUpdate !== undefined ? currentUpdate : item.quantity;
               const hasChange = currentUpdate !== undefined;
@@ -130,17 +165,28 @@ export default function InventoryUpdatePage() {
                 >
                   <div className="flex items-center justify-between gap-3 mb-2">
                     <div>
-                      <p className="font-semibold text-slate-900">{item.name}</p>
+                      <div className="flex items-center gap-2">
+                        <p className="font-semibold text-slate-900">{item.name}</p>
+                        <span className={`text-xs px-2 py-1 rounded-full ${
+                          item.source === 'inventory'
+                            ? 'bg-blue-600/20 text-blue-300'
+                            : 'bg-purple-600/20 text-purple-300'
+                        }`}>
+                          {item.source === 'inventory' ? 'Inventory' : 'Purchase'}
+                        </span>
+                      </div>
                       <p className="text-xs text-slate-400">Current: {item.quantity} {item.unit}</p>
                     </div>
-                    <input
-                      type="number"
-                      min={0}
-                      value={displayQty}
-                      onChange={(e) => updateQuantity(item.id, Number(e.target.value))}
-                      className="w-20 rounded-2xl border border-slate-300 bg-white px-3 py-2 text-right text-slate-900 font-semibold outline-none"
-                      placeholder="New qty"
-                    />
+                    {item.source === 'inventory' && (
+                      <input
+                        type="number"
+                        min={0}
+                        value={displayQty}
+                        onChange={(e) => updateQuantity(item.id, Number(e.target.value))}
+                        className="w-20 rounded-2xl border border-slate-300 bg-white px-3 py-2 text-right text-slate-900 font-semibold outline-none"
+                        placeholder="New qty"
+                      />
+                    )}
                   </div>
                   {hasChange && (
                     <p className="text-xs text-amber-300">

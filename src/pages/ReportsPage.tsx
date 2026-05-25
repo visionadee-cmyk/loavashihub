@@ -370,6 +370,25 @@ export default function ReportsPage() {
     }
   };
 
+  const exportDDRImage = async () => {
+    const element = document.getElementById('ddr-report-container');
+    if (!element) return;
+
+    try {
+      const canvas = await html2canvas(element, { scale: 2, backgroundColor: '#ffffff' });
+      const image = canvas.toDataURL('image/jpeg', 0.95);
+      const link = document.createElement('a');
+      link.href = image;
+      link.download = `loavashi-ddr-${selectedDailyDate}.jpg`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    } catch (error) {
+      console.error('Failed to export image:', error);
+      alert('Failed to export image');
+    }
+  };
+
   const revenueByMonth = useMemo(() => {
     if (!bills.length && !directRevenueEntries.length) {
       return [];
@@ -609,7 +628,7 @@ export default function ReportsPage() {
           ))}
         </div>
         {/* Daily Report Generator */}
-        <div className="rounded-3xl border border-slate-200 bg-gradient-to-br from-blue-50 to-indigo-50 p-6 shadow-sm">
+        <div id="ddr-report-container" className="rounded-3xl border border-slate-200 bg-gradient-to-br from-blue-50 to-indigo-50 p-6 shadow-sm">
           <div className="mb-6 flex flex-wrap items-center justify-between gap-4">
             <div>
               <h3 className="text-lg font-semibold text-slate-900">Daily Direct Revenue Report</h3>
@@ -623,6 +642,14 @@ export default function ReportsPage() {
                 max={new Date().toISOString().slice(0, 10)}
                 className="rounded-2xl border border-slate-300 px-3 py-2 text-sm text-slate-900"
               />
+              <button
+                type="button"
+                onClick={exportDDRImage}
+                className="inline-flex items-center gap-2 rounded-3xl bg-yellow-600 px-4 py-3 text-sm font-semibold text-white hover:bg-yellow-500"
+              >
+                <Download size={16} />
+                JPG
+              </button>
               <button
                 type="button"
                 onClick={shareToWhatsApp}
@@ -742,6 +769,7 @@ export default function ReportsPage() {
             )}
           </div>
         </div>
+
         {/* Charts Grid */}
         <div className="grid gap-5 xl:grid-cols-2">
           <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm shadow-slate-300/20">

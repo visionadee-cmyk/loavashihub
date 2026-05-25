@@ -1,6 +1,6 @@
 import { Link, NavLink, useLocation } from 'react-router-dom';
 import { useEffect, useState } from 'react';
-import { LogOut, LayoutDashboard, ShoppingCart, ShoppingBag, Coffee, Table, Users2, ClipboardList, Box, Layers, BookOpen, BarChart3, Clock, CheckCircle2, ListChecks, Menu, X, DollarSign, Package, Brain } from 'lucide-react';
+import { LogOut, LayoutDashboard, ShoppingCart, ShoppingBag, Coffee, Table, Users2, ClipboardList, Box, Layers, BookOpen, BarChart3, Clock, CheckCircle2, ListChecks, Menu, X, DollarSign, Package, Brain, History } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 const logo = '/logo.jpeg';
 
@@ -16,6 +16,7 @@ const adminNav = [
   { path: '/admin/suppliers', label: 'Suppliers', icon: Users2 },
   { path: '/admin/direct-purchase', label: 'Direct Purchase', icon: ShoppingCart },
   { path: '/admin/daily-direct-revenue', label: 'Daily direct revenue', icon: DollarSign },
+  { path: '/admin/purchase-history', label: 'Purchase History', icon: History },
   { path: '/admin/inventory-update', label: 'Inventory Count', icon: ListChecks },
   { path: '/admin/recipes', label: 'Recipes', icon: BookOpen },
   { path: '/admin/assets', label: 'Assets', icon: Layers },

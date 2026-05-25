@@ -51,6 +51,8 @@ export default function DailyDirectRevenuePage() {
     closedBy: '',
     openingPettyCash: 0,
     closingPettyCash: 0,
+    vikuraAmount: 0,
+    purchasedFromCashDrawer: 0,
     cashCounts: { ...initialCashCounts },
     cardPayments: createDefaultCardPayments(),
     cashDrawerPurchases: [] as Array<{
@@ -79,7 +81,8 @@ export default function DailyDirectRevenuePage() {
     () => form.cardPayments.reduce((sum, payment) => sum + (payment.amount || 0), 0),
     [form.cardPayments],
   );
-  const totalDirectRevenue = useMemo(() => cashTotal + cardTotal, [cashTotal, cardTotal]);
+  const vikuraAmount = form.vikuraAmount || 0;
+  const totalDirectRevenue = useMemo(() => cashTotal + cardTotal + vikuraAmount, [cashTotal, cardTotal, vikuraAmount]);
 
   const updateCashCount = (field: keyof typeof initialCashCounts, value: number) => {
     setForm((current) => ({
@@ -222,6 +225,8 @@ export default function DailyDirectRevenuePage() {
       closedBy: form.closedBy.trim(),
       openingPettyCash: form.openingPettyCash,
       closingPettyCash: form.closingPettyCash,
+      vikuraAmount: form.vikuraAmount,
+      purchasedFromCashDrawer: form.purchasedFromCashDrawer,
       cashCounts: { ...form.cashCounts },
       cardPayments: form.cardPayments.filter((payment) => payment.amount > 0),
       cashTotal,
@@ -265,6 +270,8 @@ export default function DailyDirectRevenuePage() {
         closedBy: '',
         openingPettyCash: 0,
         closingPettyCash: 0,
+        vikuraAmount: 0,
+        purchasedFromCashDrawer: 0,
         cashCounts: { ...initialCashCounts },
         cardPayments: createDefaultCardPayments(),
         cashDrawerPurchases: [],
@@ -297,6 +304,8 @@ export default function DailyDirectRevenuePage() {
       closedBy: entry.closedBy,
       openingPettyCash: (entry as any).openingPettyCash || 0,
       closingPettyCash: (entry as any).closingPettyCash || 0,
+      vikuraAmount: (entry as any).vikuraAmount || 0,
+      purchasedFromCashDrawer: (entry as any).purchasedFromCashDrawer || 0,
       cashCounts: { ...entry.cashCounts },
       cardPayments: [...mergedPayments, ...extraPayments],
       cashDrawerPurchases: [],
@@ -310,6 +319,8 @@ export default function DailyDirectRevenuePage() {
       closedBy: '',
       openingPettyCash: 0,
       closingPettyCash: 0,
+      vikuraAmount: 0,
+      purchasedFromCashDrawer: 0,
       cashCounts: { ...initialCashCounts },
       cardPayments: createDefaultCardPayments(),
       cashDrawerPurchases: [],
@@ -541,6 +552,36 @@ export default function DailyDirectRevenuePage() {
           </div>
 
           <div className="mt-8 rounded-3xl border border-slate-200 bg-slate-50 p-5">
+            <h4 className="text-lg font-semibold text-slate-900 mb-4">Manual POS & Additional Items</h4>
+            <div className="grid gap-4 sm:grid-cols-2">
+              <label className="block text-sm text-slate-500">
+                Vikura (Manual POS)
+                <input
+                  type="number"
+                  value={form.vikuraAmount}
+                  onChange={(e) => setForm({ ...form, vikuraAmount: Number(e.target.value) })}
+                  placeholder="e.g., 0"
+                  min="0"
+                  step="0.01"
+                  className="mt-2 w-full rounded-3xl border border-slate-200 bg-white px-4 py-3 text-slate-900 outline-none"
+                />
+              </label>
+              <label className="block text-sm text-slate-500">
+                Purchased from Cash Drawer
+                <input
+                  type="number"
+                  value={form.purchasedFromCashDrawer}
+                  onChange={(e) => setForm({ ...form, purchasedFromCashDrawer: Number(e.target.value) })}
+                  placeholder="e.g., 0"
+                  min="0"
+                  step="0.01"
+                  className="mt-2 w-full rounded-3xl border border-slate-200 bg-white px-4 py-3 text-slate-900 outline-none"
+                />
+              </label>
+            </div>
+          </div>
+
+          <div className="mt-8 rounded-3xl border border-slate-200 bg-slate-50 p-5">
             <div className="flex items-center justify-between gap-3">
               <div>
                 <h4 className="text-lg font-semibold text-slate-900">Cash Drawer Purchases</h4>
@@ -666,7 +707,7 @@ export default function DailyDirectRevenuePage() {
           </div>
 
           <div className="mt-8 rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">
-            <div className="grid gap-3 sm:grid-cols-3">
+            <div className="grid gap-3 sm:grid-cols-4">
               <div className="rounded-3xl border border-slate-200 bg-slate-50 p-4 text-center">
                 <p className="text-sm text-slate-500">Cash total</p>
                 <p className="mt-2 text-2xl font-semibold text-[#05093f]">{formatMVR(cashTotal)}</p>
@@ -675,9 +716,31 @@ export default function DailyDirectRevenuePage() {
                 <p className="text-sm text-slate-500">Card total</p>
                 <p className="mt-2 text-2xl font-semibold text-[#05093f]">{formatMVR(cardTotal)}</p>
               </div>
+              <div className="rounded-3xl border border-slate-200 bg-blue-50 p-4 text-center">
+                <p className="text-sm text-blue-600">Vikura (Manual POS)</p>
+                <p className="mt-2 text-2xl font-semibold text-blue-900">{formatMVR(vikuraAmount)}</p>
+              </div>
               <div className="rounded-3xl border border-slate-200 bg-slate-50 p-4 text-center">
                 <p className="text-sm text-slate-500">Direct revenue</p>
                 <p className="mt-2 text-2xl font-semibold text-[#7c4b2e]">{formatMVR(totalDirectRevenue)}</p>
+              </div>
+            </div>
+            <div className="grid gap-3 sm:grid-cols-2 mt-3">
+              <div className="rounded-3xl border-2 border-yellow-300 bg-yellow-50 p-4 text-center">
+                <p className="text-sm text-yellow-700">Cash + Card Total</p>
+                <p className="mt-2 text-xl font-semibold text-yellow-900">{formatMVR(cashTotal + cardTotal)}</p>
+              </div>
+              <div className={`rounded-3xl border-2 p-4 text-center ${
+                vikuraAmount >= (cashTotal + cardTotal) 
+                  ? 'border-green-300 bg-green-50' 
+                  : 'border-red-300 bg-red-50'
+              }`}>
+                <p className={`text-sm ${vikuraAmount >= (cashTotal + cardTotal) ? 'text-green-700' : 'text-red-700'}`}>
+                  Vikura vs Cash+Card Difference
+                </p>
+                <p className={`mt-2 text-xl font-semibold ${vikuraAmount >= (cashTotal + cardTotal) ? 'text-green-900' : 'text-red-900'}`}>
+                  {formatMVR(vikuraAmount - (cashTotal + cardTotal))}
+                </p>
               </div>
             </div>
             <div className="flex flex-col gap-3 sm:flex-row sm:items-center pt-2">
@@ -774,7 +837,7 @@ export default function DailyDirectRevenuePage() {
                             </button>
                           </div>
                         </div>
-                        <div className="grid gap-2 sm:grid-cols-3 text-xs mb-3">
+                        <div className="grid gap-2 sm:grid-cols-4 text-xs mb-3">
                           <div className="rounded-2xl border border-slate-200 bg-slate-50 p-2">
                             <p className="text-slate-500">Cash:</p>
                             <p className="font-semibold text-slate-900">{formatMVR(entry.cashTotal)}</p>
@@ -783,9 +846,31 @@ export default function DailyDirectRevenuePage() {
                             <p className="text-slate-500">Card:</p>
                             <p className="font-semibold text-slate-900">{formatMVR(entry.cardTotal)}</p>
                           </div>
+                          <div className="rounded-2xl border border-blue-200 bg-blue-50 p-2">
+                            <p className="text-blue-600">Vikura:</p>
+                            <p className="font-semibold text-blue-900">{formatMVR((entry as any).vikuraAmount || 0)}</p>
+                          </div>
                           <div className="rounded-2xl border border-emerald-200 bg-emerald-50 p-2">
                             <p className="text-slate-500">Total:</p>
                             <p className="font-semibold text-emerald-700">{formatMVR(entry.totalDirectRevenue)}</p>
+                          </div>
+                        </div>
+                        <div className="grid gap-2 sm:grid-cols-2 text-xs mb-3">
+                          <div className="rounded-2xl border-2 border-yellow-300 bg-yellow-50 p-2">
+                            <p className="text-yellow-700 font-semibold">Cash + Card Total</p>
+                            <p className="font-bold text-yellow-900">{formatMVR(entry.cashTotal + entry.cardTotal)}</p>
+                          </div>
+                          <div className={`rounded-2xl border-2 p-2 ${
+                            ((entry as any).vikuraAmount || 0) >= (entry.cashTotal + entry.cardTotal)
+                              ? 'border-green-300 bg-green-50'
+                              : 'border-red-300 bg-red-50'
+                          }`}>
+                            <p className={`font-semibold ${((entry as any).vikuraAmount || 0) >= (entry.cashTotal + entry.cardTotal) ? 'text-green-700' : 'text-red-700'}`}>
+                              Vikura Difference
+                            </p>
+                            <p className={`font-bold ${((entry as any).vikuraAmount || 0) >= (entry.cashTotal + entry.cardTotal) ? 'text-green-900' : 'text-red-900'}`}>
+                              {formatMVR(((entry as any).vikuraAmount || 0) - (entry.cashTotal + entry.cardTotal))}
+                            </p>
                           </div>
                         </div>
                         {(entry.openingPettyCash !== undefined || entry.closingPettyCash !== undefined) && (

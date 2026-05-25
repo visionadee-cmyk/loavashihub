@@ -138,6 +138,8 @@ export interface DailyDirectRevenue {
     note1000: number;
   };
   cardPayments: CardPayment[];
+  vikuraAmount?: number;
+  purchasedFromCashDrawer?: number;
   cashTotal: number;
   cardTotal: number;
   totalDirectRevenue: number;

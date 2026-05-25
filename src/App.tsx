@@ -14,6 +14,7 @@ import SmartAnalyticsPage from './pages/SmartAnalyticsPage';
 import PurchaseProductsPage from './pages/PurchaseProductsPage';
 import DirectPurchasePage from './pages/DirectPurchasePage';
 import DailyDirectRevenuePage from './pages/DailyDirectRevenuePage';
+import PurchaseHistoryPage from './pages/PurchaseHistoryPage';
 import SuppliersPage from './pages/SuppliersPage';
 import InventoryUpdatePage from './pages/InventoryUpdatePage';
 import RecipeManagement from './pages/RecipeManagement';
@@ -161,6 +162,14 @@ function App() {
               element={
                 <ProtectedRoute allowedRoles={['admin']}>
                   <DailyDirectRevenuePage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/admin/purchase-history"
+              element={
+                <ProtectedRoute allowedRoles={['admin']}>
+                  <PurchaseHistoryPage />
                 </ProtectedRoute>
               }
             />

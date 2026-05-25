@@ -140,7 +140,6 @@ export default function ReportsPage() {
       date: dayStart,
       posRevenue,
       directRevenue: dayDirectRevenue?.totalDirectRevenue || 0,
-      vikuraAmount: (dayDirectRevenue as any)?.vikuraAmount || 0,
       totalRevenue: totalDayRevenue,
       cashBreakdown,
       cardPayments: dayDirectRevenue?.cardPayments || [],
@@ -168,19 +167,8 @@ export default function ReportsPage() {
     text += `💰 *REVENUE*\n`;
     text += `POS Sales: ${formatMVR(report.posRevenue)}\n`;
     text += `Direct Revenue: ${formatMVR(report.directRevenue)}\n`;
-    if (report.vikuraAmount > 0) {
-      text += `Vikura (Manual POS): ${formatMVR(report.vikuraAmount)}\n`;
-    }
     text += `━━━━━━━━━━━━━━━━\n`;
     text += `Total Revenue: ${formatMVR(report.totalRevenue)}\n\n`;
-    
-    if (report.vikuraAmount > 0) {
-      text += `📊 *VIKURA vs REVENUE*\n`;
-      text += `Vikura: ${formatMVR(report.vikuraAmount)}\n`;
-      text += `Revenue: ${formatMVR(report.totalRevenue)}\n`;
-      text += `Difference: ${formatMVR(Math.abs(report.vikuraAmount - report.totalRevenue))}\n`;
-      text += `Status: ${report.vikuraAmount >= report.totalRevenue ? '✓ Vikura Higher' : '✗ Revenue Higher'}\n\n`;
-    }
 
     if (report.cashBreakdown.length > 0) {
       text += `💵 *CASH DRAWER*\n`;
@@ -666,7 +654,7 @@ export default function ReportsPage() {
             </div>
           </div>
 
-          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-5">
+          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
             <div className="rounded-2xl border border-white/50 bg-white p-4">
               <p className="text-xs uppercase tracking-widest text-slate-500">POS Revenue</p>
               <p className="mt-3 text-2xl font-bold text-slate-900">{formatMVR(dailyReport.posRevenue)}</p>
@@ -674,10 +662,6 @@ export default function ReportsPage() {
             <div className="rounded-2xl border border-white/50 bg-white p-4">
               <p className="text-xs uppercase tracking-widest text-slate-500">Direct Revenue</p>
               <p className="mt-3 text-2xl font-bold text-slate-900">{formatMVR(dailyReport.directRevenue)}</p>
-            </div>
-            <div className="rounded-2xl border border-white/50 bg-blue-50 p-4">
-              <p className="text-xs uppercase tracking-widest text-blue-600">Vikura (Manual POS)</p>
-              <p className="mt-3 text-2xl font-bold text-blue-900">{formatMVR(dailyReport.vikuraAmount)}</p>
             </div>
             <div className="rounded-2xl border border-white/50 bg-white p-4">
               <p className="text-xs uppercase tracking-widest text-slate-500">Daily Expenses</p>
@@ -690,50 +674,6 @@ export default function ReportsPage() {
               </p>
             </div>
           </div>
-
-          {/* Vikura vs Revenue Comparison */}
-          {dailyReport.vikuraAmount > 0 && (
-            <div className="mt-6 rounded-2xl border-2 border-blue-300 bg-blue-50 p-5">
-              <h4 className="mb-4 font-semibold text-blue-900 text-lg">📊 Vikura vs Revenue Analysis</h4>
-              <div className="grid grid-cols-3 gap-3">
-                <div className="rounded-2xl bg-white p-4 border border-blue-200">
-                  <p className="text-xs text-blue-700 uppercase tracking-widest font-semibold">Vikura (Manual POS)</p>
-                  <p className="text-2xl font-bold text-blue-900 mt-2">{formatMVR(dailyReport.vikuraAmount)}</p>
-                </div>
-                <div className="rounded-2xl bg-white p-4 border border-blue-200">
-                  <p className="text-xs text-blue-700 uppercase tracking-widest font-semibold">Total Revenue</p>
-                  <p className="text-2xl font-bold text-blue-900 mt-2">{formatMVR(dailyReport.totalRevenue)}</p>
-                </div>
-                <div className={`rounded-2xl p-4 border-2 ${
-                  dailyReport.vikuraAmount >= dailyReport.totalRevenue 
-                    ? 'bg-green-50 border-green-300' 
-                    : 'bg-red-50 border-red-300'
-                }`}>
-                  <p className={`text-xs uppercase tracking-widest font-semibold ${
-                    dailyReport.vikuraAmount >= dailyReport.totalRevenue 
-                      ? 'text-green-700' 
-                      : 'text-red-700'
-                  }`}>Difference</p>
-                  <p className={`text-2xl font-bold mt-2 ${
-                    dailyReport.vikuraAmount >= dailyReport.totalRevenue 
-                      ? 'text-green-700' 
-                      : 'text-red-700'
-                  }`}>
-                    {formatMVR(Math.abs(dailyReport.vikuraAmount - dailyReport.totalRevenue))}
-                  </p>
-                  <p className={`text-xs mt-2 font-semibold ${
-                    dailyReport.vikuraAmount >= dailyReport.totalRevenue 
-                      ? 'text-green-600' 
-                      : 'text-red-600'
-                  }`}>
-                    {dailyReport.vikuraAmount >= dailyReport.totalRevenue 
-                      ? '✓ Vikura Higher' 
-                      : '✗ Revenue Higher'}
-                  </p>
-                </div>
-              </div>
-            </div>
-          )}
 
           {/* Salary if any */}
           {dailyReport.salary > 0 && (

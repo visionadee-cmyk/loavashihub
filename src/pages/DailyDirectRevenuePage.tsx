@@ -789,7 +789,7 @@ export default function DailyDirectRevenuePage() {
             {Object.entries(groupedEntries).map(([date, dayEntries]) => {
               const dailyCashTotal = dayEntries.reduce((sum, e) => sum + e.cashTotal, 0);
               const dailyCardTotal = dayEntries.reduce((sum, e) => sum + e.cardTotal, 0);
-              const dailyRevenue = dayEntries.reduce((sum, e) => sum + e.totalDirectRevenue, 0);
+              const dailyRevenue = dayEntries.reduce((sum, e) => sum + (e.cashTotal + e.cardTotal), 0);
               const formattedDate = new Date(date).toLocaleDateString('en-US', { weekday: 'short', year: 'numeric', month: 'short', day: 'numeric' });
               
               return (
@@ -852,7 +852,7 @@ export default function DailyDirectRevenuePage() {
                           </div>
                           <div className="rounded-2xl border border-emerald-200 bg-emerald-50 p-2">
                             <p className="text-slate-500">Total:</p>
-                            <p className="font-semibold text-emerald-700">{formatMVR(entry.totalDirectRevenue)}</p>
+                            <p className="font-semibold text-emerald-700">{formatMVR(entry.cashTotal + entry.cardTotal)}</p>
                           </div>
                         </div>
                         <div className="grid gap-2 sm:grid-cols-2 text-xs mb-3">

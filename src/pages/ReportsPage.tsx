@@ -101,17 +101,18 @@ export default function ReportsPage() {
     // Get today's direct revenue
     const dayDirectRevenue = directRevenueEntries.find((entry) => entry.date === dayStart);
 
-    // Get today's expenses
+
+    // Get today's expenses (including salary)
     const dayExpenses = expenses
-      .filter((expense) => expense.date === dayStart && expense.category !== 'Salary')
+      .filter((expense) => expense.date === dayStart)
       .reduce((sum, expense) => sum + expense.amount, 0);
 
-    // Get today's salary expenses
+    // Get today's salary expenses (for display, still calculated separately if needed)
     const daySalary = expenses
       .filter((expense) => expense.date === dayStart && expense.category === 'Salary')
       .reduce((sum, expense) => sum + expense.amount, 0);
 
-    // Get today's direct purchases
+    // Get today's direct purchases (including all from DirectPurchasePage)
     const dayPurchases = directPurchases
       .filter((purchase) => purchase.date === dayStart)
       .reduce((sum, purchase) => sum + purchase.total, 0);
@@ -668,30 +669,44 @@ export default function ReportsPage() {
             </div>
           </div>
 
-          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-5">
-            <div className="rounded-2xl border border-white/50 bg-white p-4">
-              <p className="text-xs uppercase tracking-widest text-slate-500">POS Revenue</p>
-              <p className="mt-3 text-2xl font-bold text-slate-900">{formatMVR(dailyReport.posRevenue)}</p>
+          {dailyReport && (dailyReport.posRevenue !== 0 || dailyReport.directRevenue !== 0 || dailyReport.expenses !== 0 || dailyReport.purchases !== 0 || dailyReport.salary !== 0) ? (
+            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-6">
+              <div className="rounded-2xl border border-white/50 bg-white p-4">
+                <p className="text-xs uppercase tracking-widest text-slate-500">POS Revenue</p>
+                <p className="mt-3 text-2xl font-bold text-slate-900">{formatMVR(dailyReport.posRevenue)}</p>
+              </div>
+              <div className="rounded-2xl border border-white/50 bg-white p-4">
+                <p className="text-xs uppercase tracking-widest text-slate-500">Direct Revenue</p>
+                <p className="mt-3 text-2xl font-bold text-slate-900">{formatMVR(dailyReport.directRevenue)}</p>
+              </div>
+              <div className="rounded-2xl border border-white/50 bg-blue-50 p-4">
+                <p className="text-xs uppercase tracking-widest text-blue-600">Vikura (Manual POS)</p>
+                <p className="mt-3 text-2xl font-bold text-blue-900">{formatMVR(dailyReport.vikuraAmount)}</p>
+              </div>
+              <div className="rounded-2xl border border-white/50 bg-white p-4">
+                <p className="text-xs uppercase tracking-widest text-slate-500">Direct Purchases</p>
+                <p className="mt-3 text-2xl font-bold text-amber-700">{formatMVR(dailyReport.purchases)}</p>
+              </div>
+              <div className="rounded-2xl border border-white/50 bg-white p-4">
+                <p className="text-xs uppercase tracking-widest text-slate-500">Salary</p>
+                <p className="mt-3 text-2xl font-bold text-rose-700">{formatMVR(dailyReport.salary)}</p>
+              </div>
+              <div className="rounded-2xl border border-white/50 bg-white p-4">
+                <p className="text-xs uppercase tracking-widest text-slate-500">Total Daily Expense</p>
+                <p className="mt-3 text-2xl font-bold text-red-600">{formatMVR(dailyReport.totalExpenses)}</p>
+              </div>
+              <div className="rounded-2xl border border-white/50 bg-white p-4">
+                <p className="text-xs uppercase tracking-widest text-slate-500">Daily Profit</p>
+                <p className={`mt-3 text-2xl font-bold ${dailyReport.directRevenue - dailyReport.totalExpenses >= 0 ? 'text-green-600' : 'text-red-600'}`}> 
+                  {formatMVR(dailyReport.directRevenue - dailyReport.totalExpenses)}
+                </p>
+              </div>
             </div>
-            <div className="rounded-2xl border border-white/50 bg-white p-4">
-              <p className="text-xs uppercase tracking-widest text-slate-500">Direct Revenue</p>
-              <p className="mt-3 text-2xl font-bold text-slate-900">{formatMVR(dailyReport.directRevenue)}</p>
+          ) : (
+            <div className="flex items-center justify-center h-32">
+              <p className="text-slate-500 text-lg">No Daily Direct Revenue data found for the selected date.</p>
             </div>
-            <div className="rounded-2xl border border-white/50 bg-blue-50 p-4">
-              <p className="text-xs uppercase tracking-widest text-blue-600">Vikura (Manual POS)</p>
-              <p className="mt-3 text-2xl font-bold text-blue-900">{formatMVR(dailyReport.vikuraAmount)}</p>
-            </div>
-            <div className="rounded-2xl border border-white/50 bg-white p-4">
-              <p className="text-xs uppercase tracking-widest text-slate-500">Daily Expenses</p>
-              <p className="mt-3 text-2xl font-bold text-red-600">{formatMVR(dailyReport.expenses)}</p>
-            </div>
-            <div className="rounded-2xl border border-white/50 bg-white p-4">
-              <p className="text-xs uppercase tracking-widest text-slate-500">Daily Profit</p>
-              <p className={`mt-3 text-2xl font-bold ${dailyReport.profit >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                {formatMVR(dailyReport.profit)}
-              </p>
-            </div>
-          </div>
+          )}
 
           {/* Vikura vs Revenue Comparison */}
           {dailyReport.vikuraAmount > 0 && (

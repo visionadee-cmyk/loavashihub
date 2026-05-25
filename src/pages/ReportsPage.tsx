@@ -101,6 +101,8 @@ export default function ReportsPage() {
     // Get today's direct revenue
     const dayDirectRevenue = directRevenueEntries.find((entry) => entry.date === dayStart);
 
+    // Get today's Purchased from Cash Drawer
+    const purchasedFromCashDrawer = dayDirectRevenue?.purchasedFromCashDrawer || 0;
 
     // Get today's expenses (including salary)
     const dayExpenses = expenses
@@ -117,9 +119,9 @@ export default function ReportsPage() {
       .filter((purchase) => purchase.date === dayStart)
       .reduce((sum, purchase) => sum + purchase.total, 0);
 
-    // Calculate revenue from POS + Direct Revenue (Cash + Card only, excluding Vikura)
+    // Calculate revenue from POS + Direct Revenue (Cash + Card only, excluding Vikura) + Purchased from Cash Drawer
     const directRevenueWithoutVikura = (dayDirectRevenue?.cashTotal || 0) + (dayDirectRevenue?.cardTotal || 0);
-    const totalDayRevenue = posRevenue + directRevenueWithoutVikura;
+    const totalDayRevenue = posRevenue + directRevenueWithoutVikura + purchasedFromCashDrawer;
     const totalDayExpenses = dayExpenses + dayPurchases + daySalary;
     const dailyProfit = totalDayRevenue - totalDayExpenses;
 
@@ -143,6 +145,7 @@ export default function ReportsPage() {
       date: dayStart,
       posRevenue,
       directRevenue: directRevenueWithoutVikura,
+      purchasedFromCashDrawer,
       vikuraAmount: (dayDirectRevenue as any)?.vikuraAmount || 0,
       totalRevenue: totalDayRevenue,
       cashBreakdown,

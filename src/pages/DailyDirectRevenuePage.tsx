@@ -82,7 +82,7 @@ export default function DailyDirectRevenuePage() {
     [form.cardPayments],
   );
   const vikuraAmount = form.vikuraAmount || 0;
-  const totalDirectRevenue = useMemo(() => cashTotal + cardTotal + vikuraAmount, [cashTotal, cardTotal, vikuraAmount]);
+  const totalDirectRevenue = useMemo(() => cashTotal + cardTotal, [cashTotal, cardTotal]);
 
   const updateCashCount = (field: keyof typeof initialCashCounts, value: number) => {
     setForm((current) => ({

@@ -1,12 +1,13 @@
 import { Link, NavLink, useLocation } from 'react-router-dom';
 import { useEffect, useState } from 'react';
-import { LogOut, LayoutDashboard, ShoppingCart, ShoppingBag, Coffee, Table, Users2, ClipboardList, Box, Layers, BookOpen, BarChart3, Clock, CheckCircle2, ListChecks, Menu, X, DollarSign, Package, Brain, History } from 'lucide-react';
+import { LogOut, LayoutDashboard, ShoppingCart, ShoppingBag, Coffee, Table, Users2, ClipboardList, Box, Layers, BookOpen, BarChart3, Clock, CheckCircle2, ListChecks, Menu, X, DollarSign, Package, Brain, History, Wine } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 const logo = '/logo.jpeg';
 
 const adminNav = [
   { path: '/admin', label: 'Dashboard', icon: LayoutDashboard },
   { path: '/admin/menu', label: 'Menu items', icon: Coffee },
+  { path: '/dine-and-go', label: 'Dine-and-Go', icon: Wine },
   { path: '/bills/pending', label: 'Open bills', icon: Clock },
   { path: '/bills/completed', label: 'Completed bills', icon: CheckCircle2 },
   { path: '/admin/tables', label: 'Tables', icon: Table },
@@ -27,6 +28,7 @@ const adminNav = [
 
 const cashierNav = [
   { path: '/pos', label: 'POS', icon: ShoppingCart },
+  { path: '/dine-and-go', label: 'Dine-and-Go', icon: Wine },
   { path: '/bills/pending', label: 'Open bills', icon: Clock },
   { path: '/bills/completed', label: 'Completed bills', icon: CheckCircle2 },
   { path: '/stock-on-hand', label: 'Stock on Hand', icon: Package },

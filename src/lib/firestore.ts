@@ -1,3 +1,16 @@
+import type { DineAndGoCustomer } from '../types/dineAndGo';
+// Dine-and-Go Firestore helpers
+export async function loadDineAndGoCustomers(): Promise<DineAndGoCustomer[]> {
+  return loadCollection<DineAndGoCustomer>('dineAndGoCustomers', []);
+}
+
+export async function saveDineAndGoCustomer(id: string, data: DineAndGoCustomer): Promise<void> {
+  return saveDocument('dineAndGoCustomers', id, data);
+}
+
+export async function deleteDineAndGoCustomer(id: string): Promise<void> {
+  return deleteDocument('dineAndGoCustomers', id);
+}
 import { collection, deleteDoc as firestoreDeleteDoc, doc, getDocs, setDoc, type DocumentData } from 'firebase/firestore';
 import { db, hasFirebaseConfig } from './firebase';
 

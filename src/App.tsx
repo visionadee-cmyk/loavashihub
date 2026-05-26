@@ -26,6 +26,7 @@ import BillDetailsPage from './pages/BillDetailsPage';
 import CustomersPage from './pages/CustomersPage';
 import SettingsPage from './pages/SettingsPage';
 import StockOnHandPage from './pages/StockOnHandPage';
+import DineAndGoPage from './pages/DineAndGoPage';
 import ProtectedRoute from './components/ProtectedRoute';
 import ServiceWorkerNotifier from './components/ServiceWorkerNotifier';
 
@@ -226,6 +227,14 @@ function App() {
               element={
                 <ProtectedRoute allowedRoles={['admin', 'cashier']}>
                   <StockOnHandPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/dine-and-go"
+              element={
+                <ProtectedRoute allowedRoles={['admin', 'cashier']}>
+                  <DineAndGoPage />
                 </ProtectedRoute>
               }
             />

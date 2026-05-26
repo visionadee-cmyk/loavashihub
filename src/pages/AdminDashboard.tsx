@@ -2,14 +2,16 @@ import { motion } from 'framer-motion';
 import {
   XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
   BarChart, Bar, Legend, PieChart, Pie, Cell, AreaChart, Area,
-  ComposedChart, RadarChart, Radar, PolarGrid, PolarAngleAxis, PolarRadiusAxis
+  ComposedChart
 } from 'recharts';
 import AppShell from '../components/AppShell';
 import { useEffect, useMemo, useState } from 'react';
 import { loadCollection, saveDocument } from '../lib/firestore';
+import { loadDineAndGoCustomers, saveDineAndGoCustomer, deleteDineAndGoCustomer } from '../lib/firestore';
 import { formatMVR } from '../lib/mvr';
 import { TrendingUp, TrendingDown, DollarSign, ShoppingCart, AlertTriangle, Package } from 'lucide-react';
 import type { Bill, MenuItem, InventoryItem, PurchaseOrder, DailyDirectRevenue } from '../types';
+import type { DineAndGoCustomer } from '../types/dineAndGo';
 
 const paymentColors = ['#16a34a', '#05093f', '#7c4b2e', '#f59e0b'];
 
@@ -36,6 +38,14 @@ export default function AdminDashboard() {
   const [bills, setBills] = useState<Bill[]>([]);
   const [purchaseOrders, setPurchaseOrders] = useState<PurchaseOrder[]>([]);
   const [dailyDirectRevenue, setDailyDirectRevenue] = useState<DailyDirectRevenue[]>([]);
+
+  // Dine-and-Go state
+  const [dineAndGoCustomers, setDineAndGoCustomers] = useState<DineAndGoCustomer[]>([]);
+  const [dineAndGoForm, setDineAndGoForm] = useState<Partial<DineAndGoCustomer>>({});
+  const [editingDineAndGoId, setEditingDineAndGoId] = useState<string | null>(null);
+  const [showDineAndGoForm, setShowDineAndGoForm] = useState(false);
+  const [chargeAmount, setChargeAmount] = useState<number>(0);
+  const [chargingCustomerId, setChargingCustomerId] = useState<string | null>(null);
 
   useEffect(() => {
     loadCollection<MenuItem>('menuItems', [])
@@ -84,6 +94,9 @@ export default function AdminDashboard() {
     loadCollection<DailyDirectRevenue>('dailyDirectRevenue', [])
       .then((items) => { if (items.length) setDailyDirectRevenue(items); })
       .catch(() => undefined);
+    
+    // Load dine-and-go customers
+    loadDineAndGoCustomers().then(setDineAndGoCustomers).catch(() => undefined);
   }, []);
 
   const todaySales = useMemo(() => {
@@ -112,13 +125,9 @@ export default function AdminDashboard() {
   const openBills = bills.filter((bill) => bill.status !== 'Served').length;
   const receivedOrders = purchaseOrders.filter((order) => order.status === 'Received').length;
 
-  const totalRevenue = useMemo(() => {
-    return bills.reduce((sum, bill) => sum + bill.items.reduce((itemSum, item) => itemSum + item.price * item.quantity, 0), 0);
-  }, [bills]);
 
-  const averageOrderValue = useMemo(() => {
-    return bills.length > 0 ? totalRevenue / bills.length : 0;
-  }, [totalRevenue, bills.length]);
+
+
 
   const topItems = useMemo(() => {
     if (!bills.length) return products.slice(0, 5);
@@ -150,38 +159,14 @@ export default function AdminDashboard() {
     return Object.entries(breakdown).map(([method, value]) => ({ method, value }));
   }, [bills]);
 
-  const cashTotal = useMemo(() => {
-    return bills.reduce((sum, bill) => {
-      if (bill.paymentMethod === 'Cash') {
-        return sum + bill.items.reduce((itemSum, item) => itemSum + item.price * item.quantity, 0);
-      }
-      return sum;
-    }, 0);
-  }, [bills]);
 
-  const transferTotal = useMemo(() => {
-    return bills.reduce((sum, bill) => {
-      if (bill.paymentMethod === 'Bank transfer') {
-        return sum + bill.items.reduce((itemSum, item) => itemSum + item.price * item.quantity, 0);
-      }
-      return sum;
-    }, 0);
-  }, [bills]);
 
-  const cardTotal = useMemo(() => {
-    return bills.reduce((sum, bill) => {
-      if (bill.paymentMethod === 'Card') {
-        return sum + bill.items.reduce((itemSum, item) => itemSum + item.price * item.quantity, 0);
-      }
-      return sum;
-    }, 0);
-  }, [bills]);
 
-  const cashTransactions = useMemo(() => bills.filter(b => b.paymentMethod === 'Cash').length, [bills]);
-  const transferTransactions = useMemo(() => bills.filter(b => b.paymentMethod === 'Bank transfer').length, [bills]);
-  const cardTransactions = useMemo(() => bills.filter(b => b.paymentMethod === 'Card').length, [bills]);
 
-  // Daily Direct Revenue Metrics
+
+
+
+
   const directCashTotal = useMemo(() => {
     return dailyDirectRevenue.reduce((sum, entry) => sum + (entry.cashTotal || 0), 0);
   }, [dailyDirectRevenue]);
@@ -190,51 +175,9 @@ export default function AdminDashboard() {
     return dailyDirectRevenue.reduce((sum, entry) => sum + (entry.cardTotal || 0), 0);
   }, [dailyDirectRevenue]);
 
-  const directCashBreakdown = useMemo(() => {
-    const breakdown: Record<string, number> = {
-      'Fifty Lari': 0,
-      'One Rf': 0,
-      'Two Rf': 0,
-      'Note 5': 0,
-      'Note 10': 0,
-      'Note 20': 0,
-      'Note 50': 0,
-      'Note 100': 0,
-      'Note 500': 0,
-      'Note 1000': 0,
-    };
-    
-    dailyDirectRevenue.forEach((entry) => {
-      breakdown['Fifty Lari'] += (entry.cashCounts?.fiftyLari || 0) * 50;
-      breakdown['One Rf'] += (entry.cashCounts?.oneRf || 0) * 1;
-      breakdown['Two Rf'] += (entry.cashCounts?.twoRf || 0) * 2;
-      breakdown['Note 5'] += (entry.cashCounts?.note5 || 0) * 5;
-      breakdown['Note 10'] += (entry.cashCounts?.note10 || 0) * 10;
-      breakdown['Note 20'] += (entry.cashCounts?.note20 || 0) * 20;
-      breakdown['Note 50'] += (entry.cashCounts?.note50 || 0) * 50;
-      breakdown['Note 100'] += (entry.cashCounts?.note100 || 0) * 100;
-      breakdown['Note 500'] += (entry.cashCounts?.note500 || 0) * 500;
-      breakdown['Note 1000'] += (entry.cashCounts?.note1000 || 0) * 1000;
-    });
-    
-    return Object.entries(breakdown)
-      .filter(([, value]) => value > 0)
-      .map(([name, value]) => ({ name, value }));
-  }, [dailyDirectRevenue]);
 
-  const directCardBreakdown = useMemo(() => {
-    const breakdown: Record<string, number> = {};
-    
-    dailyDirectRevenue.forEach((entry) => {
-      entry.cardPayments?.forEach((payment) => {
-        breakdown[payment.type] = (breakdown[payment.type] || 0) + (payment.amount || 0);
-      });
-    });
-    
-    return Object.entries(breakdown)
-      .sort(([, a], [, b]) => b - a)
-      .map(([type, amount]) => ({ type, amount }));
-  }, [dailyDirectRevenue]);
+
+
 
   const dailySales = useMemo(() => {
     const today = new Date();
@@ -341,11 +284,71 @@ export default function AdminDashboard() {
 
   const lowStockAlerts = inventory.filter((item) => item.quantity <= item.lowStock);
 
-  const inventoryValue = useMemo(() => {
-    return inventory.reduce((sum, item) => sum + (item.quantity * 100), 0); // Estimated value
-  }, [inventory]);
 
 
+  // Dine-and-Go functions
+  const saveDineAndGo = async () => {
+    const id = editingDineAndGoId ?? `dineandgo-${Date.now()}`;
+    const payload: DineAndGoCustomer = {
+      id,
+      name: dineAndGoForm.name?.trim() || '',
+      table: dineAndGoForm.table?.trim() || '',
+      company: dineAndGoForm.company?.trim() || '',
+      runningTotal: dineAndGoForm.runningTotal ?? 0,
+      lastPaymentDate: dineAndGoForm.lastPaymentDate || '',
+    };
+    if (editingDineAndGoId) {
+      setDineAndGoCustomers((cur) => cur.map((c) => (c.id === id ? payload : c)));
+      setEditingDineAndGoId(null);
+    } else {
+      setDineAndGoCustomers((cur) => [payload, ...cur]);
+    }
+    await saveDineAndGoCustomer(id, payload);
+    setDineAndGoForm({});
+    setShowDineAndGoForm(false);
+  };
+
+  const editDineAndGo = (customer: DineAndGoCustomer) => {
+    setEditingDineAndGoId(customer.id ?? null);
+    setDineAndGoForm(customer);
+    setShowDineAndGoForm(true);
+  };
+
+  const removeDineAndGo = async (id: string) => {
+    setDineAndGoCustomers((cur) => cur.filter((c) => c.id !== id));
+    await deleteDineAndGoCustomer(id);
+  };
+
+  const addCharge = async (customerId: string) => {
+    if (chargeAmount <= 0) return;
+    const customer = dineAndGoCustomers.find((c) => c.id === customerId);
+    if (!customer) return;
+
+    const updated: DineAndGoCustomer = {
+      ...customer,
+      runningTotal: (customer.runningTotal ?? 0) + chargeAmount,
+    };
+
+    setDineAndGoCustomers((cur) => cur.map((c) => (c.id === customerId ? updated : c)));
+    await saveDineAndGoCustomer(customerId, updated);
+
+    setChargeAmount(0);
+    setChargingCustomerId(null);
+  };
+
+  const processWeeklyPayment = async (customerId: string) => {
+    const customer = dineAndGoCustomers.find((c) => c.id === customerId);
+    if (!customer) return;
+
+    const updated: DineAndGoCustomer = {
+      ...customer,
+      runningTotal: 0,
+      lastPaymentDate: new Date().toISOString().split('T')[0],
+    };
+
+    setDineAndGoCustomers((cur) => cur.map((c) => (c.id === customerId ? updated : c)));
+    await saveDineAndGoCustomer(customerId, updated);
+  };
 
   return (
     <AppShell title="Dashboard">
@@ -423,586 +426,353 @@ export default function AdminDashboard() {
           </motion.div>
         </div>
 
-        {/* Payment Methods KPI Row */}
-        <div className="grid gap-4 sm:grid-cols-3 lg:grid-cols-3">
+        {/* Charts Section */}
+        <div className="grid gap-6 lg:grid-cols-2">
+          {/* Daily Sales Trend */}
           <motion.div
             initial={{ opacity: 0, y: 18 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.5 }}
-            className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm relative overflow-hidden"
+            className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm"
           >
-            <div className="absolute top-0 right-0 w-24 h-24 bg-gradient-to-br from-emerald-500/10 to-transparent rounded-bl-full" />
-            <div className="flex items-center justify-between mb-2">
-              <p className="text-sm uppercase tracking-[0.24em] text-slate-500">Cash Sales</p>
-              <DollarSign className="h-5 w-5 text-emerald-600" />
-            </div>
-            <p className="text-3xl font-bold text-slate-900">{formatMVR(cashTotal)}</p>
-            <p className="mt-3 text-sm text-slate-500">{cashTransactions} transactions</p>
+            <h3 className="mb-4 text-lg font-semibold text-slate-900">7-Day Sales Trend</h3>
+            <ResponsiveContainer width="100%" height={300}>
+              <BarChart data={dailySales}>
+                <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
+                <XAxis dataKey="day" stroke="#9ca3af" />
+                <YAxis stroke="#9ca3af" />
+                <Tooltip content={<CustomTooltip />} />
+                <Bar dataKey="revenue" fill="#16a34a" radius={[8, 8, 0, 0]} />
+              </BarChart>
+            </ResponsiveContainer>
           </motion.div>
 
+          {/* Hourly Sales */}
           <motion.div
             initial={{ opacity: 0, y: 18 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.6 }}
-            className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm relative overflow-hidden"
+            className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm"
           >
-            <div className="absolute top-0 right-0 w-24 h-24 bg-gradient-to-br from-blue-500/10 to-transparent rounded-bl-full" />
-            <div className="flex items-center justify-between mb-2">
-              <p className="text-sm uppercase tracking-[0.24em] text-slate-500">Bank Transfers</p>
-              <DollarSign className="h-5 w-5 text-blue-600" />
-            </div>
-            <p className="text-3xl font-bold text-slate-900">{formatMVR(transferTotal)}</p>
-            <p className="mt-3 text-sm text-slate-500">{transferTransactions} transactions</p>
+            <h3 className="mb-4 text-lg font-semibold text-slate-900">Hourly Sales</h3>
+            <ResponsiveContainer width="100%" height={300}>
+              <AreaChart data={hourlySales}>
+                <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
+                <XAxis dataKey="hour" stroke="#9ca3af" fontSize={12} />
+                <YAxis stroke="#9ca3af" />
+                <Tooltip content={<CustomTooltip />} />
+                <Area type="monotone" dataKey="revenue" fill="#3b82f6" stroke="#2563eb" />
+              </AreaChart>
+            </ResponsiveContainer>
           </motion.div>
 
+          {/* Payment Method Breakdown */}
           <motion.div
             initial={{ opacity: 0, y: 18 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.7 }}
-            className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm relative overflow-hidden"
-          >
-            <div className="absolute top-0 right-0 w-24 h-24 bg-gradient-to-br from-violet-500/10 to-transparent rounded-bl-full" />
-            <div className="flex items-center justify-between mb-2">
-              <p className="text-sm uppercase tracking-[0.24em] text-slate-500">Card Payments</p>
-              <DollarSign className="h-5 w-5 text-violet-600" />
-            </div>
-            <p className="text-3xl font-bold text-slate-900">{formatMVR(cardTotal)}</p>
-            <p className="mt-3 text-sm text-slate-500">{cardTransactions} transactions</p>
-          </motion.div>
-        </div>
-
-        {/* Main Charts Row */}
-        <div className="grid gap-5 lg:grid-cols-3">
-          {/* Daily Sales Chart - Larger */}
-          <motion.section
-            initial={{ opacity: 0, x: -20 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ delay: 0.5 }}
-            className="lg:col-span-2 rounded-3xl border border-slate-200 bg-white p-6 shadow-sm"
-          >
-            <div className="mb-6 flex items-center justify-between">
-              <div>
-                <h3 className="text-xl font-semibold text-slate-900">Revenue Overview</h3>
-                <p className="text-sm text-slate-500">Daily revenue and order count for the past week</p>
-              </div>
-            </div>
-            <div className="h-80">
-              {bills.length > 0 ? (
-                <ResponsiveContainer width="100%" height="100%">
-                  <ComposedChart data={dailySales} margin={{ top: 10, right: 10, left: -10, bottom: 0 }}>
-                    <defs>
-                      <linearGradient id="colorRevenue" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="5%" stopColor="#16a34a" stopOpacity={0.8}/>
-                        <stop offset="95%" stopColor="#16a34a" stopOpacity={0.1}/>
-                      </linearGradient>
-                    </defs>
-                    <CartesianGrid strokeDasharray="3 3" stroke="rgba(5, 9, 63, 0.1)" />
-                    <XAxis dataKey="day" tick={{ fill: 'rgba(5, 9, 63, 0.7)', fontSize: 12 }} />
-                    <YAxis yAxisId="left" tick={{ fill: 'rgba(5, 9, 63, 0.7)', fontSize: 12 }} />
-                    <YAxis yAxisId="right" orientation="right" tick={{ fill: 'rgba(5, 9, 63, 0.7)', fontSize: 12 }} />
-                    <Tooltip content={<CustomTooltip />} />
-                    <Legend />
-                    <Area yAxisId="left" type="monotone" dataKey="revenue" stroke="#16a34a" fillOpacity={1} fill="url(#colorRevenue)" name="Revenue" />
-                    <Bar yAxisId="right" dataKey="orders" fill="#05093f" radius={[4, 4, 0, 0]} name="Orders" />
-                  </ComposedChart>
-                </ResponsiveContainer>
-              ) : (
-                <div className="flex flex-col items-center justify-center h-full text-slate-400">
-                  <BarChart className="h-12 w-12 mb-2" />
-                  <p className="text-sm font-medium">No sales data yet</p>
-                  <p className="text-xs">Revenue data will appear here once bills are created</p>
-                </div>
-              )}
-            </div>
-          </motion.section>
-
-          {/* Payment Methods */}
-          <motion.section
-            initial={{ opacity: 0, x: 20 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ delay: 0.6 }}
             className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm"
           >
-            <div className="mb-6">
-              <h3 className="text-xl font-semibold text-slate-900">Payment Methods</h3>
-              <p className="text-sm text-slate-500">Revenue distribution by payment type</p>
-            </div>
-            <div className="h-64">
-              {paymentBreakdown.length > 0 ? (
-                <ResponsiveContainer width="100%" height="100%">
-                  <PieChart>
-                    <Pie
-                      data={paymentBreakdown}
-                      dataKey="value"
-                      nameKey="method"
-                      innerRadius={60}
-                      outerRadius={90}
-                      paddingAngle={5}
-                      label={({ name, percent }: any) => `${name} ${((percent || 0) * 100).toFixed(0)}%`}
-                      labelLine={{ stroke: 'rgba(5, 9, 63, 0.3)' }}
-                    >
-                      {paymentBreakdown.map((entry, index) => (
-                        <Cell key={entry.method} fill={paymentColors[index % paymentColors.length]} />
-                      ))}
-                    </Pie>
-                    <Tooltip content={<CustomTooltip />} />
-                  </PieChart>
-                </ResponsiveContainer>
-              ) : (
-                <div className="flex flex-col items-center justify-center h-full text-slate-400">
-                  <DollarSign className="h-12 w-12 mb-2" />
-                  <p className="text-sm font-medium">No payment data yet</p>
-                  <p className="text-xs">Payment methods will appear here once bills are created</p>
-                </div>
-              )}
-            </div>
-            {paymentBreakdown.length > 0 && (
-              <div className="mt-4 space-y-2">
-                {paymentBreakdown.map((item, index) => (
-                  <div key={item.method} className="flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      <div className="h-3 w-3 rounded-full" style={{ backgroundColor: paymentColors[index % paymentColors.length] }} />
-                      <span className="text-sm text-slate-600">{item.method}</span>
-                    </div>
-                    <span className="text-sm font-semibold">{formatMVR(item.value)}</span>
-                  </div>
-                ))}
-              </div>
-            )}
-          </motion.section>
-        </div>
+            <h3 className="mb-4 text-lg font-semibold text-slate-900">Payment Methods</h3>
+            <ResponsiveContainer width="100%" height={300}>
+              <PieChart>
+                <Pie
+                  data={paymentBreakdown}
+                  cx="50%"
+                  cy="50%"
+                  labelLine={false}
+                  label={({ method, value }) => `${method}: ${formatMVR(value)}`}
+                  outerRadius={100}
+                  fill="#8884d8"
+                  dataKey="value"
+                >
+                  {paymentBreakdown.map((_, index) => (
+                    <Cell key={`cell-${index}`} fill={paymentColors[index % paymentColors.length]} />
+                  ))}
+                </Pie>
+                <Tooltip content={<CustomTooltip />} />
+              </PieChart>
+            </ResponsiveContainer>
+          </motion.div>
 
-        {/* Second Row - Enhanced Payment Analysis */}
-        <div className="grid gap-5 lg:grid-cols-2">
-          {/* Payment Method Trend */}
-          <motion.section
-            initial={{ opacity: 0, y: 16 }}
+          {/* Category Breakdown */}
+          <motion.div
+            initial={{ opacity: 0, y: 18 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.8 }}
             className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm"
           >
-            <div className="mb-6">
-              <h3 className="text-xl font-semibold text-slate-900">Payment Methods Trend</h3>
-              <p className="text-sm text-slate-500">Cash vs Bank Transfer vs Card over time</p>
-            </div>
-            <div className="h-80">
-              {bills.length > 0 ? (
-                <ResponsiveContainer width="100%" height="100%">
-                  <ComposedChart data={paymentMethodTrend} margin={{ top: 10, right: 10, left: -10, bottom: 0 }}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="rgba(5, 9, 63, 0.1)" />
-                    <XAxis dataKey="day" tick={{ fill: 'rgba(5, 9, 63, 0.7)', fontSize: 12 }} />
-                    <YAxis tick={{ fill: 'rgba(5, 9, 63, 0.7)', fontSize: 12 }} />
-                    <Tooltip content={<CustomTooltip />} />
-                    <Legend />
-                    <Bar dataKey="cash" fill="#10b981" radius={[4, 4, 0, 0]} name="Cash" />
-                    <Bar dataKey="transfer" fill="#3b82f6" radius={[4, 4, 0, 0]} name="Bank Transfer" />
-                    <Bar dataKey="card" fill="#8b5cf6" radius={[4, 4, 0, 0]} name="Card" />
-                  </ComposedChart>
-                </ResponsiveContainer>
-              ) : (
-                <div className="flex flex-col items-center justify-center h-full text-slate-400">
-                  <BarChart className="h-12 w-12 mb-2" />
-                  <p className="text-sm font-medium">No payment trends yet</p>
-                  <p className="text-xs">Payment trends will appear here once bills are created</p>
-                </div>
-              )}
-            </div>
-          </motion.section>
+            <h3 className="mb-4 text-lg font-semibold text-slate-900">Category Sales</h3>
+            <ResponsiveContainer width="100%" height={300}>
+              <BarChart
+                data={categoryData}
+                layout="vertical"
+                margin={{ top: 5, right: 30, left: 100 }}
+              >
+                <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
+                <XAxis type="number" stroke="#9ca3af" />
+                <YAxis dataKey="name" type="category" stroke="#9ca3af" width={100} fontSize={12} />
+                <Tooltip content={<CustomTooltip />} />
+                <Bar dataKey="value" fill="#f59e0b" />
+              </BarChart>
+            </ResponsiveContainer>
+          </motion.div>
 
-          {/* Payment Methods Breakdown - Enhanced */}
-          <motion.section
-            initial={{ opacity: 0, y: 16 }}
+          {/* Monthly Sales */}
+          <motion.div
+            initial={{ opacity: 0, y: 18 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.9 }}
-            className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm"
+            className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm lg:col-span-2"
           >
-            <div className="mb-6">
-              <h3 className="text-xl font-semibold text-slate-900">Payment Distribution</h3>
-              <p className="text-sm text-slate-500">Detailed breakdown by method</p>
-            </div>
-            <div className="h-64">
-              {paymentBreakdown.length > 0 ? (
-                <ResponsiveContainer width="100%" height="100%">
-                  <PieChart>
-                    <Pie
-                      data={paymentBreakdown}
-                      dataKey="value"
-                      nameKey="method"
-                      innerRadius={60}
-                      outerRadius={90}
-                      paddingAngle={5}
-                      label={({ name, percent }: any) => `${name} ${((percent || 0) * 100).toFixed(0)}%`}
-                      labelLine={{ stroke: 'rgba(5, 9, 63, 0.3)' }}
-                    >
-                      {paymentBreakdown.map((entry, index) => {
-                        const colors = ['#10b981', '#3b82f6', '#8b5cf6'];
-                        return <Cell key={entry.method} fill={colors[index % colors.length]} />;
-                      })}
-                    </Pie>
-                    <Tooltip content={<CustomTooltip />} />
-                  </PieChart>
-                </ResponsiveContainer>
-              ) : (
-                <div className="flex flex-col items-center justify-center h-full text-slate-400">
-                  <PieChart className="h-12 w-12 mb-2" />
-                  <p className="text-sm font-medium">No payment methods yet</p>
-                  <p className="text-xs">Breakdown will appear here once bills are created</p>
-                </div>
-              )}
-            </div>
-            {paymentBreakdown.length > 0 && (
-              <div className="mt-4 space-y-2">
-                {paymentBreakdown.map((item, index) => {
-                  const colors = ['#10b981', '#3b82f6', '#8b5cf6'];
-                  return (
-                    <div key={item.method} className="flex items-center justify-between">
-                      <div className="flex items-center gap-2">
-                        <div className="h-3 w-3 rounded-full" style={{ backgroundColor: colors[index % colors.length] }} />
-                        <span className="text-sm text-slate-600">{item.method}</span>
-                      </div>
-                      <span className="text-sm font-semibold">{formatMVR(item.value)}</span>
-                    </div>
-                  );
-                })}
-              </div>
-            )}
-          </motion.section>
-        </div>
+            <h3 className="mb-4 text-lg font-semibold text-slate-900">Monthly Sales</h3>
+            <ResponsiveContainer width="100%" height={300}>
+              <AreaChart data={monthlySales}>
+                <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
+                <XAxis dataKey="day" stroke="#9ca3af" />
+                <YAxis stroke="#9ca3af" />
+                <Tooltip content={<CustomTooltip />} />
+                <Area type="monotone" dataKey="amount" fill="#8b5cf6" stroke="#7c3aed" />
+              </AreaChart>
+            </ResponsiveContainer>
+          </motion.div>
 
-        {/* Direct Revenue Section - Cash and Card Breakdown */}
-        <div className="grid gap-5 lg:grid-cols-2">
-          {/* Direct Cash Breakdown */}
-          <motion.section
-            initial={{ opacity: 0, y: 16 }}
+          {/* Payment Method Trend */}
+          <motion.div
+            initial={{ opacity: 0, y: 18 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 1.0 }}
-            className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm"
+            transition={{ delay: 1 }}
+            className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm lg:col-span-2"
           >
-            <div className="mb-6">
-              <h3 className="text-xl font-semibold text-slate-900">Direct Cash Breakdown</h3>
-              <p className="text-sm text-slate-500">Cash counts by denomination</p>
-              <p className="mt-2 text-2xl font-bold text-emerald-600">{formatMVR(directCashTotal)}</p>
-            </div>
-            <div className="space-y-2 max-h-64 overflow-y-auto">
-              {directCashBreakdown.length > 0 ? (
-                directCashBreakdown.map((item) => (
-                  <div key={item.name} className="flex items-center justify-between rounded-lg bg-slate-50 p-3">
-                    <span className="text-sm font-medium text-slate-700">{item.name}</span>
-                    <span className="text-sm font-semibold text-slate-900">{formatMVR(item.value)}</span>
-                  </div>
-                ))
-              ) : (
-                <p className="text-center text-sm text-slate-500 py-6">No direct cash entries yet</p>
-              )}
-            </div>
-          </motion.section>
+            <h3 className="mb-4 text-lg font-semibold text-slate-900">Payment Method Trend</h3>
+            <ResponsiveContainer width="100%" height={300}>
+              <ComposedChart data={paymentMethodTrend}>
+                <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
+                <XAxis dataKey="day" stroke="#9ca3af" />
+                <YAxis stroke="#9ca3af" />
+                <Tooltip content={<CustomTooltip />} />
+                <Legend />
+                <Bar dataKey="cash" fill="#059669" radius={[8, 8, 0, 0]} />
+                <Bar dataKey="transfer" fill="#3b82f6" radius={[8, 8, 0, 0]} />
+                <Bar dataKey="card" fill="#f59e0b" radius={[8, 8, 0, 0]} />
+              </ComposedChart>
+            </ResponsiveContainer>
+          </motion.div>
 
-          {/* Direct Card Breakdown */}
-          <motion.section
-            initial={{ opacity: 0, y: 16 }}
+          {/* Top Items */}
+          <motion.div
+            initial={{ opacity: 0, y: 18 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 1.1 }}
             className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm"
           >
-            <div className="mb-6">
-              <h3 className="text-xl font-semibold text-slate-900">Direct Card Payments</h3>
-              <p className="text-sm text-slate-500">Card payment methods breakdown</p>
-              <p className="mt-2 text-2xl font-bold text-violet-600">{formatMVR(directCardTotal)}</p>
-            </div>
-            <div className="space-y-2 max-h-64 overflow-y-auto">
-              {directCardBreakdown.length > 0 ? (
-                directCardBreakdown.map((item) => (
-                  <div key={item.type} className="flex items-center justify-between rounded-lg bg-slate-50 p-3">
-                    <span className="text-sm font-medium text-slate-700">{item.type}</span>
-                    <span className="text-sm font-semibold text-slate-900">{formatMVR(item.amount)}</span>
-                  </div>
-                ))
-              ) : (
-                <p className="text-center text-sm text-slate-500 py-6">No direct card entries yet</p>
-              )}
-            </div>
-          </motion.section>
-        </div>
-
-        {/* Second Row */}
-        <div className="grid gap-5 lg:grid-cols-2">
-          {/* Hourly Sales */}
-          <motion.section
-            initial={{ opacity: 0, y: 16 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.7 }}
-            className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm"
-          >
-            <div className="mb-6">
-              <h3 className="text-xl font-semibold text-slate-900">Hourly Revenue</h3>
-              <p className="text-sm text-slate-500">Revenue distribution across 24 hours</p>
-            </div>
-            <div className="h-72">
-              {hourlySales.some(h => h.revenue > 0) ? (
-                <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={hourlySales.filter(h => h.revenue > 0)} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="rgba(5, 9, 63, 0.1)" />
-                    <XAxis dataKey="hour" tick={{ fill: 'rgba(5, 9, 63, 0.7)', fontSize: 10 }} interval={3} />
-                    <YAxis tick={{ fill: 'rgba(5, 9, 63, 0.7)', fontSize: 12 }} />
-                    <Tooltip content={<CustomTooltip />} />
-                    <Bar dataKey="revenue" fill="#16a34a" radius={[6, 6, 0, 0]} />
-                  </BarChart>
-                </ResponsiveContainer>
-              ) : (
-                <div className="flex flex-col items-center justify-center h-full text-slate-400">
-                  <BarChart className="h-12 w-12 mb-2" />
-                  <p className="text-sm font-medium">No hourly revenue yet</p>
-                  <p className="text-xs">Hourly breakdown will appear once sales are recorded</p>
-                </div>
-              )}
-            </div>
-          </motion.section>
-
-          {/* Category Distribution */}
-          <motion.section
-            initial={{ opacity: 0, y: 16 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.8 }}
-            className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm"
-          >
-            <div className="mb-6">
-              <h3 className="text-xl font-semibold text-slate-900">Category Performance</h3>
-              <p className="text-sm text-slate-500">Revenue by product category</p>
-            </div>
-            {categoryData.length > 0 ? (
-              <div className="h-72">
-                <ResponsiveContainer width="100%" height="100%">
-                  <RadarChart data={categoryData}>
-                    <PolarGrid stroke="rgba(5, 9, 63, 0.1)" />
-                    <PolarAngleAxis dataKey="name" tick={{ fill: 'rgba(5, 9, 63, 0.7)', fontSize: 11 }} />
-                    <PolarRadiusAxis angle={30} domain={[0, 'auto']} tick={{ fill: 'rgba(5, 9, 63, 0.5)', fontSize: 10 }} />
-                    <Radar name="Revenue" dataKey="value" stroke="#16a34a" fill="#16a34a" fillOpacity={0.5} />
-                    <Tooltip content={<CustomTooltip />} />
-                  </RadarChart>
-                </ResponsiveContainer>
-              </div>
-            ) : (
-              <div className="flex items-center justify-center h-72 text-slate-500">
-                No category data available yet
-              </div>
-            )}
-          </motion.section>
-        </div>
-
-        {/* Third Row */}
-        <div className="grid gap-5 lg:grid-cols-[1fr_1fr]">
-          {/* Top Products */}
-          <motion.section
-            initial={{ opacity: 0, y: 16 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.9 }}
-            className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm"
-          >
-            <div className="mb-6 flex items-center justify-between">
-              <div>
-                <h3 className="text-xl font-semibold text-slate-900">Top Selling Products</h3>
-                <p className="text-sm text-slate-500">Highest revenue generating items</p>
-              </div>
-              <span className="rounded-full bg-green-50 px-3 py-1 text-xs font-semibold text-green-600">
-                {topItems.length} products
-              </span>
-            </div>
+            <h3 className="mb-4 text-lg font-semibold text-slate-900">Top Items</h3>
             <div className="space-y-3">
-              {topItems.map((item: any, index) => (
-                <div key={item.id} className="flex items-center justify-between rounded-2xl border border-slate-100 bg-slate-50 p-4 transition hover:border-green-200 hover:bg-green-50">
-                  <div className="flex items-center gap-3">
-                    <div className={`flex h-8 w-8 items-center justify-center rounded-full text-sm font-bold ${
-                      index < 3 ? 'bg-green-600 text-white' : 'bg-slate-200 text-slate-600'
-                    }`}>
-                      {index + 1}
-                    </div>
-                    <div>
-                      <p className="font-semibold text-slate-900">{item.name}</p>
-                      <p className="text-xs text-slate-500">{item.quantity} sold</p>
-                    </div>
-                  </div>
-                  <div className="text-right">
-                    <p className="font-bold text-slate-900">{formatMVR(item.revenue)}</p>
-                    <p className="text-xs text-slate-500">{formatMVR(item.price)} each</p>
-                  </div>
+              {topItems.map((item, index) => (
+                <div key={index} className="flex items-center justify-between py-2 px-3 bg-slate-50 rounded-2xl">
+                  <span className="font-medium text-slate-700">{item.name}</span>
+                  <span className="text-sm text-slate-500">{formatMVR((item as any).revenue || 0)}</span>
                 </div>
               ))}
             </div>
-          </motion.section>
+          </motion.div>
 
-          {/* Monthly Trend */}
-          <motion.section
-            initial={{ opacity: 0, y: 16 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 1.0 }}
-            className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm"
-          >
-            <div className="mb-6">
-              <h3 className="text-xl font-semibold text-slate-900">Monthly Revenue Trend</h3>
-              <p className="text-sm text-slate-500">Revenue performance over time</p>
-            </div>
-            <div className="h-72">
-              {monthlySales && monthlySales.length > 0 ? (
-                <ResponsiveContainer width="100%" height="100%">
-                  <AreaChart data={monthlySales} margin={{ top: 10, right: 10, left: -10, bottom: 0 }}>
-                    <defs>
-                      <linearGradient id="colorMonthly" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="5%" stopColor="#05093f" stopOpacity={0.8}/>
-                        <stop offset="95%" stopColor="#05093f" stopOpacity={0.1}/>
-                      </linearGradient>
-                    </defs>
-                    <CartesianGrid strokeDasharray="3 3" stroke="rgba(5, 9, 63, 0.1)" />
-                    <XAxis dataKey="day" tick={{ fill: 'rgba(5, 9, 63, 0.7)', fontSize: 10 }} />
-                    <YAxis tick={{ fill: 'rgba(5, 9, 63, 0.7)', fontSize: 12 }} />
-                    <Tooltip content={<CustomTooltip />} />
-                    <Area type="monotone" dataKey="amount" stroke="#05093f" fillOpacity={1} fill="url(#colorMonthly)" name="Revenue" />
-                  </AreaChart>
-                </ResponsiveContainer>
-              ) : (
-                <div className="flex flex-col items-center justify-center h-full text-slate-400">
-                  <BarChart className="h-12 w-12 mb-2" />
-                  <p className="text-sm font-medium">No monthly data yet</p>
-                  <p className="text-xs">Monthly trends will appear once bills are created</p>
-                </div>
-              )}
-            </div>
-          </motion.section>
-        </div>
-
-        {/* Bottom Section */}
-        <div className="grid gap-5 lg:grid-cols-3">
-          {/* Inventory Alerts */}
-          <motion.section
-            initial={{ opacity: 0, y: 16 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 1.1 }}
-            className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm"
-          >
-            <div className="mb-4 flex items-center justify-between">
-              <div>
-                <h3 className="text-lg font-semibold text-slate-900">Inventory Alerts</h3>
-                <p className="text-sm text-slate-500">Low stock items requiring attention</p>
-              </div>
-              <span className="rounded-full bg-amber-50 px-3 py-1 text-xs font-semibold text-amber-600">
-                {lowStockAlerts.length} alerts
-              </span>
-            </div>
-            <div className="space-y-3 max-h-64 overflow-y-auto">
-              {lowStockAlerts.length ? (
-                lowStockAlerts.slice(0, 5).map((item) => (
-                  <div key={item.id} className="flex items-center justify-between rounded-2xl border border-amber-200 bg-amber-50 p-3">
-                    <div>
-                      <p className="font-medium text-slate-900">{item.name}</p>
-                      <p className="text-xs text-slate-500">{item.quantity} {item.unit} remaining</p>
-                    </div>
-                    <span className="rounded-full bg-amber-600 px-3 py-1 text-xs font-semibold text-white">
-                      Low stock
-                    </span>
-                  </div>
-                ))
-              ) : (
-                <div className="flex items-center justify-center py-8 text-slate-500">
-                  <div className="text-center">
-                    <Package className="mx-auto h-8 w-8 text-green-500 mb-2" />
-                    <p>All inventory levels are healthy</p>
-                  </div>
-                </div>
-              )}
-            </div>
-          </motion.section>
-
-          {/* Quick Stats */}
-          <motion.section
-            initial={{ opacity: 0, y: 16 }}
+          {/* Direct Revenue Summary */}
+          <motion.div
+            initial={{ opacity: 0, y: 18 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 1.2 }}
             className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm"
           >
-            <div className="mb-6">
-              <h3 className="text-lg font-semibold text-slate-900">Business Metrics</h3>
-              <p className="text-sm text-slate-500">Key performance indicators</p>
-            </div>
+            <h3 className="mb-4 text-lg font-semibold text-slate-900">Direct Revenue</h3>
             <div className="space-y-4">
-              <div className="flex items-center justify-between rounded-2xl bg-slate-50 p-4">
-                <div>
-                  <p className="text-sm text-slate-500">Total Revenue</p>
-                  <p className="text-xl font-bold text-slate-900">{formatMVR(totalRevenue)}</p>
-                </div>
-                <div className="h-10 w-10 rounded-full bg-green-100 flex items-center justify-center">
-                  <DollarSign className="h-5 w-5 text-green-600" />
-                </div>
+              <div className="flex justify-between items-center p-3 bg-green-50 rounded-2xl">
+                <span className="font-medium text-slate-700">Cash Total</span>
+                <span className="font-bold text-green-600">{formatMVR(directCashTotal)}</span>
               </div>
-              <div className="flex items-center justify-between rounded-2xl bg-slate-50 p-4">
-                <div>
-                  <p className="text-sm text-slate-500">Avg Order Value</p>
-                  <p className="text-xl font-bold text-slate-900">{formatMVR(averageOrderValue)}</p>
-                </div>
-                <div className="h-10 w-10 rounded-full bg-blue-100 flex items-center justify-center">
-                  <TrendingUp className="h-5 w-5 text-blue-600" />
-                </div>
-              </div>
-              <div className="flex items-center justify-between rounded-2xl bg-slate-50 p-4">
-                <div>
-                  <p className="text-sm text-slate-500">Total Orders</p>
-                  <p className="text-xl font-bold text-slate-900">{bills.length}</p>
-                </div>
-                <div className="h-10 w-10 rounded-full bg-purple-100 flex items-center justify-center">
-                  <ShoppingCart className="h-5 w-5 text-purple-600" />
-                </div>
-              </div>
-              <div className="flex items-center justify-between rounded-2xl bg-slate-50 p-4">
-                <div>
-                  <p className="text-sm text-slate-500">Inventory Value</p>
-                  <p className="text-xl font-bold text-slate-900">{formatMVR(inventoryValue)}</p>
-                </div>
-                <div className="h-10 w-10 rounded-full bg-amber-100 flex items-center justify-center">
-                  <Package className="h-5 w-5 text-amber-600" />
-                </div>
+              <div className="flex justify-between items-center p-3 bg-blue-50 rounded-2xl">
+                <span className="font-medium text-slate-700">Card Total</span>
+                <span className="font-bold text-blue-600">{formatMVR(directCardTotal)}</span>
               </div>
             </div>
-          </motion.section>
+          </motion.div>
+        </div>
 
-          {/* Menu Items */}
-          <motion.section
-            initial={{ opacity: 0, y: 16 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 1.3 }}
-            className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm"
-          >
-            <div className="mb-6 flex items-center justify-between">
-              <div>
-                <h3 className="text-lg font-semibold text-slate-900">Active Menu</h3>
-                <p className="text-sm text-slate-500">All available products</p>
-              </div>
-              <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-600">
-                {products.length} items
-              </span>
+        {/* Dine-and-Go Customers Section */}
+        <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
+          <div className="mb-6 flex items-center justify-between gap-3">
+            <div>
+              <h3 className="text-xl font-semibold text-[#05093f]">Dine-and-Go Customers</h3>
+              <p className="text-sm text-slate-500">Track customers who dine and pay weekly. Only admins can edit.</p>
             </div>
-            <div className="space-y-2 max-h-80 overflow-y-auto">
-              {products.slice(0, 8).map((product) => (
-                <div key={product.id} className="flex items-center justify-between rounded-xl bg-slate-50 p-3">
-                  <div className="flex items-center gap-3">
-                    <div className="h-8 w-8 rounded-full bg-slate-200 overflow-hidden">
-                      <img src={product.image} alt={product.name} className="h-full w-full object-cover" />
+            <button
+              type="button"
+              onClick={() => { setShowDineAndGoForm(!showDineAndGoForm); setEditingDineAndGoId(null); setDineAndGoForm({}); }}
+              className="inline-flex items-center gap-2 rounded-3xl bg-violet-600 px-4 py-3 text-sm font-semibold text-white hover:bg-violet-500"
+            >
+              {showDineAndGoForm ? 'Cancel' : 'Add Dine-and-Go'}
+            </button>
+          </div>
+          {showDineAndGoForm && (
+            <div className="grid gap-4 mb-6">
+              <label className="block text-sm text-slate-700">
+                Name
+                <input
+                  value={dineAndGoForm.name || ''}
+                  onChange={e => setDineAndGoForm(cur => ({ ...cur, name: e.target.value }))}
+                  className="mt-2 w-full rounded-3xl border border-slate-300 bg-white px-4 py-3 text-slate-900 outline-none"
+                  placeholder="Name (optional)"
+                />
+              </label>
+              <div className="grid gap-4 sm:grid-cols-2">
+                <label className="block text-sm text-slate-700">
+                  Table
+                  <input
+                    value={dineAndGoForm.table || ''}
+                    onChange={e => setDineAndGoForm(cur => ({ ...cur, table: e.target.value }))}
+                    className="mt-2 w-full rounded-3xl border border-slate-300 bg-white px-4 py-3 text-slate-900 outline-none"
+                    placeholder="Table (optional)"
+                  />
+                </label>
+                <label className="block text-sm text-slate-700">
+                  Company
+                  <input
+                    value={dineAndGoForm.company || ''}
+                    onChange={e => setDineAndGoForm(cur => ({ ...cur, company: e.target.value }))}
+                    className="mt-2 w-full rounded-3xl border border-slate-300 bg-white px-4 py-3 text-slate-900 outline-none"
+                    placeholder="Company (optional)"
+                  />
+                </label>
+              </div>
+              <div className="grid gap-4 sm:grid-cols-2">
+                <label className="block text-sm text-slate-700">
+                  Running Total
+                  <input
+                    type="number"
+                    value={dineAndGoForm.runningTotal ?? ''}
+                    onChange={e => setDineAndGoForm(cur => ({ ...cur, runningTotal: e.target.value ? Number(e.target.value) : undefined }))}
+                    className="mt-2 w-full rounded-3xl border border-slate-300 bg-white px-4 py-3 text-slate-900 outline-none"
+                    placeholder="Running total (optional)"
+                  />
+                </label>
+                <label className="block text-sm text-slate-700">
+                  Last Payment Date
+                  <input
+                    type="date"
+                    value={dineAndGoForm.lastPaymentDate || ''}
+                    onChange={e => setDineAndGoForm(cur => ({ ...cur, lastPaymentDate: e.target.value }))}
+                    className="mt-2 w-full rounded-3xl border border-slate-300 bg-white px-4 py-3 text-slate-900 outline-none"
+                    placeholder="Last payment date (optional)"
+                  />
+                </label>
+              </div>
+              <button
+                type="button"
+                onClick={saveDineAndGo}
+                className="rounded-3xl bg-green-600 px-6 py-3 text-sm font-semibold text-white hover:bg-green-500"
+              >
+                {editingDineAndGoId ? 'Update' : 'Add'} Dine-and-Go
+              </button>
+            </div>
+          )}
+          <div className="space-y-4">
+            {dineAndGoCustomers.length > 0 ? (
+              dineAndGoCustomers.map((customer) => (
+                <div key={customer.id} className="rounded-2xl border border-slate-200 bg-slate-50 p-4 hover:border-slate-300">
+                  <div className="flex flex-col lg:flex-row gap-4 lg:items-start">
+                    <div className="grid gap-2 flex-1">
+                      <h4 className="font-semibold text-slate-900">{customer.name || 'N/A'}</h4>
+                      <div className="flex gap-4 text-sm text-slate-600">
+                        {customer.table && <span>Table: {customer.table}</span>}
+                        {customer.company && <span>Company: {customer.company}</span>}
+                      </div>
+                      <div className="flex items-center gap-4">
+                        <div className="bg-white rounded-lg px-3 py-2">
+                          <p className="text-xs text-slate-500">Running Total</p>
+                          <p className="text-lg font-bold text-slate-900">{formatMVR(customer.runningTotal ?? 0)}</p>
+                        </div>
+                        {customer.lastPaymentDate && (
+                          <div className="bg-white rounded-lg px-3 py-2">
+                            <p className="text-xs text-slate-500">Last Payment</p>
+                            <p className="text-sm font-semibold text-slate-900">{customer.lastPaymentDate}</p>
+                          </div>
+                        )}
+                      </div>
                     </div>
-                    <div>
-                      <p className="text-sm font-medium text-slate-900">{product.name}</p>
-                      <p className="text-xs text-slate-500">{product.category}</p>
+
+                    <div className="flex flex-col gap-2 w-full lg:w-auto lg:min-w-fit">
+                      {chargingCustomerId === customer.id ? (
+                        <div className="flex gap-2">
+                          <input
+                            type="number"
+                            value={chargeAmount}
+                            onChange={(e) => setChargeAmount(Number(e.target.value))}
+                            className="flex-1 rounded-lg border border-slate-300 px-2 py-1 text-sm"
+                            placeholder="Amount"
+                          />
+                          <button
+                            type="button"
+                            onClick={() => addCharge(customer.id!)}
+                            className="rounded-lg bg-green-600 px-3 py-1 text-sm font-semibold text-white hover:bg-green-500"
+                          >
+                            Add
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setChargingCustomerId(null);
+                              setChargeAmount(0);
+                            }}
+                            className="rounded-lg bg-slate-400 px-3 py-1 text-sm font-semibold text-white hover:bg-slate-500"
+                          >
+                            Cancel
+                          </button>
+                        </div>
+                      ) : (
+                        <div className="flex gap-2">
+                          <button
+                            type="button"
+                            onClick={() => setChargingCustomerId(customer.id!)}
+                            className="rounded-lg bg-[#05093f] px-3 py-2 text-sm font-semibold text-white hover:bg-blue-900"
+                          >
+                            Add Charge
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => processWeeklyPayment(customer.id!)}
+                            className="rounded-lg bg-emerald-600 px-3 py-2 text-sm font-semibold text-white hover:bg-emerald-500"
+                          >
+                            Weekly Payment
+                          </button>
+                        </div>
+                      )}
+                      <div className="flex gap-1 text-xs">
+                        <button
+                          type="button"
+                          onClick={() => editDineAndGo(customer)}
+                          className="flex-1 rounded-lg bg-slate-400 px-2 py-1 text-white hover:bg-slate-500"
+                        >
+                          Edit
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => customer.id && removeDineAndGo(customer.id)}
+                          className="flex-1 rounded-lg bg-red-600 px-2 py-1 text-white hover:bg-red-500"
+                        >
+                          Delete
+                        </button>
+                      </div>
                     </div>
                   </div>
-                  <p className="text-sm font-bold text-slate-900">{formatMVR(product.price)}</p>
                 </div>
-              ))}
-              {products.length > 8 && (
-                <p className="text-center text-sm text-slate-500 pt-2">
-                  + {products.length - 8} more items
-                </p>
-              )}
-              {products.length === 0 && (
-                <p className="text-center text-sm text-slate-500 py-8">No menu items available yet</p>
-              )}
-            </div>
-          </motion.section>
+              ))
+            ) : (
+              <div className="flex flex-col items-center justify-center py-12 text-slate-500">
+                <p className="text-sm font-medium">No dine-and-go customers yet</p>
+                <p className="text-xs">Add customers to start tracking dine-and-go accounts</p>
+              </div>
+            )}
+          </div>
         </div>
       </div>
     </AppShell>

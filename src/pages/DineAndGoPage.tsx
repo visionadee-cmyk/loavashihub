@@ -150,16 +150,6 @@ export default function DineAndGoPage() {
     setPaymentNotes('');
   };
 
-  const processWeeklyPayment = async (customerId: string) => {
-    const customer = customers.find((c) => c.id === customerId);
-    if (!customer) return;
-
-    const fullAmount = customer.runningTotal ?? 0;
-    if (fullAmount > 0) {
-      await processPayment(customerId, fullAmount, 'full', 'Weekly full payment');
-    }
-  };
-
   const totalOutstanding = useMemo(
     () => customers.reduce((sum, c) => sum + (c.runningTotal ?? 0), 0),
     [customers],

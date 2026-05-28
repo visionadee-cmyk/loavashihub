@@ -92,6 +92,10 @@ export default function POSPage() {
   const [discountPercent] = useState(0);
   const [customerPanelOpen, setCustomerPanelOpen] = useState(false);
   const [tableMenuOpen, setTableMenuOpen] = useState(false);
+  const [showQuickAddModal, setShowQuickAddModal] = useState(false);
+  const [quickItemName, setQuickItemName] = useState('');
+  const [quickItemPrice, setQuickItemPrice] = useState<number | ''>('');
+  const [quickItemQty, setQuickItemQty] = useState<number>(1);
   const [newCustomer, setNewCustomer] = useState<Partial<Customer>>(defaultCustomer);
   const [statusMessage, setStatusMessage] = useState<string | null>(null);
   const [showNewOrderModal, setShowNewOrderModal] = useState(false);
@@ -250,6 +254,50 @@ export default function POSPage() {
       paymentStatus: paid ? 'Unpaid' : 'Paid',
       status: paid ? 'Pending' : 'Served',
     });
+  };
+
+  const addQuickItemToBill = async () => {
+    if (!quickItemName.trim() || !quickItemPrice || quickItemQty < 1) {
+      setStatusMessage('Please provide name, price and quantity.');
+      return;
+    }
+
+    // Ensure there's an active bill
+    let targetBill = activeBill;
+    if (!targetBill) {
+      const newBill = createEmptyBill(tables[0]?.name || 'Table');
+      setBills((current) => [...current, newBill]);
+      targetBill = newBill;
+      setActiveBillId(newBill.id);
+      if (hasFirebaseConfig) {
+        try {
+          await saveDocument('bills', newBill.id, newBill);
+        } catch (error) {
+          console.error('Failed to create bill for quick add:', error);
+        }
+      }
+    }
+
+    const newItem: OrderItem = {
+      id: `item-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
+      productId: `custom-${Date.now()}`,
+      name: quickItemName.trim(),
+      price: Number(quickItemPrice),
+      quantity: quickItemQty,
+      notes: '',
+    };
+
+    const updatedBill: Bill = {
+      ...targetBill,
+      items: [...(targetBill.items || []), newItem],
+    };
+
+    updateBill(updatedBill);
+
+    setQuickItemName('');
+    setQuickItemPrice('');
+    setQuickItemQty(1);
+    setShowQuickAddModal(false);
   };
 
   const holdOrder = () => {
@@ -674,13 +722,22 @@ export default function POSPage() {
                     +
                   </button>
                 <div className="flex items-center gap-1">
-                  <button
-                    type="button"
-                    onClick={togglePaymentStatus}
-                    className="inline-flex h-8 w-8 md:h-10 md:w-10 items-center justify-center rounded-lg border border-green-300 bg-green-500 text-white hover:bg-green-600"
-                  >
-                    <span className="h-2 w-2 rounded-full bg-white" />
-                  </button>
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={() => setShowQuickAddModal(true)}
+                      className="inline-flex h-8 w-auto md:h-10 md:w-auto items-center justify-center rounded-lg border border-green-300 bg-green-500 text-white px-3 hover:bg-green-600 text-xs font-semibold"
+                    >
+                      Quick Add
+                    </button>
+                    <button
+                      type="button"
+                      onClick={togglePaymentStatus}
+                      className="inline-flex h-8 w-8 md:h-10 md:w-10 items-center justify-center rounded-lg border border-green-300 bg-green-500 text-white hover:bg-green-600"
+                    >
+                      <span className="h-2 w-2 rounded-full bg-white" />
+                    </button>
+                  </div>
                 </div>
               </div>
 
@@ -714,6 +771,43 @@ export default function POSPage() {
                   >
                     Add
                   </button>
+                </div>
+              ) : null}
+
+              {/* Quick Add Modal */}
+              {showQuickAddModal ? (
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 p-4">
+                  <div className="rounded-[20px] bg-white p-4 md:p-6 shadow-2xl max-w-sm w-full">
+                    <div className="flex items-center justify-between mb-3">
+                      <h3 className="text-lg font-semibold text-slate-900">Quick Add Item</h3>
+                      <button onClick={() => setShowQuickAddModal(false)} className="text-slate-500 hover:text-slate-700">
+                        <X className="h-5 w-5" />
+                      </button>
+                    </div>
+
+                    <div className="space-y-3">
+                      <label className="block text-sm text-slate-700">
+                        Item name
+                        <input value={quickItemName} onChange={(e) => setQuickItemName(e.target.value)} className="mt-2 w-full rounded-lg border border-slate-300 px-3 py-2 outline-none" />
+                      </label>
+
+                      <div className="grid grid-cols-2 gap-2">
+                        <label className="block text-sm text-slate-700">
+                          Price
+                          <input type="number" value={quickItemPrice as any} onChange={(e) => setQuickItemPrice(e.target.value === '' ? '' : Number(e.target.value))} className="mt-2 w-full rounded-lg border border-slate-300 px-3 py-2 outline-none" />
+                        </label>
+                        <label className="block text-sm text-slate-700">
+                          Qty
+                          <input type="number" min={1} value={quickItemQty} onChange={(e) => setQuickItemQty(Math.max(1, Number(e.target.value) || 1))} className="mt-2 w-full rounded-lg border border-slate-300 px-3 py-2 outline-none" />
+                        </label>
+                      </div>
+
+                      <div className="flex gap-2">
+                        <button onClick={() => setShowQuickAddModal(false)} className="flex-1 rounded-lg bg-slate-300 px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-400">Cancel</button>
+                        <button onClick={addQuickItemToBill} className="flex-1 rounded-lg bg-green-500 px-3 py-2 text-sm font-semibold text-white hover:bg-green-600">Add to Bill</button>
+                      </div>
+                    </div>
+                  </div>
                 </div>
               ) : null}
             </div>

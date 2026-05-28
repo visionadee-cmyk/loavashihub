@@ -162,6 +162,55 @@ export default function ReportsPage() {
     };
   }, [selectedDailyDate, bills, directRevenueEntries, expenses, directPurchases]);
 
+  // Month-to-date (MTD) and Year-to-date (YTD) stats
+  const mtdStats = useMemo(() => {
+    const today = new Date();
+    const startMonth = new Date(today.getFullYear(), today.getMonth(), 1).toISOString().slice(0, 10);
+
+    const salesMTD = bills
+      .filter((b) => b.createdAt.slice(0, 10) >= startMonth && b.createdAt.slice(0, 10) <= selectedDailyDate)
+      .reduce((sum, bill) => sum + bill.items.reduce((s, it) => s + it.price * it.quantity, 0), 0);
+
+    const directRevenueMTD = directRevenueEntries
+      .filter((d) => d.date >= startMonth && d.date <= selectedDailyDate)
+      .reduce((sum, d) => sum + (d.totalDirectRevenue || 0), 0);
+
+    const revenueMTD = salesMTD + directRevenueMTD;
+
+    const expensesMTD = expenses
+      .filter((e) => e.date >= startMonth && e.date <= selectedDailyDate)
+      .reduce((sum, e) => sum + e.amount, 0)
+      + directPurchases
+        .filter((p) => p.date >= startMonth && p.date <= selectedDailyDate)
+        .reduce((sum, p) => sum + p.total, 0);
+
+    return { revenueMTD, expensesMTD, profitMTD: revenueMTD - expensesMTD };
+  }, [bills, directRevenueEntries, expenses, directPurchases, selectedDailyDate]);
+
+  const ytdStats = useMemo(() => {
+    const today = new Date();
+    const startYear = `${today.getFullYear()}-01-01`;
+
+    const salesYTD = bills
+      .filter((b) => b.createdAt.slice(0, 10) >= startYear && b.createdAt.slice(0, 10) <= selectedDailyDate)
+      .reduce((sum, bill) => sum + bill.items.reduce((s, it) => s + it.price * it.quantity, 0), 0);
+
+    const directRevenueYTD = directRevenueEntries
+      .filter((d) => d.date >= startYear && d.date <= selectedDailyDate)
+      .reduce((sum, d) => sum + (d.totalDirectRevenue || 0), 0);
+
+    const revenueYTD = salesYTD + directRevenueYTD;
+
+    const expensesYTD = expenses
+      .filter((e) => e.date >= startYear && e.date <= selectedDailyDate)
+      .reduce((sum, e) => sum + e.amount, 0)
+      + directPurchases
+        .filter((p) => p.date >= startYear && p.date <= selectedDailyDate)
+        .reduce((sum, p) => sum + p.total, 0);
+
+    return { revenueYTD, expensesYTD, profitYTD: revenueYTD - expensesYTD };
+  }, [bills, directRevenueEntries, expenses, directPurchases, selectedDailyDate]);
+
   // Generate shareable report text
   const generateReportText = (): string => {
     const report = dailyReport;
@@ -223,6 +272,17 @@ export default function ReportsPage() {
     text += `Net: ${formatMVR(report.profit)}\n`;
     text += `Margin: ${report.totalRevenue > 0 ? ((report.profit / report.totalRevenue) * 100).toFixed(1) : 0}%\n`;
 
+    // Append MTD and YTD summaries (Month-to-Date & Year-to-Date)
+    text += `\n📅 *MTD (Month-to-Date)*\n`;
+    text += `MTD Revenue: ${formatMVR(mtdStats.revenueMTD)}\n`;
+    text += `MTD Expenses: ${formatMVR(mtdStats.expensesMTD)}\n`;
+    text += `MTD Net: ${formatMVR(mtdStats.profitMTD)}\n\n`;
+
+    text += `📅 *YTD (Year-to-Date)*\n`;
+    text += `YTD Revenue: ${formatMVR(ytdStats.revenueYTD)}\n`;
+    text += `YTD Expenses: ${formatMVR(ytdStats.expensesYTD)}\n`;
+    text += `YTD Net: ${formatMVR(ytdStats.profitYTD)}\n`;
+
     return text;
   };
 
@@ -265,6 +325,8 @@ export default function ReportsPage() {
 
     return expenseTotal + directPurchaseTotal;
   }, [expenses, directPurchases, todayKey]);
+
+  
 
   // Filtered data based on custom report filter
   const filteredBills = useMemo(

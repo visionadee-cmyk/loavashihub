@@ -12,6 +12,7 @@ import {
   X,
   ArrowRight,
   Pause,
+  Trash2,
 } from 'lucide-react';
 import { NavLink, useNavigate } from 'react-router-dom';
 import AppShell from '../components/AppShell';
@@ -96,6 +97,8 @@ export default function POSPage() {
   const [quickItemName, setQuickItemName] = useState('');
   const [quickItemPrice, setQuickItemPrice] = useState<number | ''>('');
   const [quickItemQty, setQuickItemQty] = useState<number>(1);
+  const [quickPresets, setQuickPresets] = useState<Array<{ id: string; name: string; price: number; qty: number }>>([]);
+  const [saveAsPreset, setSaveAsPreset] = useState(false);
   const [newCustomer, setNewCustomer] = useState<Partial<Customer>>(defaultCustomer);
   const [statusMessage, setStatusMessage] = useState<string | null>(null);
   const [showNewOrderModal, setShowNewOrderModal] = useState(false);
@@ -298,6 +301,73 @@ export default function POSPage() {
     setQuickItemPrice('');
     setQuickItemQty(1);
     setShowQuickAddModal(false);
+  };
+
+  const presetsStorageKey = 'posQuickPresets';
+
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem(presetsStorageKey);
+      if (raw) setQuickPresets(JSON.parse(raw));
+    } catch (e) {
+      console.error('Failed to load quick presets', e);
+    }
+  }, []);
+
+  const savePresets = (presets: typeof quickPresets) => {
+    try {
+      localStorage.setItem(presetsStorageKey, JSON.stringify(presets));
+    } catch (e) {
+      console.error('Failed to save quick presets', e);
+    }
+  };
+
+  const addPreset = (name: string, price: number, qty: number) => {
+    const preset = { id: `preset-${Date.now()}`, name, price, qty };
+    const next = [preset, ...quickPresets].slice(0, 20);
+    setQuickPresets(next);
+    savePresets(next);
+  };
+
+  const removePreset = (id: string) => {
+    const next = quickPresets.filter((p) => p.id !== id);
+    setQuickPresets(next);
+    savePresets(next);
+  };
+
+  const addPresetToBill = async (preset: { id: string; name: string; price: number; qty: number }) => {
+    // Similar logic to addQuickItemToBill but using preset values
+    let targetBill = activeBill;
+    if (!targetBill) {
+      const newBill = createEmptyBill(tables[0]?.name || 'Table');
+      setBills((current) => [...current, newBill]);
+      targetBill = newBill;
+      setActiveBillId(newBill.id);
+      if (hasFirebaseConfig) {
+        try {
+          await saveDocument('bills', newBill.id, newBill);
+        } catch (error) {
+          console.error('Failed to create bill for quick add preset:', error);
+        }
+      }
+    }
+
+    const newItem: OrderItem = {
+      id: `item-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
+      productId: `custom-${Date.now()}`,
+      name: preset.name,
+      price: Number(preset.price),
+      quantity: preset.qty,
+      notes: '',
+    };
+
+    const updatedBill: Bill = {
+      ...targetBill,
+      items: [...(targetBill.items || []), newItem],
+    };
+
+    updateBill(updatedBill);
+    setStatusMessage(`Added ${preset.name} x${preset.qty} to bill`);
   };
 
   const holdOrder = () => {
@@ -786,6 +856,23 @@ export default function POSPage() {
                     </div>
 
                     <div className="space-y-3">
+                      {quickPresets.length > 0 && (
+                        <div>
+                          <p className="text-xs font-semibold text-slate-600 mb-2">Presets</p>
+                          <div className="flex flex-wrap gap-2 mb-2">
+                            {quickPresets.map((p) => (
+                              <div key={p.id} className="flex items-center gap-2">
+                                <button onClick={() => addPresetToBill(p)} className="rounded-md bg-slate-100 px-3 py-2 text-xs font-semibold hover:bg-slate-200">
+                                  {p.name} • {formatMVR(p.price)} x{p.qty}
+                                </button>
+                                <button onClick={() => removePreset(p.id)} className="text-red-500 p-1" title="Remove preset">
+                                  <Trash2 className="h-4 w-4" />
+                                </button>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
                       <label className="block text-sm text-slate-700">
                         Item name
                         <input value={quickItemName} onChange={(e) => setQuickItemName(e.target.value)} className="mt-2 w-full rounded-lg border border-slate-300 px-3 py-2 outline-none" />
@@ -802,9 +889,21 @@ export default function POSPage() {
                         </label>
                       </div>
 
+                      <div className="flex items-center gap-2">
+                        <label className="flex items-center gap-2 text-xs">
+                          <input type="checkbox" checked={saveAsPreset} onChange={(e) => setSaveAsPreset(e.target.checked)} />
+                          <span>Save as preset</span>
+                        </label>
+                      </div>
+
                       <div className="flex gap-2">
                         <button onClick={() => setShowQuickAddModal(false)} className="flex-1 rounded-lg bg-slate-300 px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-400">Cancel</button>
-                        <button onClick={addQuickItemToBill} className="flex-1 rounded-lg bg-green-500 px-3 py-2 text-sm font-semibold text-white hover:bg-green-600">Add to Bill</button>
+                        <button onClick={() => {
+                          if (saveAsPreset && quickItemName.trim() && quickItemPrice) {
+                            addPreset(quickItemName.trim(), Number(quickItemPrice), quickItemQty);
+                          }
+                          addQuickItemToBill();
+                        }} className="flex-1 rounded-lg bg-green-500 px-3 py-2 text-sm font-semibold text-white hover:bg-green-600">Add to Bill</button>
                       </div>
                     </div>
                   </div>
@@ -864,6 +963,13 @@ export default function POSPage() {
         >
           <GridIcon className="h-4 w-4" />
           Speed Key
+        </button>
+        <button
+          type="button"
+          onClick={() => setShowQuickAddModal(true)}
+          className="inline-flex h-10 md:h-12 min-w-fit items-center justify-center gap-1.5 rounded-[16px] bg-green-500 border-2 border-green-500 px-2 md:px-3 text-xs md:text-sm font-semibold text-white hover:bg-green-600 flex-shrink-0"
+        >
+          Quick Add
         </button>
         <button
           type="button"

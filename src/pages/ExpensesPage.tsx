@@ -4,7 +4,7 @@ import AppShell from '../components/AppShell';
 import { formatMVR } from '../lib/mvr';
 import { hasFirebaseConfig } from '../lib/firebase';
 import { loadCollection, saveDocument, deleteDocument } from '../lib/firestore';
-import type { Expense, MonthlyExpense } from '../types';
+import type { Expense, MonthlyExpense, StaffMember } from '../types';
 
 const defaultExpense: Partial<Expense> = {
   title: '',
@@ -24,6 +24,7 @@ const defaultMonthlyExpense: Partial<MonthlyExpense> = {
 export default function ExpensesPage() {
   const [expenses, setExpenses] = useState<Expense[]>([]);
   const [monthlyExpenses, setMonthlyExpenses] = useState<MonthlyExpense[]>([]);
+  const [staffList, setStaffList] = useState<StaffMember[]>([]);
   const [expenseForm, setExpenseForm] = useState<Partial<Expense> & { salaryFrequency?: 'daily' | 'monthly' }>({
     ...defaultExpense,
     salaryFrequency: 'daily',
@@ -44,10 +45,12 @@ export default function ExpensesPage() {
     Promise.all([
       loadCollection<Expense>('expenses', []),
       loadCollection<MonthlyExpense>('monthlyExpenses', []),
+      loadCollection<StaffMember>('staff', []),
     ])
-      .then(([loadedExpenses, loadedMonthlyExpenses]) => {
+      .then(([loadedExpenses, loadedMonthlyExpenses, loadedStaff]) => {
         if (loadedExpenses.length) setExpenses(loadedExpenses);
         if (loadedMonthlyExpenses.length) setMonthlyExpenses(loadedMonthlyExpenses);
+        if (loadedStaff.length) setStaffList(loadedStaff);
       })
       .catch((error) => console.error('Failed to load expenses:', error));
   }, []);
@@ -80,10 +83,14 @@ export default function ExpensesPage() {
 
     const expenseData = {
       id: editingId || `exp-${Date.now()}`,
-      title: expenseForm.title,
+      title:
+        expenseForm.category === 'Salary' && expenseForm.staffId
+          ? staffList.find((staff) => staff.id === expenseForm.staffId)?.name || expenseForm.title
+          : expenseForm.title,
       amount: expenseForm.amount,
       category: expenseForm.category || 'Daily expenses',
       paidBy: expenseForm.paidBy || 'Daily sales',
+      staffId: expenseForm.category === 'Salary' ? expenseForm.staffId : undefined,
       date: expenseForm.date || new Date().toISOString().slice(0, 10),
     } as Expense;
 
@@ -234,7 +241,10 @@ export default function ExpensesPage() {
                     Category
                     <select
                       value={expenseForm.category || 'Daily expenses'}
-                      onChange={(e) => setExpenseForm((current) => ({ ...current, category: e.target.value }))}
+                      onChange={(e) => {
+                        const newCat = e.target.value;
+                        setExpenseForm((current) => ({ ...current, category: newCat, staffId: newCat === 'Salary' ? current.staffId : undefined }));
+                      }}
                       className="mt-2 w-full rounded-3xl border border-slate-300 bg-white px-4 py-3 text-slate-900 outline-none"
                     >
                       <option>Daily expenses</option>
@@ -258,6 +268,31 @@ export default function ExpensesPage() {
                       <option>Other</option>
                     </select>
                   </label>
+                </div>
+                {expenseForm.category === 'Salary' ? (
+                  <label className="block text-sm text-slate-600">
+                    Staff member
+                    <select
+                      value={expenseForm.staffId || ''}
+                      onChange={(e) => {
+                        const staffId = e.target.value;
+                        const staff = staffList.find((item) => item.id === staffId);
+                        setExpenseForm((current) => ({
+                          ...current,
+                          staffId,
+                          title: staff ? staff.name : current.title,
+                        }));
+                      }}
+                      className="mt-2 w-full rounded-3xl border border-slate-300 bg-white px-4 py-3 text-slate-900 outline-none"
+                    >
+                      <option value="">Select staff name</option>
+                      {staffList.map((staff) => (
+                        <option key={staff.id} value={staff.id}>{staff.name}</option>
+                      ))}
+                    </select>
+                  </label>
+                ) : null}
+                <div className="grid gap-4 sm:grid-cols-2">
                   <label className="block text-sm text-slate-600">
                     Date
                     <input

@@ -132,14 +132,14 @@ export default function ReportsPage() {
 
     // Get today's expenses (including salary)
     const dayExpenses = expenses
-      .filter((expense) => expense.date === dayStart)
+      .filter((expense) => expense.date === dayStart && expense.category !== 'Salary')
       .reduce((sum, expense) => sum + expense.amount, 0);
 
-    // Get today's salary expenses (for display, still calculated separately if needed)
-    const daySalary = expenses
+    const daySalaryFromExpenses = expenses
       .filter((expense) => expense.date === dayStart && expense.category === 'Salary')
       .reduce((sum, expense) => sum + expense.amount, 0);
 
+    const daySalary = (dayDirectRevenue as any)?.dailySalary ?? daySalaryFromExpenses;
     // Get today's direct purchases (including all from DirectPurchasePage)
     const dayPurchases = directPurchases
       .filter((purchase) => purchase.date === dayStart)
@@ -155,8 +155,8 @@ export default function ReportsPage() {
 
     // Calculate revenue from POS + Direct Revenue (Cash + Card only, excluding Vikura) + Purchased from Cash Drawer + Outsource Revenue
     const directRevenueWithoutVikura = (dayDirectRevenue?.cashTotal || 0) + (dayDirectRevenue?.cardTotal || 0);
-    const totalDayRevenue = posRevenue + directRevenueWithoutVikura + purchasedFromCashDrawer + dayOutsourceRevenue;
-    const totalDayExpenses = dayExpenses + dayPurchases + daySalary + dayOutsourceCost;
+    const totalDayRevenue = posRevenue + directRevenueWithoutVikura + dayOutsourceRevenue;
+    const totalDayExpenses = dayExpenses + dayPurchases + daySalary + dayOutsourceCost + purchasedFromCashDrawer;
     const dailyProfit = totalDayRevenue - totalDayExpenses;
 
     // Build cash breakdown
@@ -320,6 +320,9 @@ export default function ReportsPage() {
     text += `📋 *EXPENSES*\n`;
     text += `Daily Expenses: ${formatMVR(report.expenses)}\n`;
     text += `Direct Purchases: ${formatMVR(report.purchases)}\n`;
+    if (report.purchasedFromCashDrawer > 0) {
+      text += `Purchased from Cash Drawer: ${formatMVR(report.purchasedFromCashDrawer)}\n`;
+    }
     if ((report as any).outsourceCost > 0) {
       text += `Outsource Cost: ${formatMVR((report as any).outsourceCost)}\n`;
     }

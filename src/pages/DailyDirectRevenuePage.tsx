@@ -4,7 +4,7 @@ import AppShell from '../components/AppShell';
 import { hasFirebaseConfig } from '../lib/firebase';
 import { loadCollection, saveDocument, deleteDocument } from '../lib/firestore';
 import { formatMVR } from '../lib/mvr';
-import type { CardPayment, DailyDirectRevenue, DirectPurchase, DirectPurchaseItem } from '../types';
+import type { CardPayment, DailyDirectRevenue, DirectPurchase, DirectPurchaseItem, Expense } from '../types';
 
 const initialCashCounts = {
   fiftyLari: 0,
@@ -46,6 +46,8 @@ function computeCashTotal(cash: typeof initialCashCounts) {
 
 export default function DailyDirectRevenuePage() {
   const [entries, setEntries] = useState<DailyDirectRevenue[]>([]);
+  const [expenses, setExpenses] = useState<Expense[]>([]);
+  const [directPurchases, setDirectPurchases] = useState<DirectPurchase[]>([]);
   const [form, setForm] = useState({
     date: new Date().toISOString().slice(0, 10),
     closedBy: '',
@@ -53,6 +55,7 @@ export default function DailyDirectRevenuePage() {
     closingPettyCash: 0,
     vikuraAmount: 0,
     purchasedFromCashDrawer: 0,
+    dailySalary: 0,
     cashCounts: { ...initialCashCounts },
     cardPayments: createDefaultCardPayments(),
     cashDrawerPurchases: [] as Array<{
@@ -66,14 +69,23 @@ export default function DailyDirectRevenuePage() {
   const [saving, setSaving] = useState(false);
   const [showForm, setShowForm] = useState(false);
 
+  const [hasManuallyChangedDrawer, setHasManuallyChangedDrawer] = useState(false);
+  const [hasManuallyChangedSalary, setHasManuallyChangedSalary] = useState(false);
+
   useEffect(() => {
     if (!hasFirebaseConfig) return;
 
-    loadCollection<DailyDirectRevenue>('dailyDirectRevenue', [])
-      .then((data) => {
-        if (data.length) setEntries(data);
+    Promise.all([
+      loadCollection<DailyDirectRevenue>('dailyDirectRevenue', []),
+      loadCollection<Expense>('expenses', []),
+      loadCollection<DirectPurchase>('directPurchases', []),
+    ])
+      .then(([revenueData, expenseData, directPurchaseData]) => {
+        if (revenueData.length) setEntries(revenueData);
+        if (expenseData.length) setExpenses(expenseData);
+        if (directPurchaseData.length) setDirectPurchases(directPurchaseData);
       })
-      .catch((error) => console.error('Failed to load daily direct revenue:', error));
+      .catch((error) => console.error('Failed to load daily direct revenue data:', error));
   }, []);
 
   const cashTotal = useMemo(() => computeCashTotal(form.cashCounts), [form.cashCounts]);
@@ -83,6 +95,20 @@ export default function DailyDirectRevenuePage() {
   );
   const vikuraAmount = form.vikuraAmount || 0;
   const totalDirectRevenue = useMemo(() => cashTotal + cardTotal, [cashTotal, cardTotal]);
+
+  const directPurchaseDrawerTotal = useMemo(
+    () => directPurchases
+      .filter((purchase) => purchase.date === form.date)
+      .reduce((sum, purchase) => sum + purchase.total, 0),
+    [directPurchases, form.date],
+  );
+
+  const expenseSalaryTotal = useMemo(
+    () => expenses
+      .filter((expense) => expense.date === form.date && expense.category === 'Salary')
+      .reduce((sum, expense) => sum + expense.amount, 0),
+    [expenses, form.date],
+  );
 
   const updateCashCount = (field: keyof typeof initialCashCounts, value: number) => {
     setForm((current) => ({
@@ -225,6 +251,7 @@ export default function DailyDirectRevenuePage() {
       closedBy: form.closedBy.trim(),
       openingPettyCash: form.openingPettyCash,
       closingPettyCash: form.closingPettyCash,
+      dailySalary: form.dailySalary,
       vikuraAmount: form.vikuraAmount,
       purchasedFromCashDrawer: form.purchasedFromCashDrawer,
       cashCounts: { ...form.cashCounts },
@@ -240,6 +267,7 @@ export default function DailyDirectRevenuePage() {
       await saveDocument('dailyDirectRevenue', payload.id, payload);
       
       // Save cash drawer purchases as DirectPurchase entries
+      const newDirectPurchases: DirectPurchase[] = [];
       for (const purchase of form.cashDrawerPurchases) {
         if (purchase.shopName.trim() && purchase.items.length > 0) {
           const directPurchasePayload: DirectPurchase = {
@@ -253,10 +281,15 @@ export default function DailyDirectRevenuePage() {
           };
           try {
             await saveDocument('directPurchases', directPurchasePayload.id, directPurchasePayload);
+            newDirectPurchases.push(directPurchasePayload);
           } catch (error) {
             console.error('Failed to save direct purchase:', error);
           }
         }
+      }
+
+      if (newDirectPurchases.length > 0) {
+        setDirectPurchases((current) => [...current, ...newDirectPurchases]);
       }
 
       setEntries((current) => {
@@ -272,6 +305,7 @@ export default function DailyDirectRevenuePage() {
         closingPettyCash: 0,
         vikuraAmount: 0,
         purchasedFromCashDrawer: 0,
+        dailySalary: 0,
         cashCounts: { ...initialCashCounts },
         cardPayments: createDefaultCardPayments(),
         cashDrawerPurchases: [],
@@ -286,6 +320,8 @@ export default function DailyDirectRevenuePage() {
 
   const beginEditEntry = (entry: DailyDirectRevenue) => {
     setEditingId(entry.id);
+    setHasManuallyChangedDrawer(true);
+    setHasManuallyChangedSalary(true);
     // Preserve existing card payments but ensure all default types are present
     const existingPayments = entry.cardPayments || [];
     const defaultPayments = createDefaultCardPayments();
@@ -306,6 +342,7 @@ export default function DailyDirectRevenuePage() {
       closingPettyCash: (entry as any).closingPettyCash || 0,
       vikuraAmount: (entry as any).vikuraAmount || 0,
       purchasedFromCashDrawer: (entry as any).purchasedFromCashDrawer || 0,
+      dailySalary: (entry as any).dailySalary || 0,
       cashCounts: { ...entry.cashCounts },
       cardPayments: [...mergedPayments, ...extraPayments],
       cashDrawerPurchases: [],
@@ -314,6 +351,8 @@ export default function DailyDirectRevenuePage() {
 
   const cancelEdit = () => {
     setEditingId(null);
+    setHasManuallyChangedDrawer(false);
+    setHasManuallyChangedSalary(false);
     setForm({
       date: new Date().toISOString().slice(0, 10),
       closedBy: '',
@@ -321,6 +360,7 @@ export default function DailyDirectRevenuePage() {
       closingPettyCash: 0,
       vikuraAmount: 0,
       purchasedFromCashDrawer: 0,
+      dailySalary: 0,
       cashCounts: { ...initialCashCounts },
       cardPayments: createDefaultCardPayments(),
       cashDrawerPurchases: [],
@@ -341,6 +381,24 @@ export default function DailyDirectRevenuePage() {
     
     return grouped;
   }, [entries]);
+
+  useEffect(() => {
+    if (!hasManuallyChangedDrawer) {
+      setForm((current) => ({
+        ...current,
+        purchasedFromCashDrawer: directPurchaseDrawerTotal,
+      }));
+    }
+  }, [directPurchaseDrawerTotal, hasManuallyChangedDrawer]);
+
+  useEffect(() => {
+    if (!hasManuallyChangedSalary) {
+      setForm((current) => ({
+        ...current,
+        dailySalary: expenseSalaryTotal,
+      }));
+    }
+  }, [expenseSalaryTotal, hasManuallyChangedSalary]);
 
   const deleteEntry = async (id: string) => {
     setEntries((current) => current.filter((entry) => entry.id !== id));
@@ -454,50 +512,54 @@ export default function DailyDirectRevenuePage() {
             <h4 className="text-lg font-semibold text-slate-900">Cash breakdown</h4>
             <p className="text-sm text-slate-500">Enter counts for coins and notes.</p>
 
-            <div className="mt-5 grid gap-4 sm:grid-cols-2">
-              <div className="space-y-3 rounded-3xl border border-slate-200 bg-white p-4">
-                <p className="text-sm font-semibold text-slate-900">Coins</p>
-                {[
-                  { label: '50 Lari coin', field: 'fiftyLari' as const },
-                  { label: '1 RF coin', field: 'oneRf' as const },
-                  { label: '2 RF coin', field: 'twoRf' as const },
-                ].map((item) => (
-                  <label key={item.field} className="block text-sm text-slate-500">
-                    {item.label}
-                    <input
-                      type="number"
-                      min={0}
-                      value={form.cashCounts[item.field]}
-                      onChange={(e) => updateCashCount(item.field, Number(e.target.value))}
-                      className="mt-2 w-full rounded-3xl border border-slate-200 bg-slate-50 px-4 py-3 text-slate-900 outline-none"
-                    />
-                  </label>
-                ))}
-              </div>
+            <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3 mt-5">
+              {[
+                { label: '50 Laari', field: 'fiftyLari' as const },
+                { label: '1 Rf', field: 'oneRf' as const },
+                { label: '2 Rf', field: 'twoRf' as const },
+                { label: '5 Note', field: 'note5' as const },
+                { label: '10 Note', field: 'note10' as const },
+                { label: '20 Note', field: 'note20' as const },
+                { label: '50 Note', field: 'note50' as const },
+                { label: '100 Note', field: 'note100' as const },
+                { label: '500 Note', field: 'note500' as const },
+                { label: '1000 Note', field: 'note1000' as const },
+              ].map((item) => (
+                <label key={item.field} className="block text-sm text-slate-500">
+                  {item.label}
+                  <input
+                    type="number"
+                    min={0}
+                    value={form.cashCounts[item.field]}
+                    onChange={(e) => updateCashCount(item.field, Number(e.target.value))}
+                    className="mt-2 w-full rounded-3xl border border-slate-200 bg-slate-50 px-4 py-3 text-slate-900 outline-none"
+                  />
+                </label>
+              ))}
+            </div>
 
-              <div className="space-y-3 rounded-3xl border border-slate-200 bg-white p-4">
-                <p className="text-sm font-semibold text-slate-900">Notes</p>
-                {[
-                  { label: '5', field: 'note5' as const },
-                  { label: '10', field: 'note10' as const },
-                  { label: '20', field: 'note20' as const },
-                  { label: '50', field: 'note50' as const },
-                  { label: '100', field: 'note100' as const },
-                  { label: '500', field: 'note500' as const },
-                  { label: '1000', field: 'note1000' as const },
-                ].map((item) => (
-                  <label key={item.field} className="block text-sm text-slate-500">
-                    {item.label} MVR notes
-                    <input
-                      type="number"
-                      min={0}
-                      value={form.cashCounts[item.field]}
-                      onChange={(e) => updateCashCount(item.field, Number(e.target.value))}
-                      className="mt-2 w-full rounded-3xl border border-slate-200 bg-slate-50 px-4 py-3 text-slate-900 outline-none"
-                    />
-                  </label>
-                ))}
-              </div>
+            <div className="space-y-3 rounded-3xl border border-slate-200 bg-white p-4 mt-6">
+              <p className="text-sm font-semibold text-slate-900">Notes</p>
+              {[
+                { label: '5', field: 'note5' as const },
+                { label: '10', field: 'note10' as const },
+                { label: '20', field: 'note20' as const },
+                { label: '50', field: 'note50' as const },
+                { label: '100', field: 'note100' as const },
+                { label: '500', field: 'note500' as const },
+                { label: '1000', field: 'note1000' as const },
+              ].map((item) => (
+                <label key={item.field} className="block text-sm text-slate-500">
+                  {item.label} MVR notes
+                  <input
+                    type="number"
+                    min={0}
+                    value={form.cashCounts[item.field]}
+                    onChange={(e) => updateCashCount(item.field, Number(e.target.value))}
+                    className="mt-2 w-full rounded-3xl border border-slate-200 bg-slate-50 px-4 py-3 text-slate-900 outline-none"
+                  />
+                </label>
+              ))}
             </div>
           </div>
 
@@ -571,7 +633,25 @@ export default function DailyDirectRevenuePage() {
                 <input
                   type="number"
                   value={form.purchasedFromCashDrawer}
-                  onChange={(e) => setForm({ ...form, purchasedFromCashDrawer: Number(e.target.value) })}
+                  onChange={(e) => {
+                    setHasManuallyChangedDrawer(true);
+                    setForm({ ...form, purchasedFromCashDrawer: Number(e.target.value) });
+                  }}
+                  placeholder="e.g., 0"
+                  min="0"
+                  step="0.01"
+                  className="mt-2 w-full rounded-3xl border border-slate-200 bg-white px-4 py-3 text-slate-900 outline-none"
+                />
+              </label>
+              <label className="block text-sm text-slate-500">
+                Daily salary
+                <input
+                  type="number"
+                  value={form.dailySalary}
+                  onChange={(e) => {
+                    setHasManuallyChangedSalary(true);
+                    setForm({ ...form, dailySalary: Number(e.target.value) });
+                  }}
                   placeholder="e.g., 0"
                   min="0"
                   step="0.01"
@@ -579,6 +659,12 @@ export default function DailyDirectRevenuePage() {
                 />
               </label>
             </div>
+            {directPurchaseDrawerTotal > 0 ? (
+              <p className="mt-3 text-sm text-slate-500">Auto-filled from direct purchases: {formatMVR(directPurchaseDrawerTotal)}</p>
+            ) : null}
+            {expenseSalaryTotal > 0 ? (
+              <p className="mt-2 text-sm text-slate-500">Auto-filled from salary expenses: {formatMVR(expenseSalaryTotal)}</p>
+            ) : null}
           </div>
 
           <div className="mt-8 rounded-3xl border border-slate-200 bg-slate-50 p-5">

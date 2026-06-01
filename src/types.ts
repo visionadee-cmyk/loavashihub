@@ -126,6 +126,7 @@ export interface DailyDirectRevenue {
   closedBy: string;
   openingPettyCash?: number;
   closingPettyCash?: number;
+  dailySalary?: number;
   cashCounts: {
     fiftyLari: number;
     oneRf: number;
@@ -190,6 +191,7 @@ export interface Expense {
   amount: number;
   category: string;
   paidBy: string;
+  staffId?: string;
   receiptUrl?: string;
   date: string;
 }

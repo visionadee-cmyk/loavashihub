@@ -22,6 +22,9 @@ Loavashi Hub is a comprehensive, modern cafe and restaurant management system bu
 - **Customer Database** - Customer information and order history
 - **Asset Management** - Equipment tracking and maintenance status
 - **Daily Revenue Tracking** - Cash counting and revenue reconciliation
+- **Salary Expense Mapping** - Map salary expenses to staff records and auto-fill daily salary totals from staff salary expenses
+- **Cash Drawer Auto-Fill** - Auto-fill purchased-from-cash-drawer amounts from same-day direct purchase records with manual override support
+- **WhatsApp Report Expansion** - Include drawer purchases and salary expenses in exportable WhatsApp report summaries
 - **Supplier Management** - Vendor information and contact details
 - **Outsource Items** - Manage outsourced catering or party orders: select menu items, set cost per portion, record portions and party details; integrates into reports and daily revenue
 

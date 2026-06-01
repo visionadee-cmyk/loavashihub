@@ -2,6 +2,13 @@
 
 All notable changes to the Loavashi Hub application.
 
+## 2026-06-01
+
+- Added salary expense support to map `Salary` expense entries to staff names in `StaffManagement`.
+- Auto-filled `Purchased from Cash Drawer` from same-day direct purchases in `DailyDirectRevenuePage`, with manual override.
+- Added manual/auto daily salary field in `DailyDirectRevenuePage` and persisted it to direct revenue records.
+- Included drawer purchase and salary expense totals in daily report expense calculations and WhatsApp report summaries.
+
 ## 2026-05-21
 
 - Added automatic inventory restock when purchase orders are marked as `Received`.

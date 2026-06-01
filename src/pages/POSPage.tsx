@@ -276,20 +276,12 @@ export default function POSPage() {
       return;
     }
 
-    // Ensure there's an active bill
+    // Require an active bill - do not auto-select a table
     let targetBill = activeBill;
     if (!targetBill) {
-      const newBill = createEmptyBill(tables[0]?.name || 'Table', useDefaultTaxRate ? defaultTaxRate : 0);
-      setBills((current) => [...current, newBill]);
-      targetBill = newBill;
-      setActiveBillId(newBill.id);
-      if (hasFirebaseConfig) {
-        try {
-          await saveDocument('bills', newBill.id, newBill);
-        } catch (error) {
-          console.error('Failed to create bill for quick add:', error);
-        }
-      }
+      setStatusMessage('Please create a new order first by selecting a table.');
+      setShowQuickAddModal(false);
+      return;
     }
 
     const newItem: OrderItem = {

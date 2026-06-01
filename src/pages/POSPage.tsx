@@ -379,6 +379,34 @@ export default function POSPage() {
     setStatusMessage('Order is placed on hold.');
   };
 
+  const voidBill = () => {
+    if (!activeBill) return;
+    if (!activeBill.items.length) {
+      setStatusMessage('No items to void.');
+      return;
+    }
+    updateBill({ ...activeBill, items: [], status: 'Pending' });
+    setStatusMessage('All items voided.');
+  };
+
+  const processRefund = () => {
+    if (!activeBill) return;
+    if (activeBill.status !== 'Served') {
+      setStatusMessage('Can only refund completed bills.');
+      return;
+    }
+    updateBill({ ...activeBill, paymentStatus: 'Paid', notes: (activeBill.notes || '') + ' [REFUNDED]' });
+    setStatusMessage('Refund processed and marked on bill.');
+  };
+
+  const goBack = () => {
+    if (activeBill?.items.length) {
+      setStatusMessage('Please clear or save the current bill before going back.');
+      return;
+    }
+    navigate('/pos');
+  };
+
   const saveCurrentBill = async () => {
     if (!activeBill) return;
     if (!activeBill.items.length) {
@@ -1006,6 +1034,7 @@ export default function POSPage() {
       <nav className="sticky bottom-0 z-40 flex items-center gap-1 md:gap-2 border-t border-slate-200 bg-white px-2 md:px-3 py-2 md:py-3 shadow-lg overflow-x-auto">
         <button
           type="button"
+          onClick={() => setShowQuickAddModal(true)}
           className="inline-flex h-10 md:h-12 min-w-fit items-center justify-center gap-1.5 rounded-[16px] bg-green-500 border-2 border-green-500 px-2 md:px-3 text-xs md:text-sm font-semibold text-white hover:bg-green-600 flex-shrink-0"
         >
           <GridIcon className="h-4 w-4" />
@@ -1020,12 +1049,14 @@ export default function POSPage() {
         </button>
         <button
           type="button"
+          onClick={() => setStatusMessage('Department management coming soon.')}
           className="inline-flex h-10 md:h-12 min-w-fit items-center justify-center gap-1.5 rounded-[16px] bg-green-500 border-2 border-green-500 px-2 md:px-3 text-xs md:text-sm font-semibold text-white hover:bg-green-600 flex-shrink-0"
         >
           Depts
         </button>
         <button
           type="button"
+          onClick={() => navigate('/bills/pending')}
           className="inline-flex h-10 md:h-12 min-w-fit items-center justify-center gap-1.5 rounded-[16px] bg-green-500 border-2 border-green-500 px-2 md:px-3 text-xs md:text-sm font-semibold text-white hover:bg-green-600 flex-shrink-0"
         >
           <ShoppingCart className="h-4 w-4" />
@@ -1033,6 +1064,7 @@ export default function POSPage() {
         </button>
         <button
           type="button"
+          onClick={() => setStatusMessage('Table orders filter coming soon.')}
           className="inline-flex h-10 md:h-12 min-w-fit items-center justify-center gap-1.5 rounded-[16px] bg-green-500 border-2 border-green-500 px-2 md:px-3 text-xs md:text-sm font-semibold text-white hover:bg-green-600 flex-shrink-0"
         >
           Table Orders
@@ -1047,31 +1079,45 @@ export default function POSPage() {
         </button>
         <button
           type="button"
-          className="inline-flex h-10 md:h-12 min-w-fit items-center justify-center gap-1.5 rounded-[16px] bg-green-500 border-2 border-green-500 px-2 md:px-3 text-xs md:text-sm font-semibold text-white hover:bg-green-600 flex-shrink-0"
+          onClick={voidBill}
+          className="inline-flex h-10 md:h-12 min-w-fit items-center justify-center gap-1.5 rounded-[16px] bg-red-600 border-2 border-red-600 px-2 md:px-3 text-xs md:text-sm font-semibold text-white hover:bg-red-700 flex-shrink-0"
         >
           Void
         </button>
         <button
           type="button"
-          className="inline-flex h-10 md:h-12 min-w-fit items-center justify-center gap-1.5 rounded-[16px] bg-green-500 border-2 border-green-500 px-2 md:px-3 text-xs md:text-sm font-semibold text-white hover:bg-green-600 flex-shrink-0"
+          onClick={() => {
+            if (!activeBill?.items.length) {
+              setStatusMessage('No items to remove.');
+              return;
+            }
+            const lastItem = activeBill.items[activeBill.items.length - 1];
+            const updatedBill = { ...activeBill, items: activeBill.items.slice(0, -1) };
+            updateBill(updatedBill);
+            setStatusMessage(`${lastItem.name} removed as no sale.`);
+          }}
+          className="inline-flex h-10 md:h-12 min-w-fit items-center justify-center gap-1.5 rounded-[16px] bg-yellow-600 border-2 border-yellow-600 px-2 md:px-3 text-xs md:text-sm font-semibold text-white hover:bg-yellow-700 flex-shrink-0"
         >
           No Sales
         </button>
         <button
           type="button"
-          className="inline-flex h-10 md:h-12 min-w-fit items-center justify-center gap-1.5 rounded-[16px] bg-green-500 border-2 border-green-500 px-2 md:px-3 text-xs md:text-sm font-semibold text-white hover:bg-green-600 flex-shrink-0"
+          onClick={processRefund}
+          className="inline-flex h-10 md:h-12 min-w-fit items-center justify-center gap-1.5 rounded-[16px] bg-purple-600 border-2 border-purple-600 px-2 md:px-3 text-xs md:text-sm font-semibold text-white hover:bg-purple-700 flex-shrink-0"
         >
           Refund
         </button>
         <button
           type="button"
-          className="inline-flex h-10 md:h-12 min-w-fit items-center justify-center gap-1.5 rounded-[16px] bg-green-500 border-2 border-green-500 px-2 md:px-3 text-xs md:text-sm font-semibold text-white hover:bg-green-600 flex-shrink-0"
+          onClick={() => setStatusMessage('Select items to check prices.')}
+          className="inline-flex h-10 md:h-12 min-w-fit items-center justify-center gap-1.5 rounded-[16px] bg-blue-600 border-2 border-blue-600 px-2 md:px-3 text-xs md:text-sm font-semibold text-white hover:bg-blue-700 flex-shrink-0"
         >
           Price Check
         </button>
         <button
           type="button"
-          className="inline-flex h-10 md:h-12 min-w-fit items-center justify-center gap-1.5 rounded-[16px] bg-green-500 border-2 border-green-500 px-2 md:px-3 text-xs md:text-sm font-semibold text-white hover:bg-green-600 flex-shrink-0"
+          onClick={goBack}
+          className="inline-flex h-10 md:h-12 min-w-fit items-center justify-center gap-1.5 rounded-[16px] bg-slate-500 border-2 border-slate-500 px-2 md:px-3 text-xs md:text-sm font-semibold text-white hover:bg-slate-600 flex-shrink-0"
         >
           <ArrowRight className="h-4 w-4" />
           BACK

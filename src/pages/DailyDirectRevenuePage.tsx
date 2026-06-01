@@ -615,7 +615,7 @@ export default function DailyDirectRevenuePage() {
 
           <div className="mt-8 rounded-3xl border border-slate-200 bg-slate-50 p-5">
             <h4 className="text-lg font-semibold text-slate-900 mb-4">Manual POS & Additional Items</h4>
-            <div className="grid gap-4 sm:grid-cols-2">
+            <div className="grid gap-4 sm:grid-cols-3">
               <label className="block text-sm text-slate-500">
                 Vikura (Manual POS)
                 <input

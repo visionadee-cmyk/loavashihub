@@ -127,7 +127,10 @@ export default function ExpensesPage() {
 
   const beginEditExpense = (expense: Expense) => {
     setEditingId(expense.id);
-    setExpenseForm(expense);
+    setExpenseForm({
+      ...expense,
+      staffId: expense.staffId || undefined,
+    });
     setShowDailyForm(true);
   };
 

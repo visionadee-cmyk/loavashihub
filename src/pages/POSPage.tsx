@@ -448,6 +448,8 @@ export default function POSPage() {
     return Math.max(0, subtotal + taxAmount - discountValue);
   }, [activeBill, discountPercent]);
 
+  const canSaveCurrentBill = Boolean(activeBill?.items.length);
+
   const selectTable = (tableId: string) => {
     if (!activeBill) return;
     const table = tables.find((entry) => entry.id === tableId);
@@ -1023,7 +1025,16 @@ export default function POSPage() {
               </div>
             </div>
 
-            <button type="button" onClick={saveCurrentBill} className="w-full rounded-[18px] bg-green-500 px-3 py-2 text-xs md:text-sm font-semibold text-white shadow-lg hover:bg-green-600">
+            <button
+              type="button"
+              onClick={saveCurrentBill}
+              disabled={!canSaveCurrentBill}
+              className={`w-full rounded-[18px] px-3 py-2 text-xs md:text-sm font-semibold text-white shadow-lg transition ${
+                canSaveCurrentBill
+                  ? 'bg-green-500 hover:bg-green-600'
+                  : 'bg-slate-300 cursor-not-allowed'
+              }`}
+            >
               PAY {formatMVR(payable)}
             </button>
           </aside>

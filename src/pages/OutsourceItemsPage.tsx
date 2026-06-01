@@ -20,6 +20,8 @@ export default function OutsourceItemsPage() {
   const [menuItems, setMenuItems] = useState<MenuItem[]>([]);
   const [items, setItems] = useState<OutsourceItem[]>([]);
   const [partyNames, setPartyNames] = useState<{ id: string; name: string }[]>([]);
+  const [partyEditId, setPartyEditId] = useState<string | null>(null);
+  const [partyEditName, setPartyEditName] = useState('');
   const [menuQuery, setMenuQuery] = useState('');
   const [form, setForm] = useState(initialForm);
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -170,6 +172,37 @@ export default function OutsourceItemsPage() {
         console.error('Failed to delete party name:', error);
       }
     }
+  };
+
+  const beginPartyEdit = (party: { id: string; name: string }) => {
+    setPartyEditId(party.id);
+    setPartyEditName(party.name);
+  };
+
+  const cancelPartyEdit = () => {
+    setPartyEditId(null);
+    setPartyEditName('');
+  };
+
+  const savePartyEdit = async () => {
+    if (!partyEditId || !partyEditName.trim()) return;
+
+    const updatedName = partyEditName.trim();
+    setPartyNames((current) =>
+      current.map((party) =>
+        party.id === partyEditId ? { ...party, name: updatedName } : party,
+      ),
+    );
+
+    if (hasFirebaseConfig) {
+      try {
+        await saveDocument('partyNames', partyEditId, { id: partyEditId, name: updatedName });
+      } catch (error) {
+        console.error('Failed to update party name:', error);
+      }
+    }
+
+    cancelPartyEdit();
   };
 
   return (
@@ -436,9 +469,45 @@ export default function OutsourceItemsPage() {
           ) : (
             <div className="space-y-2">
               {partyNames.map((p) => (
-                <div key={p.id} className="flex items-center justify-between rounded-2xl border border-slate-200 bg-slate-50 p-3">
-                  <div className="text-sm font-semibold text-slate-900">{p.name}</div>
+                <div key={p.id} className="flex flex-col gap-2 rounded-2xl border border-slate-200 bg-slate-50 p-3 sm:flex-row sm:items-center sm:justify-between">
+                  {partyEditId === p.id ? (
+                    <div className="flex-1 space-y-2">
+                      <input
+                        type="text"
+                        value={partyEditName}
+                        onChange={(e) => setPartyEditName(e.target.value)}
+                        className="w-full rounded-2xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 outline-none"
+                      />
+                      <div className="flex flex-wrap gap-2">
+                        <button
+                          type="button"
+                          onClick={savePartyEdit}
+                          className="rounded-full bg-emerald-600 px-3 py-2 text-sm font-semibold text-white hover:bg-emerald-500"
+                        >
+                          Save
+                        </button>
+                        <button
+                          type="button"
+                          onClick={cancelPartyEdit}
+                          className="rounded-full border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50"
+                        >
+                          Cancel
+                        </button>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="flex-1 text-sm font-semibold text-slate-900">{p.name}</div>
+                  )}
                   <div className="flex items-center gap-2">
+                    {partyEditId !== p.id ? (
+                      <button
+                        type="button"
+                        onClick={() => beginPartyEdit(p)}
+                        className="inline-flex items-center gap-2 rounded-full bg-yellow-100 px-3 py-2 text-sm font-semibold text-slate-900 hover:bg-yellow-200"
+                      >
+                        Edit
+                      </button>
+                    ) : null}
                     <button
                       type="button"
                       onClick={() => deleteParty(p.id)}

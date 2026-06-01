@@ -62,7 +62,7 @@ function buildOrderItem(item: MenuItem | { name: string; price: number }): Order
   };
 }
 
-function createEmptyBill(tableName: string): Bill {
+function createEmptyBill(tableName: string, defaultTaxRate = 0): Bill {
   const billNumber = generateBillNumber(tableName);
   return {
     id: `bill-${Date.now()}`,
@@ -72,7 +72,7 @@ function createEmptyBill(tableName: string): Bill {
     items: [],
     orderType: 'Dine-in',
     discount: 0,
-    tax: 0,
+    tax: defaultTaxRate,
     status: 'Pending',
     notes: '',
     paymentMethod: 'Cash',
@@ -94,6 +94,8 @@ export default function POSPage() {
   const [customerPanelOpen, setCustomerPanelOpen] = useState(false);
   const [tableMenuOpen, setTableMenuOpen] = useState(false);
   const [showQuickAddModal, setShowQuickAddModal] = useState(false);
+  const [defaultTaxRate, setDefaultTaxRate] = useState(0);
+  const [useDefaultTaxRate, setUseDefaultTaxRate] = useState(false);
   const [quickItemName, setQuickItemName] = useState('');
   const [quickItemPrice, setQuickItemPrice] = useState<number | ''>('');
   const [quickItemQty, setQuickItemQty] = useState<number>(1);
@@ -106,6 +108,28 @@ export default function POSPage() {
   const [selectedPaxForNewOrder, setSelectedPaxForNewOrder] = useState(1);
   const searchInputRef = useRef<HTMLInputElement>(null);
   const navigate = useNavigate();
+  const defaultTaxRateStorageKey = 'posDefaultTaxRate';
+  const useDefaultTaxRateStorageKey = 'posUseDefaultTaxRate';
+
+  useEffect(() => {
+    try {
+      const storedRate = localStorage.getItem(defaultTaxRateStorageKey);
+      const storedUse = localStorage.getItem(useDefaultTaxRateStorageKey);
+      if (storedRate !== null) setDefaultTaxRate(Number(storedRate));
+      if (storedUse !== null) setUseDefaultTaxRate(storedUse === 'true');
+    } catch (error) {
+      console.error('Failed to load POS tax settings', error);
+    }
+  }, []);
+
+  const savePosTaxSettings = (rate: number, enabled: boolean) => {
+    try {
+      localStorage.setItem(defaultTaxRateStorageKey, String(rate));
+      localStorage.setItem(useDefaultTaxRateStorageKey, String(enabled));
+    } catch (error) {
+      console.error('Failed to save POS tax settings', error);
+    }
+  };
 
   // Filter navigation based on user role
   const filteredInternalNav = useMemo(
@@ -152,7 +176,7 @@ export default function POSPage() {
       let allBills = loadedBills;
 
       if (!initialBill && loadedTables.length) {
-        initialBill = createEmptyBill(loadedTables[0].name);
+        initialBill = createEmptyBill(loadedTables[0].name, useDefaultTaxRate ? defaultTaxRate : 0);
         allBills = [...loadedBills, initialBill];
         await saveDocument('bills', initialBill.id, initialBill);
       }
@@ -268,7 +292,7 @@ export default function POSPage() {
     // Ensure there's an active bill
     let targetBill = activeBill;
     if (!targetBill) {
-      const newBill = createEmptyBill(tables[0]?.name || 'Table');
+      const newBill = createEmptyBill(tables[0]?.name || 'Table', useDefaultTaxRate ? defaultTaxRate : 0);
       setBills((current) => [...current, newBill]);
       targetBill = newBill;
       setActiveBillId(newBill.id);
@@ -339,7 +363,7 @@ export default function POSPage() {
     // Similar logic to addQuickItemToBill but using preset values
     let targetBill = activeBill;
     if (!targetBill) {
-      const newBill = createEmptyBill(tables[0]?.name || 'Table');
+      const newBill = createEmptyBill(tables[0]?.name || 'Table', useDefaultTaxRate ? defaultTaxRate : 0);
       setBills((current) => [...current, newBill]);
       targetBill = newBill;
       setActiveBillId(newBill.id);
@@ -392,7 +416,7 @@ export default function POSPage() {
 
     updateBill(savedBill);
 
-    const newBill = createEmptyBill(activeBill.table || tables[0]?.name || 'Table 1');
+    const newBill = createEmptyBill(activeBill.table || tables[0]?.name || 'Table 1', useDefaultTaxRate ? defaultTaxRate : 0);
     setBills((current) => [...current, newBill]);
     setActiveBillId(newBill.id);
 
@@ -452,7 +476,7 @@ export default function POSPage() {
       return;
     }
 
-    const newBill = createEmptyBill(selectedTable.name);
+    const newBill = createEmptyBill(selectedTable.name, useDefaultTaxRate ? defaultTaxRate : 0);
     newBill.notes = `Pax: ${selectedPaxForNewOrder}`;
     
     setBills((current) => [...current, newBill]);
@@ -563,6 +587,37 @@ export default function POSPage() {
                     <GridIcon className="h-3 w-3 md:h-4 md:w-4" />
                     Scan
                   </button>
+                </div>
+
+                <div className="flex flex-wrap items-center gap-2">
+                  <label className="inline-flex items-center gap-2 rounded-[24px] border border-slate-200 bg-white px-3 py-2 text-xs text-slate-800">
+                    <input
+                      type="checkbox"
+                      checked={useDefaultTaxRate}
+                      onChange={(event) => {
+                        const enabled = event.target.checked;
+                        setUseDefaultTaxRate(enabled);
+                        savePosTaxSettings(defaultTaxRate, enabled);
+                      }}
+                      className="h-4 w-4 rounded border-slate-300 text-green-600 focus:ring-green-500"
+                    />
+                    Use default tax
+                  </label>
+                  <label className="inline-flex items-center gap-2 rounded-[24px] border border-slate-200 bg-white px-3 py-2 text-xs text-slate-800">
+                    <span>Default %</span>
+                    <input
+                      type="number"
+                      value={defaultTaxRate}
+                      min="0"
+                      max="100"
+                      onChange={(event) => {
+                        const next = Number(event.target.value);
+                        setDefaultTaxRate(next);
+                        savePosTaxSettings(next, useDefaultTaxRate);
+                      }}
+                      className="w-16 rounded-2xl border border-slate-200 bg-slate-50 px-2 py-1 text-xs text-slate-900 outline-none"
+                    />
+                  </label>
                 </div>
 
                 {statusMessage ? (

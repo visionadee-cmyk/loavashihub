@@ -21,6 +21,20 @@ export default function CompletedBillsPage() {
   }, []);
 
   const completedBills = useMemo(() => bills.filter((bill) => bill.status === 'Served'), [bills]);
+  const groupedCompletedBills = useMemo(() => {
+    const grouped: Record<string, Bill[]> = {};
+    completedBills.forEach((bill) => {
+      const dateKey = bill.createdAt.slice(0, 10);
+      if (!grouped[dateKey]) grouped[dateKey] = [];
+      grouped[dateKey].push(bill);
+    });
+    return Object.keys(grouped)
+      .sort((a, b) => b.localeCompare(a))
+      .map((date) => ({
+        date,
+        bills: grouped[date].sort((a, b) => b.createdAt.localeCompare(a.createdAt)),
+      }));
+  }, [completedBills]);
   const openCount = useMemo(() => bills.filter((bill) => bill.status !== 'Served').length, [bills]);
   const navigate = useNavigate();
 
@@ -66,46 +80,55 @@ export default function CompletedBillsPage() {
 
           {loading ? (
             <p className="text-[#05093f]">Loading bills…</p>
-          ) : completedBills.length ? (
-            <div className="space-y-4">
-              {completedBills.map((bill) => (
-                <div key={bill.id} className="rounded-3xl border border-slate-200 bg-white p-4 shadow-sm shadow-slate-300/10">
-                  <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
-                    <div>
-                      <p className="font-semibold text-[#05093f]">{bill.billNumber ?? bill.title}</p>
-                      <p className="text-sm text-[#05093f]">{bill.table} • {bill.orderType} • {new Date(bill.createdAt).toLocaleString()}</p>
-                    </div>
-                    <div className="flex flex-wrap items-center gap-2">
-                      <span className="rounded-full bg-[#7c4b2e]/10 px-3 py-1 text-xs uppercase tracking-[0.24em] text-[#05093f]">{bill.status}</span>
-                      <span className="rounded-full bg-[#7c4b2e]/10 px-3 py-1 text-xs uppercase tracking-[0.24em] text-[#05093f]">{bill.paymentStatus}</span>
-                    </div>
-                  </div>
-                  <div className="space-y-2">
-                    {bill.items.map((item) => (
-                      <div key={item.id} className="flex items-center justify-between rounded-3xl bg-white px-4 py-2 text-sm text-[#05093f]">
-                        <span>{item.quantity} x {item.name}</span>
-                        <span>{formatMVR(item.price * item.quantity)}</span>
+          ) : groupedCompletedBills.length ? (
+            <div className="space-y-6">
+              {groupedCompletedBills.map(({ date, bills: billsForDate }) => (
+                <div key={date}>
+                  <h4 className="mb-3 text-sm font-semibold uppercase tracking-[0.24em] text-slate-600">
+                    {new Date(date).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' })}
+                  </h4>
+                  <div className="space-y-4">
+                    {billsForDate.map((bill) => (
+                      <div key={bill.id} className="rounded-3xl border border-slate-200 bg-white p-4 shadow-sm shadow-slate-300/10">
+                        <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+                          <div>
+                            <p className="font-semibold text-[#05093f]">{bill.billNumber ?? bill.title}</p>
+                            <p className="text-sm text-[#05093f]">{bill.table} • {bill.orderType} • {new Date(bill.createdAt).toLocaleTimeString()}</p>
+                          </div>
+                          <div className="flex flex-wrap items-center gap-2">
+                            <span className="rounded-full bg-[#7c4b2e]/10 px-3 py-1 text-xs uppercase tracking-[0.24em] text-[#05093f]">{bill.status}</span>
+                            <span className="rounded-full bg-[#7c4b2e]/10 px-3 py-1 text-xs uppercase tracking-[0.24em] text-[#05093f]">{bill.paymentStatus}</span>
+                          </div>
+                        </div>
+                        <div className="space-y-2">
+                          {bill.items.map((item) => (
+                            <div key={item.id} className="flex items-center justify-between rounded-3xl bg-white px-4 py-2 text-sm text-[#05093f]">
+                              <span>{item.quantity} x {item.name}</span>
+                              <span>{formatMVR(item.price * item.quantity)}</span>
+                            </div>
+                          ))}
+                        </div>
+                        <div className="mt-4 flex flex-wrap items-center justify-between gap-3 text-[#05093f]">
+                          <div>Total {formatMVR(bill.items.reduce((sum, item) => sum + item.price * item.quantity, 0))}</div>
+                          <div className="flex flex-wrap items-center gap-2">
+                            <button
+                              type="button"
+                              onClick={() => navigate(`/bills/${bill.id}`)}
+                              className="rounded-3xl border-2 border-green-700 bg-green-600 px-4 py-3 text-sm font-semibold text-white hover:bg-green-700"
+                            >
+                              Edit
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => deleteBill(bill.id)}
+                              className="rounded-3xl bg-rose-600 px-4 py-3 text-sm font-semibold text-white hover:bg-rose-500"
+                            >
+                              Delete
+                            </button>
+                          </div>
+                        </div>
                       </div>
                     ))}
-                  </div>
-                  <div className="mt-4 flex flex-wrap items-center justify-between gap-3 text-[#05093f]">
-                    <div>Total {formatMVR(bill.items.reduce((sum, item) => sum + item.price * item.quantity, 0))}</div>
-                    <div className="flex flex-wrap items-center gap-2">
-                      <button
-                        type="button"
-                        onClick={() => navigate(`/bills/${bill.id}`)}
-                        className="rounded-3xl border-2 border-green-700 bg-green-600 px-4 py-3 text-sm font-semibold text-white hover:bg-green-700"
-                      >
-                        Edit
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => deleteBill(bill.id)}
-                        className="rounded-3xl bg-rose-600 px-4 py-3 text-sm font-semibold text-white hover:bg-rose-500"
-                      >
-                        Delete
-                      </button>
-                    </div>
                   </div>
                 </div>
               ))}

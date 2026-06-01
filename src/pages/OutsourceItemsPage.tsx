@@ -19,6 +19,8 @@ const initialForm = {
 export default function OutsourceItemsPage() {
   const [menuItems, setMenuItems] = useState<MenuItem[]>([]);
   const [items, setItems] = useState<OutsourceItem[]>([]);
+  const [partyNames, setPartyNames] = useState<string[]>([]);
+  const [menuQuery, setMenuQuery] = useState('');
   const [form, setForm] = useState(initialForm);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [showForm, setShowForm] = useState(false);
@@ -29,10 +31,17 @@ export default function OutsourceItemsPage() {
     Promise.all([
       loadCollection<MenuItem>('menuItems', []),
       loadCollection<OutsourceItem>('outsourceItems', []),
+      loadCollection<{ id: string; name: string }>('partyNames', []),
     ])
-      .then(([loadedMenuItems, loadedOutsourceItems]) => {
+      .then(([loadedMenuItems, loadedOutsourceItems, loadedPartyNames]) => {
         if (loadedMenuItems.length) setMenuItems(loadedMenuItems);
         if (loadedOutsourceItems.length) setItems(loadedOutsourceItems.sort((a, b) => b.date.localeCompare(a.date)));
+        // populate party names from collection and also fallback to existing outsource items
+        if (Array.isArray(loadedPartyNames) && loadedPartyNames.length) {
+          setPartyNames(Array.from(new Set(loadedPartyNames.map((p) => p.name))));
+        } else {
+          setPartyNames(Array.from(new Set(loadedOutsourceItems.map((it: OutsourceItem) => it.partyName))));
+        }
       })
       .catch((error) => console.error('Failed to load outsource items or menu items:', error));
   }, []);
@@ -67,6 +76,7 @@ export default function OutsourceItemsPage() {
       sellingPrice: selected?.price ?? current.sellingPrice,
       costPerPortion: selected?.costPrice ?? current.costPerPortion,
     }));
+    setMenuQuery(selected?.name ?? '');
   };
 
   const saveOutsourceItem = async () => {
@@ -101,6 +111,18 @@ export default function OutsourceItemsPage() {
     if (hasFirebaseConfig) {
       try {
         await saveDocument('outsourceItems', payload.id, payload);
+        // ensure party name saved for future quick select
+        const existing = partyNames.find((p) => p.toLowerCase() === payload.partyName.toLowerCase());
+        if (!existing) {
+          const partyId = `party-${Date.now()}`;
+          try {
+            await saveDocument('partyNames', partyId, { id: partyId, name: payload.partyName, createdAt: new Date().toISOString() });
+            setPartyNames((curr) => Array.from(new Set([payload.partyName, ...curr])));
+          } catch (err) {
+            // non-fatal
+            console.error('Failed to save party name:', err);
+          }
+        }
       } catch (error) {
         console.error('Failed to save outsource item:', error);
       }
@@ -176,11 +198,17 @@ export default function OutsourceItemsPage() {
                   Party name
                   <input
                     type="text"
+                    list="party-names"
                     value={form.partyName}
                     onChange={(e) => setForm({ ...form, partyName: e.target.value })}
                     placeholder="Party or event name"
                     className="mt-2 w-full rounded-3xl border border-slate-300 bg-slate-50 px-4 py-3 text-slate-900 outline-none"
                   />
+                  <datalist id="party-names">
+                    {partyNames.map((p) => (
+                      <option key={p} value={p} />
+                    ))}
+                  </datalist>
                 </label>
                 <label className="block text-sm text-slate-700">
                   Date
@@ -194,20 +222,31 @@ export default function OutsourceItemsPage() {
               </div>
 
               <div className="grid gap-4 lg:grid-cols-3">
-                <label className="block text-sm text-slate-700">
+                <label className="block text-sm text-slate-700 relative">
                   Menu item
-                  <select
-                    value={form.menuItemId}
-                    onChange={(e) => handleSelectMenuItem(e.target.value)}
+                  <input
+                    type="text"
+                    value={menuQuery}
+                    onChange={(e) => setMenuQuery(e.target.value)}
+                    placeholder="Search menu items by name"
                     className="mt-2 w-full rounded-3xl border border-slate-300 bg-slate-50 px-4 py-3 text-slate-900 outline-none"
-                  >
-                    <option value="">Select menu item</option>
-                    {menuItems.map((item) => (
-                      <option key={item.id} value={item.id}>
-                        {item.name}
-                      </option>
-                    ))}
-                  </select>
+                  />
+                  {menuQuery && (
+                    <ul className="absolute z-10 mt-1 max-h-48 w-full overflow-auto rounded-xl border border-slate-200 bg-white">
+                      {menuItems.filter((m) => m.name.toLowerCase().includes(menuQuery.toLowerCase())).slice(0, 10).map((m) => (
+                        <li
+                          key={m.id}
+                          onClick={() => handleSelectMenuItem(m.id)}
+                          className="cursor-pointer px-4 py-2 text-sm hover:bg-slate-100"
+                        >
+                          {m.name}
+                        </li>
+                      ))}
+                      {menuItems.filter((m) => m.name.toLowerCase().includes(menuQuery.toLowerCase())).length === 0 && (
+                        <li className="px-4 py-2 text-sm text-slate-500">No matching items</li>
+                      )}
+                    </ul>
+                  )}
                 </label>
                 <label className="block text-sm text-slate-700">
                   Selling price per portion

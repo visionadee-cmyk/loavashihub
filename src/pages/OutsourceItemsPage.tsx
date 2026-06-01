@@ -19,7 +19,7 @@ const initialForm = {
 export default function OutsourceItemsPage() {
   const [menuItems, setMenuItems] = useState<MenuItem[]>([]);
   const [items, setItems] = useState<OutsourceItem[]>([]);
-  const [partyNames, setPartyNames] = useState<string[]>([]);
+  const [partyNames, setPartyNames] = useState<{ id: string; name: string }[]>([]);
   const [menuQuery, setMenuQuery] = useState('');
   const [form, setForm] = useState(initialForm);
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -38,9 +38,13 @@ export default function OutsourceItemsPage() {
         if (loadedOutsourceItems.length) setItems(loadedOutsourceItems.sort((a, b) => b.date.localeCompare(a.date)));
         // populate party names from collection and also fallback to existing outsource items
         if (Array.isArray(loadedPartyNames) && loadedPartyNames.length) {
-          setPartyNames(Array.from(new Set(loadedPartyNames.map((p) => p.name))));
+          // dedupe by name and keep id
+          const map = new Map<string, { id: string; name: string }>();
+          loadedPartyNames.forEach((p) => map.set(p.name, { id: p.id, name: p.name }));
+          setPartyNames(Array.from(map.values()));
         } else {
-          setPartyNames(Array.from(new Set(loadedOutsourceItems.map((it: OutsourceItem) => it.partyName))));
+          const names = Array.from(new Set(loadedOutsourceItems.map((it: OutsourceItem) => it.partyName)));
+          setPartyNames(names.map((n, i) => ({ id: `party-fallback-${i}`, name: n })));
         }
       })
       .catch((error) => console.error('Failed to load outsource items or menu items:', error));
@@ -112,12 +116,12 @@ export default function OutsourceItemsPage() {
       try {
         await saveDocument('outsourceItems', payload.id, payload);
         // ensure party name saved for future quick select
-        const existing = partyNames.find((p) => p.toLowerCase() === payload.partyName.toLowerCase());
+        const existing = partyNames.find((p) => p.name.toLowerCase() === payload.partyName.toLowerCase());
         if (!existing) {
           const partyId = `party-${Date.now()}`;
           try {
             await saveDocument('partyNames', partyId, { id: partyId, name: payload.partyName, createdAt: new Date().toISOString() });
-            setPartyNames((curr) => Array.from(new Set([payload.partyName, ...curr])));
+            setPartyNames((curr) => [{ id: partyId, name: payload.partyName }, ...curr]);
           } catch (err) {
             // non-fatal
             console.error('Failed to save party name:', err);
@@ -153,6 +157,17 @@ export default function OutsourceItemsPage() {
         await deleteDocument('outsourceItems', id);
       } catch (error) {
         console.error('Failed to delete outsource item:', error);
+      }
+    }
+  };
+
+  const deleteParty = async (id: string) => {
+    setPartyNames((current) => current.filter((p) => p.id !== id));
+    if (hasFirebaseConfig) {
+      try {
+        await deleteDocument('partyNames', id);
+      } catch (error) {
+        console.error('Failed to delete party name:', error);
       }
     }
   };
@@ -206,7 +221,7 @@ export default function OutsourceItemsPage() {
                   />
                   <datalist id="party-names">
                     {partyNames.map((p) => (
-                      <option key={p} value={p} />
+                      <option key={p.id} value={p.name} />
                     ))}
                   </datalist>
                 </label>
@@ -398,6 +413,39 @@ export default function OutsourceItemsPage() {
                       <p className="text-xs uppercase tracking-[0.24em] text-slate-500">Profit</p>
                       <p className={`mt-2 text-lg font-semibold ${item.profit >= 0 ? 'text-emerald-600' : 'text-rose-600'}`}>{formatMVR(item.profit)}</p>
                     </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </section>
+
+        <section className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
+          <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
+            <div>
+              <h3 className="text-xl font-semibold text-slate-900">Saved party names</h3>
+              <p className="text-sm text-slate-500">Manage saved party names used for outsource entries.</p>
+            </div>
+            <span className="rounded-full bg-slate-100 px-4 py-2 text-sm text-slate-600">{partyNames.length} names</span>
+          </div>
+
+          {partyNames.length === 0 ? (
+            <div className="rounded-3xl border border-dashed border-slate-300 bg-slate-50 p-8 text-center text-slate-500">
+              No saved party names.
+            </div>
+          ) : (
+            <div className="space-y-2">
+              {partyNames.map((p) => (
+                <div key={p.id} className="flex items-center justify-between rounded-2xl border border-slate-200 bg-slate-50 p-3">
+                  <div className="text-sm font-semibold text-slate-900">{p.name}</div>
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={() => deleteParty(p.id)}
+                      className="inline-flex items-center gap-2 rounded-full bg-red-50 px-3 py-2 text-sm font-semibold text-red-600 hover:bg-red-100"
+                    >
+                      <Trash2 className="h-4 w-4" /> Delete
+                    </button>
                   </div>
                 </div>
               ))}

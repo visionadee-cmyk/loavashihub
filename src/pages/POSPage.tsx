@@ -72,7 +72,7 @@ function createEmptyBill(tableName: string): Bill {
     items: [],
     orderType: 'Dine-in',
     discount: 0,
-    tax: 5,
+    tax: 0,
     status: 'Pending',
     notes: '',
     paymentMethod: 'Cash',
@@ -412,7 +412,7 @@ export default function POSPage() {
   const payable = useMemo(() => {
     if (!activeBill) return 0;
     const subtotal = activeBill.items.reduce((sum, item) => sum + item.price * item.quantity, 0);
-    const taxAmount = Math.round((subtotal * (activeBill.tax ?? 5)) / 100);
+    const taxAmount = Math.round((subtotal * (activeBill.tax ?? 0)) / 100);
     const discountValue = Math.round((subtotal * discountPercent) / 100);
     return Math.max(0, subtotal + taxAmount - discountValue);
   }, [activeBill, discountPercent]);
@@ -480,7 +480,7 @@ export default function POSPage() {
     [activeBill],
   );
 
-  const taxAmount = Math.round((subtotal * (activeBill?.tax ?? 5)) / 100);
+  const taxAmount = Math.round((subtotal * (activeBill?.tax ?? 0)) / 100);
 
   const availableTables = useMemo(
     () =>
@@ -756,7 +756,7 @@ export default function POSPage() {
               })}
             </section>
 
-            <section className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-2 md:gap-3 overflow-y-auto max-h-[calc(100vh-600px)]">
+            <section className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-2 md:gap-3 overflow-y-auto max-h-[60vh]">
               {filteredProducts.length ? (
                 filteredProducts.slice(0, 20).map((product) => (
                   <article key={product.id} className="rounded-[20px] border-2 border-green-400 bg-white p-2 text-center shadow-sm transition hover:-translate-y-0.5 hover:shadow-md">
@@ -939,7 +939,20 @@ export default function POSPage() {
                 <span className="font-semibold">{formatMVR(subtotal)}</span>
               </div>
               <div className="flex items-center justify-between text-xs text-slate-600">
-                <span>Tax (5%)</span>
+                <label className="flex items-center gap-2">
+                  <span>Tax</span>
+                  <input
+                    type="number"
+                    value={activeBill?.tax ?? 0}
+                    onChange={(e) => {
+                      if (!activeBill) return;
+                      const next = { ...activeBill, tax: Number(e.target.value) } as Bill;
+                      updateBill(next);
+                    }}
+                    className="w-16 rounded-lg border border-slate-200 bg-white px-2 py-1 text-xs text-slate-900 outline-none"
+                  />
+                  <span>%</span>
+                </label>
                 <span className="font-semibold">{formatMVR(taxAmount)}</span>
               </div>
               <div className="flex items-center justify-between border-t border-slate-200 pt-1.5 text-sm font-bold text-slate-900">

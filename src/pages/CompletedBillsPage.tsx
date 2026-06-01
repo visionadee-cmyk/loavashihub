@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { CheckCircle2, Clock, ChevronDown, ChevronRight, Search } from 'lucide-react';
+import { CheckCircle2, Clock, ChevronDown, ChevronRight, Printer, Search } from 'lucide-react';
 import AppShell from '../components/AppShell';
 import { loadCollection, deleteDocument } from '../lib/firestore';
 import { formatMVR } from '../lib/mvr';
@@ -12,6 +12,8 @@ export default function CompletedBillsPage() {
   const [searchQuery, setSearchQuery] = useState('');
   const [dateFrom, setDateFrom] = useState('');
   const [dateTo, setDateTo] = useState('');
+  const [statusFilters, setStatusFilters] = useState<string[]>(['Served']);
+  const [paymentStatusFilters, setPaymentStatusFilters] = useState<string[]>([]);
   const [collapsedDates, setCollapsedDates] = useState<Record<string, boolean>>({});
 
   useEffect(() => {
@@ -25,8 +27,14 @@ export default function CompletedBillsPage() {
   }, []);
 
   const completedBills = useMemo(() => bills.filter((bill) => bill.status === 'Served'), [bills]);
+  const statusOptions = useMemo(() => Array.from(new Set(bills.map((bill) => bill.status))).sort(), [bills]);
+  const paymentStatusOptions = useMemo(() => Array.from(new Set(bills.map((bill) => bill.paymentStatus))).sort(), [bills]);
+
   const filteredBills = useMemo(() => {
-    return completedBills.filter((bill) => {
+    const statusFiltered = statusFilters.length ? bills.filter((bill) => statusFilters.includes(bill.status)) : bills;
+    const paymentFiltered = paymentStatusFilters.length ? statusFiltered.filter((bill) => paymentStatusFilters.includes(bill.paymentStatus)) : statusFiltered;
+    const completedOnly = paymentFiltered.filter((bill) => bill.status === 'Served');
+    return completedOnly.filter((bill) => {
       const normalizedQuery = searchQuery.trim().toLowerCase();
       const billName = (bill.billNumber ?? bill.title ?? '').toLowerCase();
       const tableName = bill.table.toLowerCase();
@@ -69,10 +77,63 @@ export default function CompletedBillsPage() {
     setCollapsedDates((current) => ({ ...current, [date]: !current[date] }));
   };
 
+  const toggleStatusFilter = (status: string) => {
+    setStatusFilters((current) =>
+      current.includes(status) ? current.filter((item) => item !== status) : [...current, status]
+    );
+  };
+
+  const togglePaymentStatusFilter = (paymentStatus: string) => {
+    setPaymentStatusFilters((current) =>
+      current.includes(paymentStatus) ? current.filter((item) => item !== paymentStatus) : [...current, paymentStatus]
+    );
+  };
+
   const clearFilters = () => {
     setSearchQuery('');
     setDateFrom('');
     setDateTo('');
+    setStatusFilters(['Served']);
+    setPaymentStatusFilters([]);
+  };
+
+  const exportCSV = () => {
+    const rows = ['Date,Bill,Table,Order Type,Status,Payment Status,Item,Qty,Item Total,Bill Total'];
+    groupedCompletedBills.forEach(({ date, bills: billsForDate }) => {
+      billsForDate.forEach((bill) => {
+        const billTotal = bill.items.reduce((sum, item) => sum + item.price * item.quantity, 0);
+        bill.items.forEach((item) => {
+          const row = [
+            date,
+            bill.billNumber ?? bill.title,
+            bill.table,
+            bill.orderType,
+            bill.status,
+            bill.paymentStatus,
+            item.name,
+            String(item.quantity),
+            String(item.price * item.quantity),
+            String(billTotal),
+          ]
+            .map((value) => `"${String(value).replace(/"/g, '""')}"`)
+            .join(',');
+          rows.push(row);
+        });
+      });
+    });
+    const blob = new Blob([rows.join('\r\n')], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `completed-bills-${new Date().toISOString().slice(0, 10)}.csv`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+  };
+
+  const printPage = () => {
+    window.print();
   };
 
   const deleteBill = async (id: string) => {
@@ -113,7 +174,7 @@ export default function CompletedBillsPage() {
               <h3 className="text-lg font-semibold text-[#05093f]">Completed bills</h3>
               <p className="text-sm text-[#05093f]">Review all paid and served invoices with date filters, totals, and search.</p>
             </div>
-            <div className="grid gap-4 sm:grid-cols-2 md:grid-cols-[1.6fr_1fr]">
+            <div className="grid gap-4 sm:grid-cols-2 md:grid-cols-[1.6fr_1fr] print:hidden">
               <label className="block text-sm text-slate-600">
                 Search bills
                 <div className="mt-2 flex items-center gap-2 rounded-3xl border border-slate-300 bg-white px-4 py-2">
@@ -137,7 +198,7 @@ export default function CompletedBillsPage() {
             </div>
           </div>
 
-          <div className="grid gap-4 md:grid-cols-3">
+          <div className="grid gap-4 md:grid-cols-3 print:hidden">
             <label className="block text-sm text-slate-600">
               From
               <input
@@ -156,9 +217,69 @@ export default function CompletedBillsPage() {
                 className="mt-2 w-full rounded-3xl border border-slate-300 bg-white px-4 py-3 text-slate-900 outline-none"
               />
             </label>
-            <div className="flex items-end gap-3">
+            <div className="flex flex-col items-end justify-end gap-3">
               <div className="rounded-3xl border border-slate-300 bg-slate-50 px-4 py-3 text-sm text-slate-500">
                 Showing {filteredBills.length} completed bill{filteredBills.length === 1 ? '' : 's'}
+              </div>
+              <div className="flex flex-wrap gap-2">
+                <button
+                  type="button"
+                  onClick={exportCSV}
+                  className="inline-flex items-center gap-2 rounded-3xl bg-slate-900 px-4 py-3 text-sm font-semibold text-white hover:bg-slate-800"
+                >
+                  Export CSV
+                </button>
+                <button
+                  type="button"
+                  onClick={printPage}
+                  className="inline-flex items-center gap-2 rounded-3xl border border-slate-300 bg-white px-4 py-3 text-sm font-semibold text-slate-700 hover:bg-slate-50"
+                >
+                  <Printer className="h-4 w-4" />
+                  Print
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <div className="space-y-4 print:hidden">
+            <div>
+              <p className="mb-2 text-sm font-semibold text-slate-800">Bill status</p>
+              <div className="flex flex-wrap gap-2">
+                {statusOptions.map((status) => {
+                  const active = statusFilters.includes(status);
+                  return (
+                    <button
+                      key={status}
+                      type="button"
+                      onClick={() => toggleStatusFilter(status)}
+                      className={`rounded-full border px-4 py-2 text-sm font-semibold transition ${
+                        active ? 'border-emerald-600 bg-emerald-600 text-white' : 'border-slate-300 bg-white text-slate-700 hover:bg-slate-100'
+                      }`}
+                    >
+                      {status}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+            <div>
+              <p className="mb-2 text-sm font-semibold text-slate-800">Payment status</p>
+              <div className="flex flex-wrap gap-2">
+                {paymentStatusOptions.map((paymentStatus) => {
+                  const active = paymentStatusFilters.includes(paymentStatus);
+                  return (
+                    <button
+                      key={paymentStatus}
+                      type="button"
+                      onClick={() => togglePaymentStatusFilter(paymentStatus)}
+                      className={`rounded-full border px-4 py-2 text-sm font-semibold transition ${
+                        active ? 'border-emerald-600 bg-emerald-600 text-white' : 'border-slate-300 bg-white text-slate-700 hover:bg-slate-100'
+                      }`}
+                    >
+                      {paymentStatus}
+                    </button>
+                  );
+                })}
               </div>
             </div>
           </div>

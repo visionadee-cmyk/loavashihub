@@ -172,8 +172,9 @@ export default function POSPage() {
       setTables(loadedTables);
       setCustomers(loadedCustomers);
 
-      // Do not auto-create or auto-select an empty bill on load.
-      setBills(loadedBills);
+      // Filter out empty bills and do not auto-select any bill on load
+      const billsWithItems = loadedBills.filter((bill) => bill.items.length > 0);
+      setBills(billsWithItems);
       setActiveBillId('');
 
       if (!loadedTables.length) {
@@ -423,20 +424,10 @@ export default function POSPage() {
 
     updateBill(savedBill);
 
-    const newBill = createEmptyBill(activeBill.table || tables[0]?.name || 'Table 1', useDefaultTaxRate ? defaultTaxRate : 0);
-    setBills((current) => [...current, newBill]);
-    setActiveBillId(newBill.id);
+    // Clear the active bill - user must create new order explicitly
+    setActiveBillId('');
 
-    if (hasFirebaseConfig) {
-      try {
-        await saveDocument('bills', newBill.id, newBill);
-      } catch (error) {
-        console.error('Failed to create new bill after saving order:', error);
-        setStatusMessage('Order saved, but failed to create the next bill in Firestore.');
-      }
-    }
-
-    setStatusMessage('Order saved as an open bill. New POS bill is ready.');
+    setStatusMessage('Order saved as an open bill. Create a new order to continue.');
     navigate('/bills/pending');
   };
 

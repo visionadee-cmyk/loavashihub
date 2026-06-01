@@ -4,6 +4,7 @@ import { InventoryProvider } from './context/InventoryContext';
 import LoginPage from './pages/LoginPage';
 import AdminDashboard from './pages/AdminDashboard';
 import POSPage from './pages/POSPage';
+import POSReports from './pages/POSReports';
 import MenuManagement from './pages/MenuManagement';
 import TableManagement from './pages/TableManagement';
 import StaffManagement from './pages/StaffManagement';
@@ -45,6 +46,14 @@ function App() {
                 <ProtectedRoute allowedRoles={['admin']}>
                   <AdminDashboard />
                 </ProtectedRoute>
+            <Route
+              path="/pos/reports"
+              element={
+                <ProtectedRoute allowedRoles={["admin", "cashier"]}>
+                  <POSReports />
+                </ProtectedRoute>
+              }
+            />
               }
             />
             <Route

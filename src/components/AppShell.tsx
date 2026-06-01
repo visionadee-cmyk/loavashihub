@@ -29,6 +29,7 @@ const adminNav = [
 
 const cashierNav = [
   { path: '/pos', label: 'POS', icon: ShoppingCart },
+  { path: '/pos/reports', label: 'POS reports', icon: BarChart3 },
   { path: '/dine-and-go', label: 'Dine-and-Go', icon: Wine },
   { path: '/bills/pending', label: 'Open bills', icon: Clock },
   { path: '/bills/completed', label: 'Completed bills', icon: CheckCircle2 },

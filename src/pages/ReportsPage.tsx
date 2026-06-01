@@ -878,7 +878,7 @@ export default function ReportsPage() {
                         <Cell key={`cell-${idx}`} fill={colors[idx % colors.length]} />
                       ))}
                     </Pie>
-                    <Tooltip formatter={(value: number) => formatMVR(value)} />
+                    <Tooltip formatter={(value: any) => formatMVR(Number(value ?? 0))} />
                   </PieChart>
                 </ResponsiveContainer>
               </div>

@@ -8,7 +8,7 @@ import { Download, Filter, X, Share2 } from 'lucide-react';
 import AppShell from '../components/AppShell';
 import { loadCollection } from '../lib/firestore';
 import { formatMVR } from '../lib/mvr';
-import type { Bill, DailyDirectRevenue, DirectPurchase, Expense, OutsourceItem } from '../types';
+import type { Bill, DailyDirectRevenue, DirectPurchase, Expense, OutsourceItem, MenuItem } from '../types';
 
 const colors = ['#7c4b2e', '#05093f', '#4c3929'];
 
@@ -40,6 +40,7 @@ export default function ReportsPage() {
   const [directPurchases, setDirectPurchases] = useState<DirectPurchase[]>([]);
   const [directRevenueEntries, setDirectRevenueEntries] = useState<DailyDirectRevenue[]>([]);
   const [outsourceItems, setOutsourceItems] = useState<OutsourceItem[]>([]);
+  const [menuItems, setMenuItems] = useState<MenuItem[]>([]);
   const [showCustomReport, setShowCustomReport] = useState(false);
   const [selectedDailyDate, setSelectedDailyDate] = useState<string>(new Date().toISOString().slice(0, 10));
   const [customFilter, setCustomFilter] = useState<CustomReportFilter>({
@@ -69,6 +70,9 @@ export default function ReportsPage() {
       .catch(() => undefined);
     loadCollection<OutsourceItem>('outsourceItems', [])
       .then((items) => setOutsourceItems(items))
+      .catch(() => undefined);
+    loadCollection<MenuItem>('menuItems', [])
+      .then((items) => setMenuItems(items))
       .catch(() => undefined);
   }, []);
 
@@ -385,6 +389,29 @@ export default function ReportsPage() {
 
     return expenseTotal + directPurchaseTotal + outsourceCostToday;
   }, [expenses, directPurchases, outsourceItems, todayKey]);
+
+  // Signature dishes statistics
+  const signatureStats = useMemo(() => {
+    if (!menuItems.length || !bills.length) return { totalRevenue: 0, items: [] as { name: string; revenue: number; quantity: number }[] };
+
+    const signatureIds = new Set(menuItems.filter((m) => m.isSignature).map((m) => m.id));
+    const map: Record<string, { name: string; revenue: number; quantity: number }> = {};
+
+    bills.forEach((bill) => {
+      bill.items.forEach((it) => {
+        if (!it.productId) return;
+        if (!signatureIds.has(it.productId)) return;
+        const key = it.productId;
+        if (!map[key]) map[key] = { name: it.name, revenue: 0, quantity: 0 };
+        map[key].quantity += it.quantity;
+        map[key].revenue += it.price * it.quantity;
+      });
+    });
+
+    const items = Object.values(map).sort((a, b) => b.revenue - a.revenue);
+    const totalRevenue = items.reduce((s, it) => s + it.revenue, 0);
+    return { totalRevenue, items };
+  }, [menuItems, bills]);
 
   
 
@@ -836,6 +863,39 @@ export default function ReportsPage() {
               </button>
             </div>
           </div>
+        {signatureStats.items.length > 0 ? (
+          <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
+            <div className="mb-4 flex items-center justify-between">
+              <h3 className="text-lg font-semibold text-slate-900">Signature Dishes</h3>
+              <p className="text-sm text-slate-500">Revenue: {formatMVR(signatureStats.totalRevenue)}</p>
+            </div>
+            <div className="grid gap-4 md:grid-cols-2">
+              <div className="h-52">
+                <ResponsiveContainer width="100%" height="100%">
+                  <PieChart>
+                    <Pie dataKey="value" data={signatureStats.items.map((it) => ({ name: it.name, value: it.revenue }))} outerRadius={80} innerRadius={30}>
+                      {signatureStats.items.map((_, idx) => (
+                        <Cell key={`cell-${idx}`} fill={colors[idx % colors.length]} />
+                      ))}
+                    </Pie>
+                    <Tooltip formatter={(value: number) => formatMVR(value)} />
+                  </PieChart>
+                </ResponsiveContainer>
+              </div>
+              <div>
+                <p className="text-sm text-slate-600 mb-2">Top signature dishes</p>
+                <ul className="space-y-2">
+                  {signatureStats.items.slice(0, 6).map((it) => (
+                    <li key={it.name} className="flex items-center justify-between">
+                      <span className="text-sm text-slate-800">{it.name} ({it.quantity})</span>
+                      <span className="text-sm font-semibold text-slate-900">{formatMVR(it.revenue)}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            </div>
+          </div>
+        ) : null}
 
           {dailyReport && (dailyReport.posRevenue !== 0 || dailyReport.directRevenue !== 0 || dailyReport.expenses !== 0 || dailyReport.purchases !== 0 || dailyReport.salary !== 0) ? (
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-6">

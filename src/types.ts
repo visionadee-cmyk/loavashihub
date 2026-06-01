@@ -60,6 +60,7 @@ export interface MenuItem {
   costPrice?: number;
   description: string;
   image: string;
+  isSignature?: boolean;
 }
 
 export interface PurchaseOrder {

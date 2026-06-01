@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Pen, Trash2, Check, Search, X } from 'lucide-react';
+import { Pen, Trash2, Check, Search, X, Star } from 'lucide-react';
 import AppShell from '../components/AppShell';
 import { formatMVR } from '../lib/mvr';
 import { hasFirebaseConfig } from '../lib/firebase';
@@ -15,6 +15,7 @@ const initialForm: Partial<MenuItem> = {
   costPrice: 0,
   description: '',
   image: 'https://images.unsplash.com/photo-1509042239860-f550ce710b93?auto=format&fit=crop&w=700&q=80',
+  isSignature: false,
 };
 
 export default function MenuManagement() {
@@ -30,10 +31,39 @@ export default function MenuManagement() {
   const [filterCategory, setFilterCategory] = useState<string>('All');
   const firebaseMissing = !hasFirebaseConfig;
 
-  const categoryOptions = useMemo(
-    () => (products.length ? Array.from(new Set(products.map((item) => item.category))) : Array.from(CATEGORY_OPTIONS)),
-    [products],
-  );
+  const [categories, setCategories] = useState<string[]>(Array.from(CATEGORY_OPTIONS));
+  const [newCategory, setNewCategory] = useState('');
+
+  useEffect(() => {
+    // attempt to load saved categories from Firestore collection 'categories'
+    if (!hasFirebaseConfig) return;
+    loadCollection<{ id: string; title: string }>('categories', [])
+      .then((items) => {
+        if (items && items.length) setCategories(items.map((c) => c.title));
+      })
+      .catch(() => undefined);
+  }, []);
+
+  const addCategory = async () => {
+    const title = newCategory.trim();
+    if (!title) return;
+    const id = `category-${Date.now()}`;
+    setCategories((c) => [...c, title]);
+    setNewCategory('');
+    if (hasFirebaseConfig) {
+      try {
+        await saveDocument('categories', id, { id, title });
+      } catch (error) {
+        console.error('Failed to save category:', error);
+      }
+    }
+  };
+
+  const categoryOptions = useMemo(() => {
+    if (categories.length) return categories;
+    if (products.length) return Array.from(new Set(products.map((item) => item.category)));
+    return Array.from(CATEGORY_OPTIONS);
+  }, [categories, products]);
 
   const filteredProducts = useMemo(() => {
     return products.filter((product) => {
@@ -98,6 +128,7 @@ export default function MenuManagement() {
       costPrice: Number(addForm.costPrice) || 0,
       description: addForm.description || 'Fresh product.',
       image: addForm.image ?? initialForm.image ?? '',
+      isSignature: Boolean(addForm.isSignature),
     };
 
     setProducts((current) => [payload, ...current]);
@@ -130,6 +161,7 @@ export default function MenuManagement() {
       costPrice: Number(editForm.costPrice) || 0,
       description: editForm.description || 'Fresh product.',
       image: editForm.image ?? initialForm.image ?? '',
+      isSignature: Boolean(editForm.isSignature),
     };
 
     setProducts((current) => current.map((item) => (item.id === editingId ? payload : item)));
@@ -228,6 +260,25 @@ export default function MenuManagement() {
                     <option key={category} value={category}>{category}</option>
                   ))}
                 </select>
+              </label>
+              <div className="space-y-2">
+                <label className="block text-xs text-slate-500">Add new category</label>
+                <div className="flex gap-2">
+                  <input value={newCategory} onChange={(e) => setNewCategory(e.target.value)} placeholder="e.g. Signature" className="w-full rounded-3xl border border-slate-300 bg-white px-4 py-2 text-slate-900 outline-none" />
+                  <button type="button" onClick={addCategory} className="rounded-3xl bg-violet-600 px-3 py-2 text-sm font-semibold text-white">Add</button>
+                </div>
+              </div>
+              <label className="block text-sm text-slate-600">
+                <span className="flex items-center justify-between">Signature dish <small className="text-xs text-slate-400">(highlight on POS & reports)</small></span>
+                <div className="mt-2 inline-flex items-center gap-2">
+                  <input
+                    type="checkbox"
+                    checked={Boolean(addForm.isSignature)}
+                    onChange={(e) => setAddForm((current) => ({ ...current, isSignature: e.target.checked }))}
+                    className="h-4 w-4 rounded border-slate-300"
+                  />
+                  <Star className="h-4 w-4 text-amber-400" />
+                </div>
               </label>
               <label className="block text-sm text-slate-600">
                 Cost price (MVR)
@@ -422,6 +473,18 @@ export default function MenuManagement() {
                       <option key={category} value={category}>{category}</option>
                     ))}
                   </select>
+                </label>
+                <label className="block text-sm text-slate-600">
+                  <span className="flex items-center justify-between">Signature dish <small className="text-xs text-slate-400">(highlight on POS & reports)</small></span>
+                  <div className="mt-2 inline-flex items-center gap-2">
+                    <input
+                      type="checkbox"
+                      checked={Boolean(editForm.isSignature)}
+                      onChange={(e) => setEditForm((current) => ({ ...current, isSignature: e.target.checked }))}
+                      className="h-4 w-4 rounded border-slate-300"
+                    />
+                    <Star className="h-4 w-4 text-amber-400" />
+                  </div>
                 </label>
                 <label className="block text-sm text-slate-600">
                   Cost price (MVR)

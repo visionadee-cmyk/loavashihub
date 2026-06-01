@@ -148,7 +148,7 @@ export default function POSPage() {
   );
 
   const activeBill = useMemo(
-    () => bills.find((bill) => bill.id === activeBillId) ?? bills[0] ?? null,
+    () => bills.find((bill) => bill.id === activeBillId) ?? null,
     [bills, activeBillId],
   );
 
@@ -172,22 +172,9 @@ export default function POSPage() {
       setTables(loadedTables);
       setCustomers(loadedCustomers);
 
-      let initialBill = loadedBills.find((bill) => bill.status !== 'Served') ?? null;
-      let allBills = loadedBills;
-
-      if (!initialBill && loadedTables.length) {
-        initialBill = createEmptyBill(loadedTables[0].name, useDefaultTaxRate ? defaultTaxRate : 0);
-        allBills = [...loadedBills, initialBill];
-        await saveDocument('bills', initialBill.id, initialBill);
-      }
-
-      if (allBills.length) {
-        setBills(allBills);
-        setActiveBillId(initialBill?.id ?? allBills[0].id);
-      } else {
-        setBills([]);
-        setActiveBillId('');
-      }
+      // Do not auto-create or auto-select an empty bill on load.
+      setBills(loadedBills);
+      setActiveBillId('');
 
       if (!loadedTables.length) {
         setStatusMessage('Add your tables first in Table Management before taking POS orders.');

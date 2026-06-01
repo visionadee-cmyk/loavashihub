@@ -21,6 +21,7 @@ Loavashi Hub is a cafe and restaurant management system with separate admin and 
 - `/admin/recipes` — Manage recipes and consume inventory.
 - `/admin/assets` — Track physical assets.
 - `/admin/reports` — View financial and inventory reports.
+ - `/admin/outsource` — Manage outsourced/party orders and catering costs (admin only).
 
 ## POS Page
 
@@ -61,6 +62,19 @@ When a purchase order is marked as `Received`, the system will:
 - create a new inventory item for the purchased product if it does not already exist
 
 This makes it easy to receive deliveries and keep stock levels current.
+
+## Outsource Items (Admin)
+
+The Outsource Items page allows admins to record third-party or party catering orders that use menu items but are fulfilled externally.
+
+- Navigate to `/admin/outsource` (Admin role required).
+- Select a menu item from the dropdown; the selling price auto-fills from the menu item.
+- Enter `cost per portion` and the number of `portions` for the party.
+- Enter the `party name` and optional notes.
+- The page calculates `total cost`, `total revenue` (selling price × portions), and `profit` automatically.
+- Saved records are stored in the `outsourceItems` Firestore collection and are included in the Reports and Daily Direct Revenue pages for accurate totals.
+
+Use this feature to track catering payouts and include outsourced costs in profit calculations.
 
 ## Recipe Management
 

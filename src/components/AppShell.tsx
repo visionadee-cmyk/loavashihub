@@ -16,6 +16,7 @@ const adminNav = [
   { path: '/admin/purchases', label: 'RFQ & Purchase', icon: ShoppingBag },
   { path: '/admin/suppliers', label: 'Suppliers', icon: Users2 },
   { path: '/admin/direct-purchase', label: 'Direct Purchase', icon: ShoppingCart },
+  { path: '/admin/outsource', label: 'Outsource items', icon: Package },
   { path: '/admin/daily-direct-revenue', label: 'Daily direct revenue', icon: DollarSign },
   { path: '/admin/purchase-history', label: 'Purchase History', icon: History },
   { path: '/admin/inventory-update', label: 'Inventory Count', icon: ListChecks },

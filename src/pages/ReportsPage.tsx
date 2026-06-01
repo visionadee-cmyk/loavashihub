@@ -8,7 +8,7 @@ import { Download, Filter, X, Share2 } from 'lucide-react';
 import AppShell from '../components/AppShell';
 import { loadCollection } from '../lib/firestore';
 import { formatMVR } from '../lib/mvr';
-import type { Bill, DailyDirectRevenue, DirectPurchase, Expense } from '../types';
+import type { Bill, DailyDirectRevenue, DirectPurchase, Expense, OutsourceItem } from '../types';
 
 const colors = ['#7c4b2e', '#05093f', '#4c3929'];
 
@@ -39,6 +39,7 @@ export default function ReportsPage() {
   const [expenses, setExpenses] = useState<Expense[]>([]);
   const [directPurchases, setDirectPurchases] = useState<DirectPurchase[]>([]);
   const [directRevenueEntries, setDirectRevenueEntries] = useState<DailyDirectRevenue[]>([]);
+  const [outsourceItems, setOutsourceItems] = useState<OutsourceItem[]>([]);
   const [showCustomReport, setShowCustomReport] = useState(false);
   const [selectedDailyDate, setSelectedDailyDate] = useState<string>(new Date().toISOString().slice(0, 10));
   const [customFilter, setCustomFilter] = useState<CustomReportFilter>({
@@ -66,6 +67,9 @@ export default function ReportsPage() {
     loadCollection<DailyDirectRevenue>('dailyDirectRevenue', [])
       .then((items) => setDirectRevenueEntries(items))
       .catch(() => undefined);
+    loadCollection<OutsourceItem>('outsourceItems', [])
+      .then((items) => setOutsourceItems(items))
+      .catch(() => undefined);
   }, []);
 
   const totalSales = useMemo(
@@ -83,12 +87,30 @@ export default function ReportsPage() {
     [directPurchases],
   );
 
-  const totalExpenses = useMemo(
-    () => expenses.reduce((sum, expense) => sum + expense.amount, 0) + directPurchaseExpenses,
-    [expenses, directPurchaseExpenses],
+  const outsourcedRevenue = useMemo(
+    () => outsourceItems.reduce((sum, item) => sum + item.totalRevenue, 0),
+    [outsourceItems],
   );
 
-  const profit = totalSales - totalExpenses;
+  const outsourcedCost = useMemo(
+    () => outsourceItems.reduce((sum, item) => sum + item.totalCost, 0),
+    [outsourceItems],
+  );
+
+  const totalExpenses = useMemo(
+    () => expenses.reduce((sum, expense) => sum + expense.amount, 0) + directPurchaseExpenses + outsourcedCost,
+    [expenses, directPurchaseExpenses, outsourcedCost],
+  );
+
+  const totalRevenue = useMemo(
+    () => totalSales + directRevenueTotal + outsourcedRevenue,
+    [totalSales, directRevenueTotal, outsourcedRevenue],
+  );
+
+  const profit = useMemo(
+    () => totalRevenue - totalExpenses,
+    [totalRevenue, totalExpenses],
+  );
 
   // Daily Report Data
   const dailyReport = useMemo(() => {
@@ -119,10 +141,18 @@ export default function ReportsPage() {
       .filter((purchase) => purchase.date === dayStart)
       .reduce((sum, purchase) => sum + purchase.total, 0);
 
-    // Calculate revenue from POS + Direct Revenue (Cash + Card only, excluding Vikura) + Purchased from Cash Drawer
+    const dayOutsourceRevenue = outsourceItems
+      .filter((item) => item.date === dayStart)
+      .reduce((sum, item) => sum + item.totalRevenue, 0);
+
+    const dayOutsourceCost = outsourceItems
+      .filter((item) => item.date === dayStart)
+      .reduce((sum, item) => sum + item.totalCost, 0);
+
+    // Calculate revenue from POS + Direct Revenue (Cash + Card only, excluding Vikura) + Purchased from Cash Drawer + Outsource Revenue
     const directRevenueWithoutVikura = (dayDirectRevenue?.cashTotal || 0) + (dayDirectRevenue?.cardTotal || 0);
-    const totalDayRevenue = posRevenue + directRevenueWithoutVikura + purchasedFromCashDrawer;
-    const totalDayExpenses = dayExpenses + dayPurchases + daySalary;
+    const totalDayRevenue = posRevenue + directRevenueWithoutVikura + purchasedFromCashDrawer + dayOutsourceRevenue;
+    const totalDayExpenses = dayExpenses + dayPurchases + daySalary + dayOutsourceCost;
     const dailyProfit = totalDayRevenue - totalDayExpenses;
 
     // Build cash breakdown
@@ -154,13 +184,15 @@ export default function ReportsPage() {
       totalCardPayments: dayDirectRevenue?.cardTotal || 0,
       openingPettyCash: (dayDirectRevenue as any)?.openingPettyCash || 0,
       closingPettyCash: (dayDirectRevenue as any)?.closingPettyCash || 0,
+      outsourceRevenue: dayOutsourceRevenue,
+      outsourceCost: dayOutsourceCost,
       expenses: dayExpenses,
       purchases: dayPurchases,
       salary: daySalary,
       totalExpenses: totalDayExpenses,
       profit: dailyProfit,
     };
-  }, [selectedDailyDate, bills, directRevenueEntries, expenses, directPurchases]);
+  }, [selectedDailyDate, bills, directRevenueEntries, expenses, directPurchases, outsourceItems]);
 
   // Month-to-date (MTD) and Year-to-date (YTD) stats
   const mtdStats = useMemo(() => {
@@ -175,17 +207,26 @@ export default function ReportsPage() {
       .filter((d) => d.date >= startMonth && d.date <= selectedDailyDate)
       .reduce((sum, d) => sum + (d.totalDirectRevenue || 0), 0);
 
-    const revenueMTD = salesMTD + directRevenueMTD;
+    const outsourceRevenueMTD = outsourceItems
+      .filter((item) => item.date >= startMonth && item.date <= selectedDailyDate)
+      .reduce((sum, item) => sum + item.totalRevenue, 0);
+
+    const outsourceCostMTD = outsourceItems
+      .filter((item) => item.date >= startMonth && item.date <= selectedDailyDate)
+      .reduce((sum, item) => sum + item.totalCost, 0);
+
+    const revenueMTD = salesMTD + directRevenueMTD + outsourceRevenueMTD;
 
     const expensesMTD = expenses
       .filter((e) => e.date >= startMonth && e.date <= selectedDailyDate)
       .reduce((sum, e) => sum + e.amount, 0)
       + directPurchases
         .filter((p) => p.date >= startMonth && p.date <= selectedDailyDate)
-        .reduce((sum, p) => sum + p.total, 0);
+        .reduce((sum, p) => sum + p.total, 0)
+      + outsourceCostMTD;
 
     return { revenueMTD, expensesMTD, profitMTD: revenueMTD - expensesMTD };
-  }, [bills, directRevenueEntries, expenses, directPurchases, selectedDailyDate]);
+  }, [bills, directRevenueEntries, expenses, directPurchases, outsourceItems, selectedDailyDate]);
 
   const ytdStats = useMemo(() => {
     const today = new Date();
@@ -199,17 +240,26 @@ export default function ReportsPage() {
       .filter((d) => d.date >= startYear && d.date <= selectedDailyDate)
       .reduce((sum, d) => sum + (d.totalDirectRevenue || 0), 0);
 
-    const revenueYTD = salesYTD + directRevenueYTD;
+    const outsourceRevenueYTD = outsourceItems
+      .filter((item) => item.date >= startYear && item.date <= selectedDailyDate)
+      .reduce((sum, item) => sum + item.totalRevenue, 0);
+
+    const outsourceCostYTD = outsourceItems
+      .filter((item) => item.date >= startYear && item.date <= selectedDailyDate)
+      .reduce((sum, item) => sum + item.totalCost, 0);
+
+    const revenueYTD = salesYTD + directRevenueYTD + outsourceRevenueYTD;
 
     const expensesYTD = expenses
       .filter((e) => e.date >= startYear && e.date <= selectedDailyDate)
       .reduce((sum, e) => sum + e.amount, 0)
       + directPurchases
         .filter((p) => p.date >= startYear && p.date <= selectedDailyDate)
-        .reduce((sum, p) => sum + p.total, 0);
+        .reduce((sum, p) => sum + p.total, 0)
+      + outsourceCostYTD;
 
     return { revenueYTD, expensesYTD, profitYTD: revenueYTD - expensesYTD };
-  }, [bills, directRevenueEntries, expenses, directPurchases, selectedDailyDate]);
+  }, [bills, directRevenueEntries, expenses, directPurchases, outsourceItems, selectedDailyDate]);
 
   // Generate shareable report text
   const generateReportText = (): string => {
@@ -223,6 +273,9 @@ export default function ReportsPage() {
     text += `💰 *REVENUE*\n`;
     text += `POS Sales: ${formatMVR(report.posRevenue)}\n`;
     text += `Direct Revenue: ${formatMVR(report.directRevenue)}\n`;
+    if ((report as any).outsourceRevenue > 0) {
+      text += `Outsource Revenue: ${formatMVR((report as any).outsourceRevenue)}\n`;
+    }
     if (report.vikuraAmount > 0) {
       text += `Vikura (Manual POS): ${formatMVR(report.vikuraAmount)}\n`;
     }
@@ -263,6 +316,9 @@ export default function ReportsPage() {
     text += `📋 *EXPENSES*\n`;
     text += `Daily Expenses: ${formatMVR(report.expenses)}\n`;
     text += `Direct Purchases: ${formatMVR(report.purchases)}\n`;
+    if ((report as any).outsourceCost > 0) {
+      text += `Outsource Cost: ${formatMVR((report as any).outsourceCost)}\n`;
+    }
     if (report.salary > 0) {
       text += `Daily Salary: ${formatMVR(report.salary)}\n`;
     }
@@ -302,8 +358,8 @@ export default function ReportsPage() {
   );
 
   const profitMargin = useMemo(
-    () => totalSales > 0 ? (profit / totalSales) * 100 : 0,
-    [profit, totalSales],
+    () => totalRevenue > 0 ? (profit / totalRevenue) * 100 : 0,
+    [profit, totalRevenue],
   );
 
   const todayKey = new Date().toISOString().slice(0, 10);
@@ -323,8 +379,12 @@ export default function ReportsPage() {
       .filter((purchase) => purchase.date === todayKey)
       .reduce((sum, purchase) => sum + purchase.total, 0);
 
-    return expenseTotal + directPurchaseTotal;
-  }, [expenses, directPurchases, todayKey]);
+    const outsourceCostToday = outsourceItems
+      .filter((item) => item.date === todayKey)
+      .reduce((sum, item) => sum + item.totalCost, 0);
+
+    return expenseTotal + directPurchaseTotal + outsourceCostToday;
+  }, [expenses, directPurchases, outsourceItems, todayKey]);
 
   
 
@@ -337,6 +397,11 @@ export default function ReportsPage() {
   const filteredExpenses = useMemo(
     () => expenses.filter((expense) => expense.date >= customFilter.startDate && expense.date <= customFilter.endDate),
     [expenses, customFilter.startDate, customFilter.endDate],
+  );
+
+  const filteredOutsourceItems = useMemo(
+    () => outsourceItems.filter((item) => item.date >= customFilter.startDate && item.date <= customFilter.endDate),
+    [outsourceItems, customFilter.startDate, customFilter.endDate],
   );
 
   // Daily revenue data (including direct revenue)
@@ -356,10 +421,15 @@ export default function ReportsPage() {
       grouped[entry.date] = (grouped[entry.date] ?? 0) + entry.totalDirectRevenue;
     });
 
+    const filteredOutsource = filteredOutsourceItems;
+    filteredOutsource.forEach((item) => {
+      grouped[item.date] = (grouped[item.date] ?? 0) + item.totalRevenue;
+    });
+
     return Object.entries(grouped)
       .sort(([a], [b]) => a.localeCompare(b))
       .map(([date, revenue]) => ({ date, revenue }));
-  }, [filteredBills, directRevenueEntries, customFilter.startDate, customFilter.endDate]);
+  }, [filteredBills, directRevenueEntries, filteredOutsourceItems, customFilter.startDate, customFilter.endDate]);
 
   const exportXlsx = () => {
     const workbook = utils.book_new();
@@ -368,6 +438,8 @@ export default function ReportsPage() {
     const summarySheet = utils.json_to_sheet([
       { Metric: 'Total Sales', Value: totalSales },
       { Metric: 'Direct Revenue', Value: directRevenueTotal },
+      { Metric: 'Outsource Revenue', Value: outsourcedRevenue },
+      { Metric: 'Total Revenue', Value: totalRevenue },
       { Metric: 'Total Expenses', Value: totalExpenses },
       { Metric: 'Profit', Value: profit },
       { Metric: 'Profit Margin (%)', Value: profitMargin.toFixed(2) },
@@ -406,6 +478,22 @@ export default function ReportsPage() {
       })),
     );
     utils.book_append_sheet(workbook, expensesSheet, 'Expenses');
+
+    const outsourceSheet = utils.json_to_sheet(
+      filteredOutsourceItems.map((item) => ({
+        Date: item.date,
+        Party: item.partyName,
+        Item: item.menuItemName,
+        Portions: item.portions,
+        SellingPrice: item.sellingPrice,
+        CostPerPortion: item.costPerPortion,
+        TotalRevenue: item.totalRevenue,
+        TotalCost: item.totalCost,
+        Profit: item.profit,
+        Notes: item.notes || '',
+      })),
+    );
+    utils.book_append_sheet(workbook, outsourceSheet, 'Outsource Items');
 
     const data = write(workbook, { bookType: 'xlsx', type: 'array' });
     saveAs(
@@ -480,10 +568,16 @@ export default function ReportsPage() {
       grouped[key] = (grouped[key] ?? 0) + entry.totalDirectRevenue;
     });
 
+    // Add outsource revenue to monthly totals
+    outsourceItems.forEach((item) => {
+      const key = monthKey(item.date);
+      grouped[key] = (grouped[key] ?? 0) + item.totalRevenue;
+    });
+
     return Object.entries(grouped)
       .sort(([a], [b]) => a.localeCompare(b))
       .map(([key, revenue]) => ({ name: formatMonthLabel(key), revenue }));
-  }, [bills, directRevenueEntries]);
+  }, [bills, directRevenueEntries, outsourceItems]);
 
   const paymentBreakdown = useMemo(() => {
     const counts: Record<string, number> = {};
@@ -548,10 +642,18 @@ export default function ReportsPage() {
       grouped['Direct Revenue'] = directRevenueTotal;
     }
 
+    const filteredOutsource = outsourceItems.filter(
+      (item) => item.date >= customFilter.startDate && item.date <= customFilter.endDate,
+    );
+    const outsourceRevenueTotal = filteredOutsource.reduce((sum, item) => sum + item.totalRevenue, 0);
+    if (outsourceRevenueTotal > 0) {
+      grouped['Outsource Revenue'] = outsourceRevenueTotal;
+    }
+
     return Object.entries(grouped)
       .map(([category, revenue]) => ({ name: category, value: revenue }))
       .sort((a, b) => b.value - a.value);
-  }, [filteredBills, directRevenueEntries, customFilter.startDate, customFilter.endDate]);
+  }, [filteredBills, directRevenueEntries, outsourceItems, customFilter.startDate, customFilter.endDate]);
 
   return (
     <AppShell title="Reports & analytics">
@@ -690,6 +792,7 @@ export default function ReportsPage() {
             { label: 'Avg Transaction', value: formatMVR(averageTransactionValue) },
             { label: 'POS Revenue', value: formatMVR(totalSales) },
             { label: 'Direct Revenue', value: formatMVR(directRevenueTotal) },
+            { label: 'Outsource Revenue', value: formatMVR(outsourcedRevenue) },
             { label: 'Total Expense', value: formatMVR(totalExpenses) },
             { label: 'Profit Margin', value: `${profitMargin.toFixed(1)}%` },
             { label: 'Total Profit', value: formatMVR(profit) },
@@ -751,6 +854,14 @@ export default function ReportsPage() {
               <div className="rounded-2xl border border-white/50 bg-white p-4">
                 <p className="text-xs uppercase tracking-widest text-slate-500">Direct Purchases</p>
                 <p className="mt-3 text-2xl font-bold text-amber-700">{formatMVR(dailyReport.purchases)}</p>
+              </div>
+              <div className="rounded-2xl border border-white/50 bg-white p-4">
+                <p className="text-xs uppercase tracking-widest text-slate-500">Outsource Revenue</p>
+                <p className="mt-3 text-2xl font-bold text-emerald-700">{formatMVR((dailyReport as any).outsourceRevenue || 0)}</p>
+              </div>
+              <div className="rounded-2xl border border-white/50 bg-white p-4">
+                <p className="text-xs uppercase tracking-widest text-slate-500">Outsource Cost</p>
+                <p className="mt-3 text-2xl font-bold text-rose-700">{formatMVR((dailyReport as any).outsourceCost || 0)}</p>
               </div>
               <div className="rounded-2xl border border-white/50 bg-white p-4">
                 <p className="text-xs uppercase tracking-widest text-slate-500">Salary</p>

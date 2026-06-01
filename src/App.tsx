@@ -14,6 +14,7 @@ import SmartAnalyticsPage from './pages/SmartAnalyticsPage';
 import PurchaseProductsPage from './pages/PurchaseProductsPage';
 import DirectPurchasePage from './pages/DirectPurchasePage';
 import DailyDirectRevenuePage from './pages/DailyDirectRevenuePage';
+import OutsourceItemsPage from './pages/OutsourceItemsPage';
 import PurchaseHistoryPage from './pages/PurchaseHistoryPage';
 import SuppliersPage from './pages/SuppliersPage';
 import InventoryUpdatePage from './pages/InventoryUpdatePage';
@@ -147,6 +148,14 @@ function App() {
               element={
                 <ProtectedRoute allowedRoles={['admin']}>
                   <DirectPurchasePage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/admin/outsource"
+              element={
+                <ProtectedRoute allowedRoles={['admin']}>
+                  <OutsourceItemsPage />
                 </ProtectedRoute>
               }
             />

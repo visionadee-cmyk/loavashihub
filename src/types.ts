@@ -193,6 +193,22 @@ export interface Expense {
   date: string;
 }
 
+export interface OutsourceItem {
+  id: string;
+  date: string;
+  partyName: string;
+  menuItemId: string;
+  menuItemName: string;
+  sellingPrice: number;
+  costPerPortion: number;
+  portions: number;
+  totalCost: number;
+  totalRevenue: number;
+  profit: number;
+  notes?: string;
+  createdAt: string;
+}
+
 export interface MonthlyExpense {
   id: string;
   title: string;

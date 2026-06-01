@@ -23,6 +23,7 @@ Loavashi Hub is a comprehensive, modern cafe and restaurant management system bu
 - **Asset Management** - Equipment tracking and maintenance status
 - **Daily Revenue Tracking** - Cash counting and revenue reconciliation
 - **Supplier Management** - Vendor information and contact details
+- **Outsource Items** - Manage outsourced catering or party orders: select menu items, set cost per portion, record portions and party details; integrates into reports and daily revenue
 
 ### Technical Features
 - **Role-based Protected Routes** - Role-aware navigation and access control
@@ -140,6 +141,7 @@ The app uses the following Firestore collections:
 - `directPurchases` - Direct purchase records
 - `suppliers` - Supplier information
 - `dailyDirectRevenue` - Daily revenue tracking
+- `outsourceItems` - Outsourced/party orders and third-party catering costs
 - `inventoryAdjustments` - Stock adjustment history
 - `assets` - Equipment and assets
 - `appSettings` - Application configuration

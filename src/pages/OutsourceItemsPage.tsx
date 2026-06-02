@@ -186,38 +186,7 @@ export default function OutsourceItemsPage() {
     });
   };
 
-  const cancelPayParty = () => {
-    setPaymentForm(null);
-  };
-
-  const savePartyPayment = async () => {
-    if (!paymentForm) return;
-    const updatedItems = items.map((item) =>
-      item.id === paymentForm.itemId
-        ? {
-            ...item,
-            partyPaid: true,
-            partyPaymentAmount: Number(paymentForm.amount.toFixed(2)),
-            partyPaymentDate: paymentForm.paymentDate,
-            costDeductionDate: paymentForm.deductionDate,
-          }
-        : item,
-    );
-    setItems(updatedItems);
-
-    if (hasFirebaseConfig) {
-      const updatedItem = updatedItems.find((item) => item.id === paymentForm.itemId);
-      if (updatedItem) {
-        try {
-          await saveDocument('outsourceItems', updatedItem.id, updatedItem);
-        } catch (error) {
-          console.error('Failed to save party payment:', error);
-        }
-      }
-    }
-
-    setPaymentForm(null);
-  };
+  
 
   const deleteParty = async (id: string) => {
     setPartyNames((current) => current.filter((p) => p.id !== id));

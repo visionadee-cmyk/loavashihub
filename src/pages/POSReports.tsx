@@ -528,7 +528,10 @@ export default function POSReports() {
         <div className="mt-6 rounded-2xl border border-slate-200 bg-white p-4">
           <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
             <div>
-              <h4 className="text-sm font-semibold text-slate-800">Item-wise sales</h4>
+              <div className="flex flex-wrap items-center gap-2">
+                <h4 className="text-sm font-semibold text-slate-800">Item-wise sales</h4>
+                <span className="rounded-full bg-slate-100 px-2 py-1 text-[11px] font-semibold text-slate-700">{itemSales.length} items</span>
+              </div>
               <p className="text-xs text-slate-500 mt-1">Review item quantity and revenue for the selected period.</p>
             </div>
             <div className="flex flex-wrap gap-2">
@@ -557,7 +560,7 @@ export default function POSReports() {
                   </tr>
                 </thead>
                 <tbody>
-                  {itemSales.slice(0, 50).map((item) => (
+                  {itemSales.map((item) => (
                     <tr key={item.id} className="border-b border-slate-100">
                       <td className="px-3 py-3 font-medium text-slate-900">{item.name}</td>
                       <td className="px-3 py-3 text-slate-500">{item.category}</td>
@@ -655,11 +658,16 @@ export default function POSReports() {
             </div>
           </div>
           <div className="mt-6 rounded-2xl border border-slate-200 bg-white p-4">
-            <h5 className="text-sm font-semibold text-slate-800">Filtered items</h5>
-            <p className="text-xs text-slate-500 mt-1">Showing up to the top 20 item results.</p>
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <div>
+                <h5 className="text-sm font-semibold text-slate-800">Filtered items</h5>
+                <p className="text-xs text-slate-500 mt-1">Showing all filtered item results for the current query.</p>
+              </div>
+              <span className="rounded-full bg-slate-100 px-2 py-1 text-[11px] font-semibold text-slate-700">{itemSales.length} items</span>
+            </div>
             {itemSales.length ? (
               <ul className="mt-3 space-y-2">
-                {itemSales.slice(0, 20).map((item) => (
+                {itemSales.map((item) => (
                   <li key={item.id} className="rounded-lg border border-slate-200 bg-slate-50 p-3 text-sm flex items-center justify-between">
                     <div>
                       <p className="font-medium text-slate-900">{item.name}</p>

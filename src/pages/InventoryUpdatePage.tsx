@@ -34,8 +34,10 @@ export default function InventoryUpdatePage() {
     const purchaseMap = new Map<string, number>();
     allProducts.forEach((product) => {
       if (product.source === 'purchase') {
-        const current = purchaseMap.get(product.name) || 0;
-        purchaseMap.set(product.name, current + product.quantity);
+        const quantity = Number(product.quantity) || 0;
+        const name = product.name.trim();
+        const current = purchaseMap.get(name) || 0;
+        purchaseMap.set(name, current + quantity);
       }
     });
     return Array.from(purchaseMap.entries())
@@ -46,7 +48,7 @@ export default function InventoryUpdatePage() {
 
   // Get top 10 inventory items
   const top10Inventory = useMemo(() => {
-    return inventory
+    return [...inventory]
       .sort((a, b) => b.quantity - a.quantity)
       .slice(0, 10);
   }, [inventory]);

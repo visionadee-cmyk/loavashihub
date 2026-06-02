@@ -2,6 +2,10 @@
 
 All notable changes to the Loavashi Hub application.
 
+## 2026-06-02
+
+- Added POS Reports page export and print support for Excel, PDF, and in-browser printing.
+
 ## 2026-06-01
 
 - Added salary expense support to map `Salary` expense entries to staff names in `StaffManagement`.

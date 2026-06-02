@@ -12,7 +12,7 @@ Loavashi Hub is a comprehensive, modern cafe and restaurant management system bu
 - **Staff Management** - Employee records with visa and work permit tracking
 - **Inventory Management** - Real-time stock tracking with low-stock alerts
 - **Expense Tracking** - Daily and monthly expense management
-- **Reports & Analytics** - Comprehensive business analytics with Excel/PDF export
+- **Reports & Analytics** - Comprehensive business analytics with Excel/PDF export and print-ready POS report views
 
 ### Advanced Features
 - **Recipe Management** - Create recipes with ingredient linking and automatic inventory deduction

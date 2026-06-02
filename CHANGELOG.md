@@ -5,6 +5,7 @@ All notable changes to the Loavashi Hub application.
 ## 2026-06-02
 
 - Added POS Reports page export and print support for Excel, PDF, and in-browser printing.
+- Fixed Reports Dashboard custom report builder so date range and selected metrics correctly filter report display.
 
 ## 2026-06-01
 

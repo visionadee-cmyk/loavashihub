@@ -81,8 +81,11 @@ export default function ReportsPage() {
     [bills],
   );
 
+  const computeEntryDirectRevenue = (entry: DailyDirectRevenue) =>
+    (entry.cashTotal || 0) + (entry.cardTotal || 0) + (entry.purchasedFromCashDrawer || 0);
+
   const directRevenueTotal = useMemo(
-    () => directRevenueEntries.reduce((sum, entry) => sum + entry.totalDirectRevenue, 0),
+    () => directRevenueEntries.reduce((sum, entry) => sum + computeEntryDirectRevenue(entry), 0),
     [directRevenueEntries],
   );
 
@@ -156,9 +159,10 @@ export default function ReportsPage() {
 
     // Calculate revenue from POS + Direct Revenue (Cash + Card only, excluding Vikura) + Purchased from Cash Drawer + Outsource Revenue
     const directRevenueWithoutVikura = (dayDirectRevenue?.cashTotal || 0) + (dayDirectRevenue?.cardTotal || 0);
+    const directRevenueWithDrawer = directRevenueWithoutVikura + purchasedFromCashDrawer;
     // Do not add outsource revenue to totalDayRevenue to avoid double counting
-    const totalDayRevenue = posRevenue + directRevenueWithoutVikura;
-    const totalDayExpenses = dayExpenses + dayPurchases + daySalary + dayOutsourceCost + purchasedFromCashDrawer;
+    const totalDayRevenue = posRevenue + directRevenueWithDrawer;
+    const totalDayExpenses = dayExpenses + dayPurchases + daySalary + dayOutsourceCost;
     const dailyProfit = totalDayRevenue - totalDayExpenses;
 
     // Build cash breakdown
@@ -180,7 +184,7 @@ export default function ReportsPage() {
     return {
       date: dayStart,
       posRevenue,
-      directRevenue: directRevenueWithoutVikura,
+      directRevenue: directRevenueWithDrawer,
       purchasedFromCashDrawer,
       vikuraAmount: (dayDirectRevenue as any)?.vikuraAmount || 0,
       totalRevenue: totalDayRevenue,
@@ -211,7 +215,7 @@ export default function ReportsPage() {
 
     const directRevenueMTD = directRevenueEntries
       .filter((d) => d.date >= startMonth && d.date <= selectedDailyDate)
-      .reduce((sum, d) => sum + (d.totalDirectRevenue || 0), 0);
+      .reduce((sum, d) => sum + computeEntryDirectRevenue(d), 0);
 
     const outsourceCostMTD = outsourceItems
       .filter((item) => item.date >= startMonth && item.date <= selectedDailyDate)
@@ -241,7 +245,7 @@ export default function ReportsPage() {
 
     const directRevenueYTD = directRevenueEntries
       .filter((d) => d.date >= startYear && d.date <= selectedDailyDate)
-      .reduce((sum, d) => sum + (d.totalDirectRevenue || 0), 0);
+      .reduce((sum, d) => sum + computeEntryDirectRevenue(d), 0);
 
     const outsourceCostYTD = outsourceItems
       .filter((item) => item.date >= startYear && item.date <= selectedDailyDate)
@@ -444,7 +448,7 @@ export default function ReportsPage() {
       (entry) => entry.date >= customFilter.startDate && entry.date <= customFilter.endDate,
     );
     filteredDirectRevenue.forEach((entry) => {
-      grouped[entry.date] = (grouped[entry.date] ?? 0) + entry.totalDirectRevenue;
+      grouped[entry.date] = (grouped[entry.date] ?? 0) + computeEntryDirectRevenue(entry);
     });
 
     const filteredOutsource = filteredOutsourceItems;
@@ -591,7 +595,7 @@ export default function ReportsPage() {
     // Add direct revenue to monthly totals
     directRevenueEntries.forEach((entry) => {
       const key = monthKey(entry.date);
-      grouped[key] = (grouped[key] ?? 0) + entry.totalDirectRevenue;
+      grouped[key] = (grouped[key] ?? 0) + computeEntryDirectRevenue(entry);
     });
 
     // Add outsource revenue to monthly totals
@@ -663,7 +667,7 @@ export default function ReportsPage() {
     const filteredDirectRevenue = directRevenueEntries.filter(
       (entry) => entry.date >= customFilter.startDate && entry.date <= customFilter.endDate,
     );
-    const directRevenueTotal = filteredDirectRevenue.reduce((sum, entry) => sum + entry.totalDirectRevenue, 0);
+    const directRevenueTotal = filteredDirectRevenue.reduce((sum, entry) => sum + computeEntryDirectRevenue(entry), 0);
     if (directRevenueTotal > 0) {
       grouped['Direct Revenue'] = directRevenueTotal;
     }

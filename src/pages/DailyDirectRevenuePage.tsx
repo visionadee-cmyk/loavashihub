@@ -94,7 +94,10 @@ export default function DailyDirectRevenuePage() {
     [form.cardPayments],
   );
   const vikuraAmount = form.vikuraAmount || 0;
-  const totalDirectRevenue = useMemo(() => cashTotal + cardTotal, [cashTotal, cardTotal]);
+  const totalDirectRevenue = useMemo(
+    () => cashTotal + cardTotal + (form.purchasedFromCashDrawer || 0),
+    [cashTotal, cardTotal, form.purchasedFromCashDrawer],
+  );
 
   const directPurchaseDrawerTotal = useMemo(
     () => directPurchases

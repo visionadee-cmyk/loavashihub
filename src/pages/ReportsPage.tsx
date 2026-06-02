@@ -448,6 +448,63 @@ export default function ReportsPage() {
     [outsourceItems, customFilter.startDate, customFilter.endDate],
   );
 
+  const filteredDirectRevenueEntries = useMemo(
+    () => directRevenueEntries.filter((entry) => entry.date >= customFilter.startDate && entry.date <= customFilter.endDate),
+    [directRevenueEntries, customFilter.startDate, customFilter.endDate],
+  );
+
+  const filteredDirectPurchases = useMemo(
+    () => directPurchases.filter((purchase) => purchase.date >= customFilter.startDate && purchase.date <= customFilter.endDate),
+    [directPurchases, customFilter.startDate, customFilter.endDate],
+  );
+
+  const customSales = useMemo(
+    () => filteredBills.reduce((sum, bill) => sum + bill.items.reduce((itemSum, item) => itemSum + item.price * item.quantity, 0), 0),
+    [filteredBills],
+  );
+
+  const customDirectRevenueTotal = useMemo(
+    () => filteredDirectRevenueEntries.reduce((sum, entry) => sum + computeEntryDirectRevenue(entry), 0),
+    [filteredDirectRevenueEntries],
+  );
+
+  const customDirectPurchaseExpenses = useMemo(
+    () => filteredDirectPurchases.reduce((sum, purchase) => sum + purchase.total, 0),
+    [filteredDirectPurchases],
+  );
+
+  const customOutsourcedCost = useMemo(
+    () => filteredOutsourceItems.reduce((sum, item) => sum + item.totalCost, 0),
+    [filteredOutsourceItems],
+  );
+
+  const customTotalExpenses = useMemo(
+    () => filteredExpenses.reduce((sum, expense) => sum + expense.amount, 0) + customDirectPurchaseExpenses + customOutsourcedCost,
+    [filteredExpenses, customDirectPurchaseExpenses, customOutsourcedCost],
+  );
+
+  const customTotalRevenue = useMemo(
+    () => customSales + customDirectRevenueTotal,
+    [customSales, customDirectRevenueTotal],
+  );
+
+  const customProfit = useMemo(
+    () => customTotalRevenue - customTotalExpenses,
+    [customTotalRevenue, customTotalExpenses],
+  );
+
+  const customProfitMargin = useMemo(
+    () => (customTotalRevenue ? (customProfit / customTotalRevenue) * 100 : 0),
+    [customProfit, customTotalRevenue],
+  );
+
+  const customTotalTransactions = useMemo(() => filteredBills.length, [filteredBills]);
+
+  const customAverageTransactionValue = useMemo(
+    () => (customTotalTransactions ? customSales / customTotalTransactions : 0),
+    [customSales, customTotalTransactions],
+  );
+
   // Daily revenue data (including direct revenue)
   const dailyRevenueData = useMemo(() => {
     const grouped = filteredBills.reduce<Record<string, number>>((acc, bill) => {
@@ -458,9 +515,7 @@ export default function ReportsPage() {
     }, {});
 
     // Add direct revenue entries
-    const filteredDirectRevenue = directRevenueEntries.filter(
-      (entry) => entry.date >= customFilter.startDate && entry.date <= customFilter.endDate,
-    );
+    const filteredDirectRevenue = filteredDirectRevenueEntries;
     filteredDirectRevenue.forEach((entry) => {
       grouped[entry.date] = (grouped[entry.date] ?? 0) + computeEntryDirectRevenue(entry);
     });
@@ -595,25 +650,27 @@ export default function ReportsPage() {
   };
 
   const revenueByMonth = useMemo(() => {
-    if (!bills.length && !directRevenueEntries.length) {
+    const sourceBills = showCustomReport ? filteredBills : bills;
+    const sourceDirectRevenueEntries = showCustomReport ? filteredDirectRevenueEntries : directRevenueEntries;
+    const sourceOutsourceItems = showCustomReport ? filteredOutsourceItems : outsourceItems;
+
+    if (!sourceBills.length && !sourceDirectRevenueEntries.length && !sourceOutsourceItems.length) {
       return [];
     }
 
-    const grouped = bills.reduce<Record<string, number>>((acc, bill) => {
+    const grouped = sourceBills.reduce<Record<string, number>>((acc, bill) => {
       const key = monthKey(bill.createdAt);
       const amount = bill.items.reduce((itemSum, item) => itemSum + item.price * item.quantity, 0);
       acc[key] = (acc[key] ?? 0) + amount;
       return acc;
     }, {});
 
-    // Add direct revenue to monthly totals
-    directRevenueEntries.forEach((entry) => {
+    sourceDirectRevenueEntries.forEach((entry) => {
       const key = monthKey(entry.date);
       grouped[key] = (grouped[key] ?? 0) + computeEntryDirectRevenue(entry);
     });
 
-    // Add outsource revenue to monthly totals
-    outsourceItems.forEach((item) => {
+    sourceOutsourceItems.forEach((item) => {
       const key = monthKey(item.date);
       grouped[key] = (grouped[key] ?? 0) + item.totalRevenue;
     });
@@ -621,7 +678,7 @@ export default function ReportsPage() {
     return Object.entries(grouped)
       .sort(([a], [b]) => a.localeCompare(b))
       .map(([key, revenue]) => ({ name: formatMonthLabel(key), revenue }));
-  }, [bills, directRevenueEntries, outsourceItems]);
+  }, [showCustomReport, filteredBills, filteredDirectRevenueEntries, filteredOutsourceItems, bills, directRevenueEntries, outsourceItems]);
 
   const paymentBreakdown = useMemo(() => {
     const counts: Record<string, number> = {};
@@ -698,6 +755,23 @@ export default function ReportsPage() {
       .map(([category, revenue]) => ({ name: category, value: revenue }))
       .sort((a, b) => b.value - a.value);
   }, [filteredBills, directRevenueEntries, outsourceItems, customFilter.startDate, customFilter.endDate]);
+
+  const reportTotals = {
+    totalSales: showCustomReport ? customSales : totalSales,
+    directRevenueTotal: showCustomReport ? customDirectRevenueTotal : directRevenueTotal,
+    outsourcedRevenue: showCustomReport ? filteredOutsourceItems.reduce((sum, item) => sum + item.totalRevenue, 0) : outsourcedRevenue,
+    totalExpenses: showCustomReport ? customTotalExpenses : totalExpenses,
+    profit: showCustomReport ? customProfit : profit,
+    profitMargin: showCustomReport ? customProfitMargin : profitMargin,
+    totalTransactions: showCustomReport ? customTotalTransactions : totalTransactions,
+    averageTransactionValue: showCustomReport ? customAverageTransactionValue : averageTransactionValue,
+    totalSalesForBreakdown: showCustomReport ? customSales : totalSales,
+    totalRevenue: showCustomReport ? customTotalRevenue : totalRevenue,
+  };
+
+  const visibleSalesMetrics = !showCustomReport || customFilter.includeMetrics.sales;
+  const visiblePaymentMetrics = !showCustomReport || customFilter.includeMetrics.payments;
+  const visibleProductMetrics = !showCustomReport || customFilter.includeMetrics.products;
 
   return (
     <AppShell title="Reports & analytics">
@@ -832,14 +906,14 @@ export default function ReportsPage() {
           {[
             { label: 'Daily Revenue', value: formatMVR(dailySales) },
             { label: 'Daily Expense', value: formatMVR(dailyExpenses) },
-            { label: 'Transactions', value: totalTransactions.toString() },
-            { label: 'Avg Transaction', value: formatMVR(averageTransactionValue) },
-            { label: 'POS Revenue', value: formatMVR(totalSales) },
-            { label: 'Direct Revenue', value: formatMVR(directRevenueTotal) },
-            { label: 'Outsource Revenue', value: formatMVR(outsourcedRevenue) },
-            { label: 'Total Expense', value: formatMVR(totalExpenses) },
-            { label: 'Profit Margin', value: `${profitMargin.toFixed(1)}%` },
-            { label: 'Total Profit', value: formatMVR(profit) },
+            { label: 'Transactions', value: reportTotals.totalTransactions.toString() },
+            { label: 'Avg Transaction', value: formatMVR(reportTotals.averageTransactionValue) },
+            { label: 'POS Revenue', value: formatMVR(reportTotals.totalSales) },
+            { label: 'Direct Revenue', value: formatMVR(reportTotals.directRevenueTotal) },
+            { label: 'Outsource Revenue', value: formatMVR(reportTotals.outsourcedRevenue) },
+            { label: 'Total Expense', value: formatMVR(reportTotals.totalExpenses) },
+            { label: 'Profit Margin', value: `${reportTotals.profitMargin.toFixed(1)}%` },
+            { label: 'Total Profit', value: formatMVR(reportTotals.profit) },
           ].map((card) => (
             <div key={card.label} className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm shadow-slate-300/20">
               <p className="text-sm uppercase tracking-[0.24em] text-[#05093f]">{card.label}</p>
@@ -1089,156 +1163,186 @@ export default function ReportsPage() {
 
         {/* Charts Grid */}
         <div className="grid gap-5 xl:grid-cols-2">
-          <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm shadow-slate-300/20">
-            <h3 className="text-lg font-semibold text-slate-900">Monthly Revenue Trend</h3>
-            <p className="text-sm text-[#05093f]">Revenue comparison across months</p>
-            <div className="mt-4 h-72">
-              {revenueByMonth.length > 0 ? (
-                <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={revenueByMonth} margin={{ top: 8, right: 0, left: -20, bottom: 0 }}>
-                    <CartesianGrid stroke="rgba(5, 9, 63, 0.15)" strokeDasharray="3 3" />
-                    <XAxis dataKey="name" tick={{ fill: 'rgba(5, 9, 63, 0.7)' }} />
-                    <YAxis tick={{ fill: 'rgba(5, 9, 63, 0.7)' }} />
-                    <Tooltip
-                      contentStyle={{ backgroundColor: '#ffffff', borderRadius: 16, border: '1px solid rgba(5, 9, 63, 0.2)', color: '#05093f' }}
-                      formatter={(value: any) => formatMVR(value)}
-                    />
-                    <Bar dataKey="revenue" fill="#7c4b2e" radius={[12, 12, 0, 0]} />
-                  </BarChart>
-                </ResponsiveContainer>
-              ) : (
-                <div className="flex h-full items-center justify-center text-slate-400">
-                  <p>No revenue data available</p>
+          {visibleSalesMetrics ? (
+            <>
+              <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm shadow-slate-300/20">
+                <h3 className="text-lg font-semibold text-slate-900">Monthly Revenue Trend</h3>
+                <p className="text-sm text-[#05093f]">Revenue comparison across months</p>
+                <div className="mt-4 h-72">
+                  {revenueByMonth.length > 0 ? (
+                    <ResponsiveContainer width="100%" height="100%">
+                      <BarChart data={revenueByMonth} margin={{ top: 8, right: 0, left: -20, bottom: 0 }}>
+                        <CartesianGrid stroke="rgba(5, 9, 63, 0.15)" strokeDasharray="3 3" />
+                        <XAxis dataKey="name" tick={{ fill: 'rgba(5, 9, 63, 0.7)' }} />
+                        <YAxis tick={{ fill: 'rgba(5, 9, 63, 0.7)' }} />
+                        <Tooltip
+                          contentStyle={{ backgroundColor: '#ffffff', borderRadius: 16, border: '1px solid rgba(5, 9, 63, 0.2)', color: '#05093f' }}
+                          formatter={(value: any) => formatMVR(value)}
+                        />
+                        <Bar dataKey="revenue" fill="#7c4b2e" radius={[12, 12, 0, 0]} />
+                      </BarChart>
+                    </ResponsiveContainer>
+                  ) : (
+                    <div className="flex h-full items-center justify-center text-slate-400">
+                      <p>No revenue data available</p>
+                    </div>
+                  )}
                 </div>
-              )}
-            </div>
-          </div>
+              </div>
 
-          <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm shadow-slate-300/20">
-            <h3 className="text-lg font-semibold text-slate-900">Daily Revenue</h3>
-            <p className="text-sm text-[#05093f]">Revenue trend for selected period</p>
-            <div className="mt-4 h-72">
-              {dailyRevenueData.length > 0 ? (
-                <ResponsiveContainer width="100%" height="100%">
-                  <LineChart data={dailyRevenueData} margin={{ top: 8, right: 0, left: -20, bottom: 0 }}>
-                    <CartesianGrid stroke="rgba(5, 9, 63, 0.15)" strokeDasharray="3 3" />
-                    <XAxis dataKey="date" tick={{ fill: 'rgba(5, 9, 63, 0.7)' }} />
-                    <YAxis tick={{ fill: 'rgba(5, 9, 63, 0.7)' }} />
-                    <Tooltip
-                      contentStyle={{ backgroundColor: '#ffffff', borderRadius: 16, border: '1px solid rgba(5, 9, 63, 0.2)', color: '#05093f' }}
-                      formatter={(value: any) => formatMVR(value)}
-                    />
-                    <Line type="monotone" dataKey="revenue" stroke="#05093f" strokeWidth={2} dot={{ fill: '#7c4b2e', r: 4 }} />
-                  </LineChart>
-                </ResponsiveContainer>
-              ) : (
-                <div className="flex h-full items-center justify-center text-slate-400">
-                  <p>No daily revenue data available</p>
+              <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm shadow-slate-300/20">
+                <h3 className="text-lg font-semibold text-slate-900">Daily Revenue</h3>
+                <p className="text-sm text-[#05093f]">Revenue trend for selected period</p>
+                <div className="mt-4 h-72">
+                  {dailyRevenueData.length > 0 ? (
+                    <ResponsiveContainer width="100%" height="100%">
+                      <LineChart data={dailyRevenueData} margin={{ top: 8, right: 0, left: -20, bottom: 0 }}>
+                        <CartesianGrid stroke="rgba(5, 9, 63, 0.15)" strokeDasharray="3 3" />
+                        <XAxis dataKey="date" tick={{ fill: 'rgba(5, 9, 63, 0.7)' }} />
+                        <YAxis tick={{ fill: 'rgba(5, 9, 63, 0.7)' }} />
+                        <Tooltip
+                          contentStyle={{ backgroundColor: '#ffffff', borderRadius: 16, border: '1px solid rgba(5, 9, 63, 0.2)', color: '#05093f' }}
+                          formatter={(value: any) => formatMVR(value)}
+                        />
+                        <Line type="monotone" dataKey="revenue" stroke="#05093f" strokeWidth={2} dot={{ fill: '#7c4b2e', r: 4 }} />
+                      </LineChart>
+                    </ResponsiveContainer>
+                  ) : (
+                    <div className="flex h-full items-center justify-center text-slate-400">
+                      <p>No daily revenue data available</p>
+                    </div>
+                  )}
                 </div>
-              )}
+              </div>
+            </>
+          ) : (
+            <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm shadow-slate-300/20 xl:col-span-2">
+              <h3 className="text-lg font-semibold text-slate-900">Sales metrics disabled</h3>
+              <p className="mt-3 text-sm text-slate-600">Enable Sales under Custom Report Builder to view the revenue trend charts.</p>
             </div>
-          </div>
+          )}
 
-          <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm shadow-slate-300/20">
-            <h3 className="text-lg font-semibold text-slate-900">Payment Methods</h3>
-            <p className="text-sm text-[#05093f]">Revenue distribution</p>
-            <div className="mt-4 h-72">
-              {paymentBreakdown.length > 0 ? (
-                <ResponsiveContainer width="100%" height="100%">
-                  <PieChart>
-                    <Pie data={paymentBreakdown} dataKey="value" nameKey="method" innerRadius={48} outerRadius={88} paddingAngle={4}>
-                      {paymentBreakdown.map((entry, index) => (
-                        <Cell key={entry.method} fill={colors[index % colors.length]} />
-                      ))}
-                    </Pie>
-                    <Tooltip
-                      contentStyle={{ backgroundColor: '#ffffff', borderRadius: 16, border: '1px solid rgba(5, 9, 63, 0.2)', color: '#05093f' }}
-                    />
-                    <Legend />
-                  </PieChart>
-                </ResponsiveContainer>
-              ) : (
-                <div className="flex h-full items-center justify-center text-slate-400">
-                  <p>No payment method data available</p>
-                </div>
-              )}
+          {visiblePaymentMetrics ? (
+            <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm shadow-slate-300/20">
+              <h3 className="text-lg font-semibold text-slate-900">Payment Methods</h3>
+              <p className="text-sm text-[#05093f]">Revenue distribution</p>
+              <div className="mt-4 h-72">
+                {paymentBreakdown.length > 0 ? (
+                  <ResponsiveContainer width="100%" height="100%">
+                    <PieChart>
+                      <Pie data={paymentBreakdown} dataKey="value" nameKey="method" innerRadius={48} outerRadius={88} paddingAngle={4}>
+                        {paymentBreakdown.map((entry, index) => (
+                          <Cell key={entry.method} fill={colors[index % colors.length]} />
+                        ))}
+                      </Pie>
+                      <Tooltip
+                        contentStyle={{ backgroundColor: '#ffffff', borderRadius: 16, border: '1px solid rgba(5, 9, 63, 0.2)', color: '#05093f' }}
+                      />
+                      <Legend />
+                    </PieChart>
+                  </ResponsiveContainer>
+                ) : (
+                  <div className="flex h-full items-center justify-center text-slate-400">
+                    <p>No payment method data available</p>
+                  </div>
+                )}
+              </div>
             </div>
-          </div>
+          ) : (
+            <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm shadow-slate-300/20">
+              <h3 className="text-lg font-semibold text-slate-900">Payment Metrics Disabled</h3>
+              <p className="mt-3 text-sm text-slate-600">Enable Payments under Custom Report Builder to view this section.</p>
+            </div>
+          )}
 
-          <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm shadow-slate-300/20">
-            <h3 className="text-lg font-semibold text-slate-900">Category Revenue</h3>
-            <p className="text-sm text-[#05093f]">Revenue by category</p>
-            <div className="mt-4 h-72">
-              {categoryRevenue.length > 0 ? (
-                <ResponsiveContainer width="100%" height="100%">
-                  <PieChart>
-                    <Pie data={categoryRevenue} dataKey="value" nameKey="name" innerRadius={48} outerRadius={88} paddingAngle={4}>
-                      {categoryRevenue.map((entry, index) => (
-                        <Cell key={entry.name} fill={colors[index % colors.length]} />
-                      ))}
-                    </Pie>
-                    <Tooltip
-                      contentStyle={{ backgroundColor: '#ffffff', borderRadius: 16, border: '1px solid rgba(5, 9, 63, 0.2)', color: '#05093f' }}
-                      formatter={(value: any) => formatMVR(value)}
-                    />
-                    <Legend />
-                  </PieChart>
-                </ResponsiveContainer>
-              ) : (
-                <div className="flex h-full items-center justify-center text-slate-400">
-                  <p>No category revenue data available</p>
-                </div>
-              )}
+          {visibleProductMetrics ? (
+            <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm shadow-slate-300/20">
+              <h3 className="text-lg font-semibold text-slate-900">Category Revenue</h3>
+              <p className="text-sm text-[#05093f]">Revenue by category</p>
+              <div className="mt-4 h-72">
+                {categoryRevenue.length > 0 ? (
+                  <ResponsiveContainer width="100%" height="100%">
+                    <PieChart>
+                      <Pie data={categoryRevenue} dataKey="value" nameKey="name" innerRadius={48} outerRadius={88} paddingAngle={4}>
+                        {categoryRevenue.map((entry, index) => (
+                          <Cell key={entry.name} fill={colors[index % colors.length]} />
+                        ))}
+                      </Pie>
+                      <Tooltip
+                        contentStyle={{ backgroundColor: '#ffffff', borderRadius: 16, border: '1px solid rgba(5, 9, 63, 0.2)', color: '#05093f' }}
+                        formatter={(value: any) => formatMVR(value)}
+                      />
+                      <Legend />
+                    </PieChart>
+                  </ResponsiveContainer>
+                ) : (
+                  <div className="flex h-full items-center justify-center text-slate-400">
+                    <p>No category revenue data available</p>
+                  </div>
+                )}
+              </div>
             </div>
-          </div>
+          ) : (
+            <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm shadow-slate-300/20">
+              <h3 className="text-lg font-semibold text-slate-900">Product Metrics Disabled</h3>
+              <p className="mt-3 text-sm text-slate-600">Enable Products under Custom Report Builder to view category and bestseller reports.</p>
+            </div>
+          )}
         </div>
 
         {/* Top Products & Category Breakdown */}
-        <div className="grid gap-5 xl:grid-cols-2">
-          <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm shadow-slate-300/20">
-            <h3 className="text-lg font-semibold text-slate-900">Top Selling Products</h3>
-            <p className="text-sm text-[#05093f]">Best performing items</p>
-            <div className="mt-6 space-y-3">
-              {topProducts.map((product, index) => (
-                <div key={product.id} className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
-                  <div className="flex items-center justify-between gap-4">
-                    <div className="flex items-center gap-3">
-                      <div className="flex h-8 w-8 items-center justify-center rounded-full bg-[#7c4b2e] text-xs font-bold text-white">
-                        #{index + 1}
+        {visibleProductMetrics ? (
+          <div className="grid gap-5 xl:grid-cols-2">
+            <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm shadow-slate-300/20">
+              <h3 className="text-lg font-semibold text-slate-900">Top Selling Products</h3>
+              <p className="text-sm text-[#05093f]">Best performing items</p>
+              <div className="mt-6 space-y-3">
+                {topProducts.map((product, index) => (
+                  <div key={product.id} className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+                    <div className="flex items-center justify-between gap-4">
+                      <div className="flex items-center gap-3">
+                        <div className="flex h-8 w-8 items-center justify-center rounded-full bg-[#7c4b2e] text-xs font-bold text-white">
+                          #{index + 1}
+                        </div>
+                        <div>
+                          <p className="font-medium text-slate-900">{product.name}</p>
+                          <p className="text-xs text-[#05093f]">Qty: {product.quantity}</p>
+                        </div>
                       </div>
-                      <div>
-                        <p className="font-medium text-slate-900">{product.name}</p>
-                        <p className="text-xs text-[#05093f]">Qty: {product.quantity}</p>
-                      </div>
+                      <p className="text-sm font-semibold text-[#05093f]">{formatMVR(product.price)}</p>
                     </div>
-                    <p className="text-sm font-semibold text-[#05093f]">{formatMVR(product.price)}</p>
                   </div>
-                </div>
-              ))}
+                ))}
+              </div>
             </div>
-          </div>
 
-          <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm shadow-slate-300/20">
-            <h3 className="text-lg font-semibold text-slate-900">Category Breakdown</h3>
-            <p className="text-sm text-[#05093f]">Revenue by category</p>
-            <div className="mt-6 space-y-3">
-              {categoryRevenue.map((category, index) => (
-                <div key={category.name} className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
-                  <div className="flex items-center justify-between gap-4">
-                    <div className="flex items-center gap-3">
-                      <div className="h-3 w-3 rounded-full" style={{ backgroundColor: colors[index % colors.length] }} />
-                      <p className="font-medium text-slate-900">{category.name}</p>
-                    </div>
-                    <div className="text-right">
-                      <p className="font-semibold text-[#05093f]">{formatMVR(category.value)}</p>
-                      <p className="text-xs text-[#7c4b2e]">{((category.value / totalSales) * 100).toFixed(1)}%</p>
+            <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm shadow-slate-300/20">
+              <h3 className="text-lg font-semibold text-slate-900">Category Breakdown</h3>
+              <p className="text-sm text-[#05093f]">Revenue by category</p>
+              <div className="mt-6 space-y-3">
+                {categoryRevenue.map((category, index) => (
+                  <div key={category.name} className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+                    <div className="flex items-center justify-between gap-4">
+                      <div className="flex items-center gap-3">
+                        <div className="h-3 w-3 rounded-full" style={{ backgroundColor: colors[index % colors.length] }} />
+                        <p className="font-medium text-slate-900">{category.name}</p>
+                      </div>
+                      <div className="text-right">
+                        <p className="font-semibold text-[#05093f]">{formatMVR(category.value)}</p>
+                        <p className="text-xs text-[#7c4b2e]">{((category.value / reportTotals.totalSalesForBreakdown) * 100).toFixed(1)}%</p>
+                      </div>
                     </div>
                   </div>
-                </div>
-              ))}
+                ))}
+              </div>
             </div>
           </div>
-        </div>
+        ) : (
+          <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm shadow-slate-300/20">
+            <h3 className="text-lg font-semibold text-slate-900">Product Metrics Disabled</h3>
+            <p className="mt-3 text-sm text-slate-600">Enable Products under Custom Report Builder to view top selling products and category breakdown.</p>
+          </div>
+        )}
 
         {/* Summary Statistics */}
         <div className="grid gap-5 xl:grid-cols-3">
@@ -1247,15 +1351,15 @@ export default function ReportsPage() {
             <div className="mt-6 space-y-4">
               <div className="flex items-center justify-between">
                 <span className="text-sm">Total Revenue</span>
-                <span className="text-2xl font-bold">{formatMVR(totalSales + directRevenueTotal)}</span>
+                <span className="text-2xl font-bold">{formatMVR(reportTotals.totalRevenue)}</span>
               </div>
               <div className="flex items-center justify-between border-t border-white/20 pt-4">
                 <span className="text-sm">Total Expenses</span>
-                <span className="text-2xl font-bold">{formatMVR(totalExpenses)}</span>
+                <span className="text-2xl font-bold">{formatMVR(reportTotals.totalExpenses)}</span>
               </div>
               <div className="flex items-center justify-between border-t border-white/20 pt-4">
                 <span className="text-sm">Net Profit</span>
-                <span className="text-2xl font-bold text-green-300">{formatMVR(profit + directRevenueTotal)}</span>
+                <span className="text-2xl font-bold text-green-300">{formatMVR(reportTotals.profit)}</span>
               </div>
             </div>
           </div>
@@ -1265,15 +1369,15 @@ export default function ReportsPage() {
             <div className="mt-6 space-y-4">
               <div className="flex items-center justify-between">
                 <span className="text-sm">Total Orders</span>
-                <span className="text-2xl font-bold">{totalTransactions}</span>
+                <span className="text-2xl font-bold">{reportTotals.totalTransactions}</span>
               </div>
               <div className="flex items-center justify-between border-t border-white/20 pt-4">
                 <span className="text-sm">Avg Order Value</span>
-                <span className="text-2xl font-bold">{formatMVR(averageTransactionValue)}</span>
+                <span className="text-2xl font-bold">{formatMVR(reportTotals.averageTransactionValue)}</span>
               </div>
               <div className="flex items-center justify-between border-t border-white/20 pt-4">
                 <span className="text-sm">Profit Margin</span>
-                <span className="text-2xl font-bold text-green-300">{profitMargin.toFixed(2)}%</span>
+                <span className="text-2xl font-bold text-green-300">{reportTotals.profitMargin.toFixed(2)}%</span>
               </div>
             </div>
           </div>

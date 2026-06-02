@@ -319,6 +319,7 @@ The Reports page provides comprehensive business intelligence:
 - **Daily Revenue** - Today's sales total
 - **Daily Expenses** - Today's costs
 - **Transaction Count** - Number of orders
+- **Custom Report Builder** - Filter reports by date range and select which metrics and chart sections to include
 - **Average Transaction Value** - Revenue per order
 - **POS Revenue** - Total point-of-sale income
 - **Direct Revenue** - Income from direct sales

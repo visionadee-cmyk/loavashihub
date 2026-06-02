@@ -20,7 +20,7 @@ Loavashi Hub is a cafe and restaurant management system with separate admin and 
 - `/admin/purchases` — Create purchase orders and receive stock.
 - `/admin/recipes` — Manage recipes and consume inventory.
 - `/admin/assets` — Track physical assets.
-- `/admin/reports` — View financial and inventory reports.
+- `/admin/reports` — View financial and inventory reports, including the Custom Report Builder for date-range and metric-specific dashboards.
 - `/pos/reports` — View POS sales reports with item, category, date, and custom filters; export to Excel/PDF or print.
 - `/admin/outsource` — Manage outsourced/party orders and catering costs (admin only).
 

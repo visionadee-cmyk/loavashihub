@@ -264,6 +264,10 @@ export default function OutsourceItemsPage() {
   return (
     <AppShell title="Outsource Items">
       <div className="space-y-6">
+        <div className="flex items-center gap-2">
+          <span className="inline-block rounded-full bg-rose-600 px-3 py-1 text-xs font-semibold text-white">UPDATED</span>
+          <span className="text-sm text-slate-500">Deploy check: {new Date().toISOString()}</span>
+        </div>
         <div className="grid gap-4 xl:grid-cols-3">
           {[
             { label: 'Outsource Revenue', value: formatMVR(totalOutsourceRevenue) },

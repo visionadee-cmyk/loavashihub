@@ -224,13 +224,20 @@ export default function ReportsPage() {
     // Exclude outsource revenue from MTD totals to prevent double counting
     const revenueMTD = salesMTD + directRevenueMTD;
 
+    // Include salary and purchased from cash drawer from DailyDirectRevenue
+    const mtdDailyRevenue = directRevenueEntries.filter((d) => d.date >= startMonth && d.date <= selectedDailyDate);
+    const mtdSalaryFromDRR = mtdDailyRevenue.reduce((sum, d) => sum + ((d as any).dailySalary || 0), 0);
+    const mtdPurchasedFromDrawer = mtdDailyRevenue.reduce((sum, d) => sum + (d.purchasedFromCashDrawer || 0), 0);
+
     const expensesMTD = expenses
       .filter((e) => e.date >= startMonth && e.date <= selectedDailyDate)
       .reduce((sum, e) => sum + e.amount, 0)
       + directPurchases
         .filter((p) => p.date >= startMonth && p.date <= selectedDailyDate)
         .reduce((sum, p) => sum + p.total, 0)
-      + outsourceCostMTD;
+      + outsourceCostMTD
+      + mtdSalaryFromDRR
+      + mtdPurchasedFromDrawer;
 
     return { revenueMTD, expensesMTD, profitMTD: revenueMTD - expensesMTD };
   }, [bills, directRevenueEntries, expenses, directPurchases, outsourceItems, selectedDailyDate]);
@@ -254,13 +261,20 @@ export default function ReportsPage() {
     // Exclude outsource revenue from YTD totals to prevent double counting
     const revenueYTD = salesYTD + directRevenueYTD;
 
+    // Include salary and purchased from cash drawer from DailyDirectRevenue
+    const ytdDailyRevenue = directRevenueEntries.filter((d) => d.date >= startYear && d.date <= selectedDailyDate);
+    const ytdSalaryFromDRR = ytdDailyRevenue.reduce((sum, d) => sum + ((d as any).dailySalary || 0), 0);
+    const ytdPurchasedFromDrawer = ytdDailyRevenue.reduce((sum, d) => sum + (d.purchasedFromCashDrawer || 0), 0);
+
     const expensesYTD = expenses
       .filter((e) => e.date >= startYear && e.date <= selectedDailyDate)
       .reduce((sum, e) => sum + e.amount, 0)
       + directPurchases
         .filter((p) => p.date >= startYear && p.date <= selectedDailyDate)
         .reduce((sum, p) => sum + p.total, 0)
-      + outsourceCostYTD;
+      + outsourceCostYTD
+      + ytdSalaryFromDRR
+      + ytdPurchasedFromDrawer;
 
     return { revenueYTD, expensesYTD, profitYTD: revenueYTD - expensesYTD };
   }, [bills, directRevenueEntries, expenses, directPurchases, outsourceItems, selectedDailyDate]);

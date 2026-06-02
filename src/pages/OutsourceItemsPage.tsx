@@ -26,6 +26,12 @@ export default function OutsourceItemsPage() {
   const [form, setForm] = useState(initialForm);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [showForm, setShowForm] = useState(false);
+  const [paymentForm, setPaymentForm] = useState<{
+    itemId: string;
+    amount: number;
+    paymentDate: string;
+    deductionDate: string;
+  } | null>(null);
 
   useEffect(() => {
     if (!hasFirebaseConfig) return;
@@ -91,6 +97,7 @@ export default function OutsourceItemsPage() {
     }
 
     const selected = menuItems.find((item) => item.id === form.menuItemId);
+    const existing = editingId ? items.find((item) => item.id === editingId) : undefined;
     const payload: OutsourceItem = {
       id: editingId ?? `outsource-${Date.now()}`,
       date: form.date,
@@ -104,7 +111,11 @@ export default function OutsourceItemsPage() {
       totalRevenue: Number((form.sellingPrice * form.portions).toFixed(2)),
       profit: Number(((form.sellingPrice - form.costPerPortion) * form.portions).toFixed(2)),
       notes: form.notes.trim(),
-      createdAt: new Date().toISOString(),
+      createdAt: existing?.createdAt ?? new Date().toISOString(),
+      partyPaid: existing?.partyPaid ?? false,
+      partyPaymentAmount: existing?.partyPaymentAmount,
+      partyPaymentDate: existing?.partyPaymentDate,
+      costDeductionDate: existing?.costDeductionDate,
     };
 
     setItems((current) => {
@@ -154,6 +165,9 @@ export default function OutsourceItemsPage() {
 
   const deleteOutsourceItem = async (id: string) => {
     setItems((current) => current.filter((item) => item.id !== id));
+    if (paymentForm?.itemId === id) {
+      setPaymentForm(null);
+    }
     if (hasFirebaseConfig) {
       try {
         await deleteDocument('outsourceItems', id);
@@ -161,6 +175,48 @@ export default function OutsourceItemsPage() {
         console.error('Failed to delete outsource item:', error);
       }
     }
+  };
+
+  const beginPayParty = (item: OutsourceItem) => {
+    setPaymentForm({
+      itemId: item.id,
+      amount: item.partyPaymentAmount ?? item.totalCost,
+      paymentDate: item.partyPaymentDate ?? new Date().toISOString().slice(0, 10),
+      deductionDate: item.costDeductionDate ?? item.date,
+    });
+  };
+
+  const cancelPayParty = () => {
+    setPaymentForm(null);
+  };
+
+  const savePartyPayment = async () => {
+    if (!paymentForm) return;
+    const updatedItems = items.map((item) =>
+      item.id === paymentForm.itemId
+        ? {
+            ...item,
+            partyPaid: true,
+            partyPaymentAmount: Number(paymentForm.amount.toFixed(2)),
+            partyPaymentDate: paymentForm.paymentDate,
+            costDeductionDate: paymentForm.deductionDate,
+          }
+        : item,
+    );
+    setItems(updatedItems);
+
+    if (hasFirebaseConfig) {
+      const updatedItem = updatedItems.find((item) => item.id === paymentForm.itemId);
+      if (updatedItem) {
+        try {
+          await saveDocument('outsourceItems', updatedItem.id, updatedItem);
+        } catch (error) {
+          console.error('Failed to save party payment:', error);
+        }
+      }
+    }
+
+    setPaymentForm(null);
   };
 
   const deleteParty = async (id: string) => {
@@ -445,6 +501,81 @@ export default function OutsourceItemsPage() {
                     <div className="rounded-3xl bg-white p-4">
                       <p className="text-xs uppercase tracking-[0.24em] text-slate-500">Profit</p>
                       <p className={`mt-2 text-lg font-semibold ${item.profit >= 0 ? 'text-emerald-600' : 'text-rose-600'}`}>{formatMVR(item.profit)}</p>
+                    </div>
+                  </div>
+                  <div className="mt-4 grid gap-3 sm:grid-cols-2">
+                    <div className="rounded-3xl bg-slate-100 p-4">
+                      <p className="text-xs uppercase tracking-[0.24em] text-slate-500">Party payment status</p>
+                      <p className={`mt-2 text-lg font-semibold ${item.partyPaid ? 'text-emerald-600' : 'text-slate-700'}`}>
+                        {item.partyPaid ? 'Paid' : 'Unpaid'}
+                      </p>
+                      {item.partyPaid ? (
+                        <div className="mt-2 space-y-1 text-sm text-slate-600">
+                          <p>Paid amount: {formatMVR(item.partyPaymentAmount ?? item.totalCost)}</p>
+                          <p>Payment date: {item.partyPaymentDate}</p>
+                          <p>Cost deduction date: {item.costDeductionDate}</p>
+                        </div>
+                      ) : null}
+                    </div>
+                    <div className="flex flex-col justify-between gap-2 rounded-3xl bg-white p-4">
+                      <button
+                        type="button"
+                        onClick={() => beginPayParty(item)}
+                        className="rounded-full bg-slate-900 px-4 py-3 text-sm font-semibold text-white hover:bg-slate-800"
+                      >
+                        {item.partyPaid ? 'Edit party payment' : 'Pay for party'}
+                      </button>
+                      {paymentForm?.itemId === item.id && (
+                        <div className="space-y-4 rounded-3xl border border-slate-200 bg-slate-50 p-4">
+                          <div className="grid gap-4 sm:grid-cols-2">
+                            <label className="block text-sm text-slate-700">
+                              Payment amount
+                              <input
+                                type="number"
+                                value={paymentForm.amount}
+                                onChange={(e) => setPaymentForm((current) => current ? { ...current, amount: Number(e.target.value) } : current)}
+                                min="0"
+                                step="0.01"
+                                className="mt-2 w-full rounded-3xl border border-slate-300 bg-white px-4 py-3 text-slate-900 outline-none"
+                              />
+                            </label>
+                            <label className="block text-sm text-slate-700">
+                              Payment date
+                              <input
+                                type="date"
+                                value={paymentForm.paymentDate}
+                                onChange={(e) => setPaymentForm((current) => current ? { ...current, paymentDate: e.target.value } : current)}
+                                className="mt-2 w-full rounded-3xl border border-slate-300 bg-white px-4 py-3 text-slate-900 outline-none"
+                              />
+                            </label>
+                          </div>
+                          <label className="block text-sm text-slate-700">
+                            Cost deduction date
+                            <input
+                              type="date"
+                              value={paymentForm.deductionDate}
+                              onChange={(e) => setPaymentForm((current) => current ? { ...current, deductionDate: e.target.value } : current)}
+                              className="mt-2 w-full rounded-3xl border border-slate-300 bg-white px-4 py-3 text-slate-900 outline-none"
+                            />
+                          </label>
+                          <div className="flex flex-wrap gap-2">
+                            <button
+                              type="button"
+                              onClick={savePartyPayment}
+                              className="rounded-full bg-emerald-600 px-4 py-3 text-sm font-semibold text-white hover:bg-emerald-500"
+                            >
+                              Save payment
+                            </button>
+                            <button
+                              type="button"
+                              onClick={cancelPayParty}
+                              className="rounded-full border border-slate-200 bg-white px-4 py-3 text-sm font-semibold text-slate-700 hover:bg-slate-50"
+                            >
+                              Cancel
+                            </button>
+                          </div>
+                        </div>
+                      )}
                     </div>
                   </div>
                 </div>

@@ -211,6 +211,10 @@ export interface OutsourceItem {
   totalRevenue: number;
   profit: number;
   notes?: string;
+  partyPaid?: boolean;
+  partyPaymentAmount?: number;
+  partyPaymentDate?: string;
+  costDeductionDate?: string;
   createdAt: string;
 }
 

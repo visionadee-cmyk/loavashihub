@@ -821,6 +821,7 @@ export default function POSPage() {
                       </div>
                       <div className="space-y-0.5">
                         <p className="text-[11px] md:text-xs font-semibold text-slate-900 line-clamp-1">{product.name}</p>
+                        {product.nameBn ? <p className="text-[10px] md:text-[11px] text-slate-500">{product.nameBn}</p> : null}
                         <p className="text-[8px] md:text-[10px] text-slate-500">{product.category}</p>
                       </div>
                       <p className="text-xs md:text-sm font-bold text-slate-900">{formatMVR(product.price)}</p>

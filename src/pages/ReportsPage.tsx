@@ -107,7 +107,8 @@ export default function ReportsPage() {
   );
 
   const totalRevenue = useMemo(
-    () => totalSales + directRevenueTotal + outsourcedRevenue,
+    // Exclude outsourced revenue from totalRevenue to avoid double-counting
+    () => totalSales + directRevenueTotal,
     [totalSales, directRevenueTotal, outsourcedRevenue],
   );
 
@@ -155,7 +156,8 @@ export default function ReportsPage() {
 
     // Calculate revenue from POS + Direct Revenue (Cash + Card only, excluding Vikura) + Purchased from Cash Drawer + Outsource Revenue
     const directRevenueWithoutVikura = (dayDirectRevenue?.cashTotal || 0) + (dayDirectRevenue?.cardTotal || 0);
-    const totalDayRevenue = posRevenue + directRevenueWithoutVikura + dayOutsourceRevenue;
+    // Do not add outsource revenue to totalDayRevenue to avoid double counting
+    const totalDayRevenue = posRevenue + directRevenueWithoutVikura;
     const totalDayExpenses = dayExpenses + dayPurchases + daySalary + dayOutsourceCost + purchasedFromCashDrawer;
     const dailyProfit = totalDayRevenue - totalDayExpenses;
 
@@ -211,15 +213,12 @@ export default function ReportsPage() {
       .filter((d) => d.date >= startMonth && d.date <= selectedDailyDate)
       .reduce((sum, d) => sum + (d.totalDirectRevenue || 0), 0);
 
-    const outsourceRevenueMTD = outsourceItems
-      .filter((item) => item.date >= startMonth && item.date <= selectedDailyDate)
-      .reduce((sum, item) => sum + item.totalRevenue, 0);
-
     const outsourceCostMTD = outsourceItems
       .filter((item) => item.date >= startMonth && item.date <= selectedDailyDate)
       .reduce((sum, item) => sum + item.totalCost, 0);
 
-    const revenueMTD = salesMTD + directRevenueMTD + outsourceRevenueMTD;
+    // Exclude outsource revenue from MTD totals to prevent double counting
+    const revenueMTD = salesMTD + directRevenueMTD;
 
     const expensesMTD = expenses
       .filter((e) => e.date >= startMonth && e.date <= selectedDailyDate)
@@ -244,15 +243,12 @@ export default function ReportsPage() {
       .filter((d) => d.date >= startYear && d.date <= selectedDailyDate)
       .reduce((sum, d) => sum + (d.totalDirectRevenue || 0), 0);
 
-    const outsourceRevenueYTD = outsourceItems
-      .filter((item) => item.date >= startYear && item.date <= selectedDailyDate)
-      .reduce((sum, item) => sum + item.totalRevenue, 0);
-
     const outsourceCostYTD = outsourceItems
       .filter((item) => item.date >= startYear && item.date <= selectedDailyDate)
       .reduce((sum, item) => sum + item.totalCost, 0);
 
-    const revenueYTD = salesYTD + directRevenueYTD + outsourceRevenueYTD;
+    // Exclude outsource revenue from YTD totals to prevent double counting
+    const revenueYTD = salesYTD + directRevenueYTD;
 
     const expensesYTD = expenses
       .filter((e) => e.date >= startYear && e.date <= selectedDailyDate)

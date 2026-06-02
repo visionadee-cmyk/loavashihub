@@ -15,6 +15,7 @@ export interface Category {
 export interface MenuItem {
   id: string;
   name: string;
+  nameBn?: string;
   category: string;
   price: number;
   costPrice?: number;
@@ -55,6 +56,7 @@ export interface MenuItem {
   id: string;
   menuItemId?: string;
   name: string;
+  nameBn?: string;
   category: string;
   price: number;
   costPrice?: number;

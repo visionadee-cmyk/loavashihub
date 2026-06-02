@@ -10,6 +10,7 @@ const CATEGORY_OPTIONS = ['Coffee', 'Tea', 'Burger', 'Pizza', 'Dessert', 'Juice'
 
 const initialForm: Partial<MenuItem> = {
   name: '',
+  nameBn: '',
   category: 'Coffee',
   price: 0,
   costPrice: 0,
@@ -118,11 +119,18 @@ export default function MenuManagement() {
   };
 
   const handleAdd = async () => {
+    // require Bangla name for bilingual support
+    if (!addForm.nameBn || !addForm.nameBn.trim()) {
+      setSaveError('Bangla name is required. Please provide the item name in Bangla.');
+      return;
+    }
+    setSaveError(null);
     const id = generateMenuItemId();
     const payload: MenuItem = {
       id,
       menuItemId: id,
       name: addForm.name?.trim() || 'New item',
+      nameBn: addForm.nameBn?.trim() || '',
       category: addForm.category || 'Others',
       price: Number(addForm.price) || 0,
       costPrice: Number(addForm.costPrice) || 0,
@@ -145,6 +153,7 @@ export default function MenuManagement() {
     }
 
     setAddForm(initialForm);
+    setSaveError(null);
   };
 
   const handleEditSave = async () => {
@@ -152,10 +161,18 @@ export default function MenuManagement() {
       return;
     }
 
+    // require Bangla name for bilingual support
+    if (!editForm.nameBn || !editForm.nameBn.trim()) {
+      setSaveError('Bangla name is required. Please provide the item name in Bangla.');
+      return;
+    }
+    setSaveError(null);
+
     const payload: MenuItem = {
       id: editingId,
       menuItemId: editForm.menuItemId || editingId,
       name: editForm.name?.trim() || 'Updated item',
+      nameBn: editForm.nameBn?.trim() || '',
       category: editForm.category || 'Others',
       price: Number(editForm.price) || 0,
       costPrice: Number(editForm.costPrice) || 0,
@@ -240,12 +257,22 @@ export default function MenuManagement() {
 
           <div className="grid gap-4">
             <label className="block text-sm text-slate-600">
-              Item name
+              Item name (English)
               <input
                 value={addForm.name}
                 onChange={(event) => setAddForm((current) => ({ ...current, name: event.target.value }))}
                 className="mt-2 w-full rounded-3xl border border-slate-300 bg-white px-4 py-3 text-slate-900 outline-none"
                 placeholder="Espresso, Burger, Juice"
+              />
+            </label>
+
+            <label className="block text-sm text-slate-600">
+              Item name (Bangla)
+              <input
+                value={addForm.nameBn}
+                onChange={(event) => setAddForm((current) => ({ ...current, nameBn: event.target.value }))}
+                className="mt-2 w-full rounded-3xl border border-slate-300 bg-white px-4 py-3 text-slate-900 outline-none"
+                placeholder="বাংলা নাম"
               />
             </label>
             <div className="grid gap-4 sm:grid-cols-3">
@@ -401,6 +428,7 @@ export default function MenuManagement() {
                       <div className="flex items-center justify-between gap-4">
                         <div>
                           <p className="text-base font-semibold text-slate-900">{product.name}</p>
+                          {product.nameBn ? <p className="text-sm text-slate-600">{product.nameBn}</p> : null}
                           <p className="text-sm text-slate-600">{product.category}</p>
                           <p className="text-sm text-slate-600">ID: {product.menuItemId ?? product.id}</p>
                           <p className="text-sm text-slate-600">Cost: {formatMVR(product.costPrice ?? 0)}</p>
@@ -459,6 +487,15 @@ export default function MenuManagement() {
                   onChange={(event) => setEditForm((current) => ({ ...current, name: event.target.value }))}
                   className="mt-2 w-full rounded-3xl border border-slate-300 bg-slate-100 px-4 py-3 text-slate-900 outline-none"
                   placeholder="Espresso, Burger, Juice"
+                />
+              </label>
+              <label className="block text-sm text-slate-600">
+                Item name (Bangla)
+                <input
+                  value={editForm.nameBn}
+                  onChange={(event) => setEditForm((current) => ({ ...current, nameBn: event.target.value }))}
+                  className="mt-2 w-full rounded-3xl border border-slate-300 bg-slate-100 px-4 py-3 text-slate-900 outline-none"
+                  placeholder="বাংলা নাম"
                 />
               </label>
               <div className="grid gap-4 sm:grid-cols-3">

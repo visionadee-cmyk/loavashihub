@@ -482,6 +482,13 @@ export default function OutsourceItemsPage() {
                       </button>
                       <button
                         type="button"
+                        onClick={() => beginPayParty(item)}
+                        className="inline-flex items-center gap-2 rounded-full bg-slate-900 px-4 py-2 text-sm font-semibold text-white hover:bg-slate-800"
+                      >
+                        {item.partyPaid ? 'Edit payment' : 'Pay for party'}
+                      </button>
+                      <button
+                        type="button"
                         onClick={() => deleteOutsourceItem(item.id)}
                         className="inline-flex items-center gap-2 rounded-full bg-red-50 px-4 py-2 text-sm font-semibold text-red-600 hover:bg-red-100"
                       >
@@ -503,7 +510,7 @@ export default function OutsourceItemsPage() {
                       <p className={`mt-2 text-lg font-semibold ${item.profit >= 0 ? 'text-emerald-600' : 'text-rose-600'}`}>{formatMVR(item.profit)}</p>
                     </div>
                   </div>
-                  <div className="mt-4 grid gap-3 sm:grid-cols-2">
+                  <div className="mt-4">
                     <div className="rounded-3xl bg-slate-100 p-4">
                       <p className="text-xs uppercase tracking-[0.24em] text-slate-500">Party payment status</p>
                       <p className={`mt-2 text-lg font-semibold ${item.partyPaid ? 'text-emerald-600' : 'text-slate-700'}`}>
@@ -516,66 +523,6 @@ export default function OutsourceItemsPage() {
                           <p>Cost deduction date: {item.costDeductionDate}</p>
                         </div>
                       ) : null}
-                    </div>
-                    <div className="flex flex-col justify-between gap-2 rounded-3xl bg-white p-4">
-                      <button
-                        type="button"
-                        onClick={() => beginPayParty(item)}
-                        className="rounded-full bg-slate-900 px-4 py-3 text-sm font-semibold text-white hover:bg-slate-800"
-                      >
-                        {item.partyPaid ? 'Edit party payment' : 'Pay for party'}
-                      </button>
-                      {paymentForm?.itemId === item.id && (
-                        <div className="space-y-4 rounded-3xl border border-slate-200 bg-slate-50 p-4">
-                          <div className="grid gap-4 sm:grid-cols-2">
-                            <label className="block text-sm text-slate-700">
-                              Payment amount
-                              <input
-                                type="number"
-                                value={paymentForm.amount}
-                                onChange={(e) => setPaymentForm((current) => current ? { ...current, amount: Number(e.target.value) } : current)}
-                                min="0"
-                                step="0.01"
-                                className="mt-2 w-full rounded-3xl border border-slate-300 bg-white px-4 py-3 text-slate-900 outline-none"
-                              />
-                            </label>
-                            <label className="block text-sm text-slate-700">
-                              Payment date
-                              <input
-                                type="date"
-                                value={paymentForm.paymentDate}
-                                onChange={(e) => setPaymentForm((current) => current ? { ...current, paymentDate: e.target.value } : current)}
-                                className="mt-2 w-full rounded-3xl border border-slate-300 bg-white px-4 py-3 text-slate-900 outline-none"
-                              />
-                            </label>
-                          </div>
-                          <label className="block text-sm text-slate-700">
-                            Cost deduction date
-                            <input
-                              type="date"
-                              value={paymentForm.deductionDate}
-                              onChange={(e) => setPaymentForm((current) => current ? { ...current, deductionDate: e.target.value } : current)}
-                              className="mt-2 w-full rounded-3xl border border-slate-300 bg-white px-4 py-3 text-slate-900 outline-none"
-                            />
-                          </label>
-                          <div className="flex flex-wrap gap-2">
-                            <button
-                              type="button"
-                              onClick={savePartyPayment}
-                              className="rounded-full bg-emerald-600 px-4 py-3 text-sm font-semibold text-white hover:bg-emerald-500"
-                            >
-                              Save payment
-                            </button>
-                            <button
-                              type="button"
-                              onClick={cancelPayParty}
-                              className="rounded-full border border-slate-200 bg-white px-4 py-3 text-sm font-semibold text-slate-700 hover:bg-slate-50"
-                            >
-                              Cancel
-                            </button>
-                          </div>
-                        </div>
-                      )}
                     </div>
                   </div>
                 </div>

@@ -1,4 +1,4 @@
-const CACHE_NAME = 'loavashi-hub-cache-v1';
+const CACHE_NAME = 'loavashi-hub-cache-v2';
 const ASSETS = ['/', '/index.html', '/manifest.json', '/logo.jpeg'];
 
 console.log('🔧 Service Worker Loading...');

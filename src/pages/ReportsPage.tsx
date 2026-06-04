@@ -160,8 +160,8 @@ export default function ReportsPage() {
     // Calculate revenue from POS + Direct Revenue (Cash + Card only, excluding Vikura) + Purchased from Cash Drawer + Outsource Revenue
     const directRevenueWithoutVikura = (dayDirectRevenue?.cashTotal || 0) + (dayDirectRevenue?.cardTotal || 0);
     const directRevenueWithDrawer = directRevenueWithoutVikura + purchasedFromCashDrawer;
-    // Do not add outsource revenue to totalDayRevenue to avoid double counting
-    const totalDayRevenue = posRevenue + directRevenueWithDrawer;
+    // Include outsource revenue in total daily revenue to reflect all sales fields in the report
+    const totalDayRevenue = posRevenue + directRevenueWithDrawer + dayOutsourceRevenue;
     const totalDayExpenses = dayExpenses + dayPurchases + daySalary + dayOutsourceCost;
     const dailyProfit = totalDayRevenue - totalDayExpenses;
 
@@ -290,7 +290,13 @@ export default function ReportsPage() {
 
     text += `💰 *REVENUE*\n`;
     text += `POS Sales: ${formatMVR(report.posRevenue)}\n`;
-    text += `Direct Revenue: ${formatMVR(report.directRevenue)}\n`;
+    text += `Direct Revenue:\n`;
+    text += `  Cash: ${formatMVR(report.totalCashDrawer)}\n`;
+    text += `  Card: ${formatMVR(report.totalCardPayments)}\n`;
+    if (report.purchasedFromCashDrawer > 0) {
+      text += `  Purchased from Cash Drawer: ${formatMVR(report.purchasedFromCashDrawer)}\n`;
+    }
+    text += `  Total Direct Revenue: ${formatMVR(report.directRevenue)}\n`;
     if ((report as any).outsourceRevenue > 0) {
       text += `Outsource Revenue: ${formatMVR((report as any).outsourceRevenue)}\n`;
     }
@@ -340,9 +346,7 @@ export default function ReportsPage() {
     if ((report as any).outsourceCost > 0) {
       text += `Outsource Cost: ${formatMVR((report as any).outsourceCost)}\n`;
     }
-    if (report.salary > 0) {
-      text += `Daily Salary: ${formatMVR(report.salary)}\n`;
-    }
+    text += `Daily Salary: ${formatMVR(report.salary)}\n`;
     text += `Total Expenses: ${formatMVR(report.totalExpenses)}\n\n`;
 
     text += `✅ *PROFIT/LOSS*\n`;

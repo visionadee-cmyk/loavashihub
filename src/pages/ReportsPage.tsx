@@ -221,6 +221,10 @@ export default function ReportsPage() {
       .filter((item) => item.date >= startMonth && item.date <= selectedDailyDate)
       .reduce((sum, item) => sum + item.totalCost, 0);
 
+    const outsourceRevenueMTD = outsourceItems
+      .filter((item) => item.date >= startMonth && item.date <= selectedDailyDate)
+      .reduce((sum, item) => sum + item.totalRevenue, 0);
+
     // Exclude outsource revenue from MTD totals to prevent double counting
     const revenueMTD = salesMTD + directRevenueMTD;
 
@@ -239,7 +243,7 @@ export default function ReportsPage() {
       + mtdSalaryFromDRR
       + mtdPurchasedFromDrawer;
 
-    return { revenueMTD, expensesMTD, profitMTD: revenueMTD - expensesMTD };
+    return { revenueMTD, expensesMTD, profitMTD: revenueMTD - expensesMTD, outsourceRevenueMTD, outsourceCostMTD };
   }, [bills, directRevenueEntries, expenses, directPurchases, outsourceItems, selectedDailyDate]);
 
   const ytdStats = useMemo(() => {
@@ -258,7 +262,11 @@ export default function ReportsPage() {
       .filter((item) => item.date >= startYear && item.date <= selectedDailyDate)
       .reduce((sum, item) => sum + item.totalCost, 0);
 
-    // Exclude outsource revenue from YTD totals to prevent double counting
+    const outsourceRevenueYTD = outsourceItems
+      .filter((item) => item.date >= startYear && item.date <= selectedDailyDate)
+      .reduce((sum, item) => sum + item.totalRevenue, 0);
+
+    // Exclude outsource revenue from main YTD totals to prevent double counting, but keep it available separately for reporting
     const revenueYTD = salesYTD + directRevenueYTD;
 
     // Include salary and purchased from cash drawer from DailyDirectRevenue
@@ -276,7 +284,7 @@ export default function ReportsPage() {
       + ytdSalaryFromDRR
       + ytdPurchasedFromDrawer;
 
-    return { revenueYTD, expensesYTD, profitYTD: revenueYTD - expensesYTD };
+    return { revenueYTD, expensesYTD, profitYTD: revenueYTD - expensesYTD, outsourceRevenueYTD, outsourceCostYTD };
   }, [bills, directRevenueEntries, expenses, directPurchases, outsourceItems, selectedDailyDate]);
 
   // Generate shareable report text
@@ -353,14 +361,18 @@ export default function ReportsPage() {
     text += `Net: ${formatMVR(report.profit)}\n`;
     text += `Margin: ${report.totalRevenue > 0 ? ((report.profit / report.totalRevenue) * 100).toFixed(1) : 0}%\n`;
 
-    // Append MTD and YTD summaries (Month-to-Date & Year-to-Date)
+    // Append MTD and YTD summaries (Month-to-Date & Year-to-Date) including outsource figures
     text += `\n📅 *MTD (Month-to-Date)*\n`;
     text += `MTD Revenue: ${formatMVR(mtdStats.revenueMTD)}\n`;
+    text += `MTD Outsource Revenue: ${formatMVR((mtdStats as any).outsourceRevenueMTD || 0)}\n`;
+    text += `MTD Outsource Cost: ${formatMVR((mtdStats as any).outsourceCostMTD || 0)}\n`;
     text += `MTD Expenses: ${formatMVR(mtdStats.expensesMTD)}\n`;
     text += `MTD Net: ${formatMVR(mtdStats.profitMTD)}\n\n`;
 
     text += `📅 *YTD (Year-to-Date)*\n`;
     text += `YTD Revenue: ${formatMVR(ytdStats.revenueYTD)}\n`;
+    text += `YTD Outsource Revenue: ${formatMVR((ytdStats as any).outsourceRevenueYTD || 0)}\n`;
+    text += `YTD Outsource Cost: ${formatMVR((ytdStats as any).outsourceCostYTD || 0)}\n`;
     text += `YTD Expenses: ${formatMVR(ytdStats.expensesYTD)}\n`;
     text += `YTD Net: ${formatMVR(ytdStats.profitYTD)}\n`;
 

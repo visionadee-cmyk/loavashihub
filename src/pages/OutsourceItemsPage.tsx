@@ -117,7 +117,7 @@ export default function OutsourceItemsPage() {
 
     const selected = menuItems.find((item) => item.id === form.menuItemId);
     const existing = editingId ? items.find((item) => item.id === editingId) : undefined;
-    const payload: OutsourceItem = {
+    const basePayload = {
       id: editingId ?? `outsource-${Date.now()}`,
       date: form.date,
       partyName: form.partyName.trim(),
@@ -132,10 +132,14 @@ export default function OutsourceItemsPage() {
       notes: form.notes.trim(),
       createdAt: existing?.createdAt ?? new Date().toISOString(),
       partyPaid: existing?.partyPaid ?? false,
-      partyPaymentAmount: existing?.partyPaymentAmount ?? null,
-      partyPaymentDate: existing?.partyPaymentDate ?? null,
-      costDeductionDate: existing?.costDeductionDate ?? null,
-    };
+    } as Partial<OutsourceItem>;
+
+    // only include optional payment/date fields if they exist (avoid writing `undefined` to Firestore)
+    if (existing?.partyPaymentAmount !== undefined) basePayload.partyPaymentAmount = existing.partyPaymentAmount;
+    if (existing?.partyPaymentDate) basePayload.partyPaymentDate = existing.partyPaymentDate;
+    if (existing?.costDeductionDate) basePayload.costDeductionDate = existing.costDeductionDate;
+
+    const payload: OutsourceItem = basePayload as OutsourceItem;
 
     setItems((current) => {
       if (editingId) {

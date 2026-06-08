@@ -4,6 +4,31 @@ import './index.css';
 
 createRoot(document.getElementById('root')!).render(<App />);
 
+// Global defensive handlers to surface and ignore unexpected errors
+// Protect against third-party content scripts or malformed messages causing uncaught exceptions
+window.addEventListener('error', (ev) => {
+  console.warn('Global error caught:', ev.message || ev.error || ev);
+});
+
+window.addEventListener('unhandledrejection', (ev) => {
+  console.warn('Unhandled promise rejection:', ev.reason);
+});
+
+// Filter incoming postMessage events that are not objects to avoid other scripts causing runtime errors
+window.addEventListener('message', (ev) => {
+  try {
+    const data = ev?.data;
+    if (!data || typeof data !== 'object') {
+      // ignore non-object messages (extensions sometimes send strings)
+      return;
+    }
+    // If your app expects specific message shapes, add checks here, e.g.:
+    // if (!('type' in data)) return;
+  } catch (err) {
+    console.warn('Error while processing incoming message:', err);
+  }
+});
+
 // Register service worker for PWA support
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', async () => {

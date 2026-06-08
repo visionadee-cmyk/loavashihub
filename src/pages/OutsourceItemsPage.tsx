@@ -26,12 +26,14 @@ export default function OutsourceItemsPage() {
   const [form, setForm] = useState(initialForm);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [showForm, setShowForm] = useState(false);
+  const [showFormModal, setShowFormModal] = useState(false);
   const [paymentForm, setPaymentForm] = useState<{
     itemId: string;
     amount: number;
     paymentDate: string;
     deductionDate: string;
   } | null>(null);
+  const [showPaymentModal, setShowPaymentModal] = useState(false);
   const [paymentSource, setPaymentSource] = useState<'dailyRevenue' | 'companyAccount'>('dailyRevenue');
   const [directRevenueEntry, setDirectRevenueEntry] = useState<any | null>(null);
 
@@ -178,6 +180,7 @@ export default function OutsourceItemsPage() {
       notes: item.notes || '',
     });
     setShowForm(true);
+    setShowFormModal(true);
   };
 
   const deleteOutsourceItem = async (id: string) => {
@@ -201,6 +204,7 @@ export default function OutsourceItemsPage() {
       paymentDate: item.partyPaymentDate ?? new Date().toISOString().slice(0, 10),
       deductionDate: item.costDeductionDate ?? item.date,
     });
+    setShowPaymentModal(true);
   };
 
   // compute stats per saved party name
@@ -321,6 +325,7 @@ export default function OutsourceItemsPage() {
     }
 
     setPaymentForm(null);
+    setShowPaymentModal(false);
   };
 
   
@@ -405,7 +410,7 @@ export default function OutsourceItemsPage() {
             </button>
           </div>
 
-          {showForm && (
+          {showForm && !showFormModal && (
             <div className="space-y-5">
               <div className="grid gap-4 lg:grid-cols-2">
                 <label className="block text-sm text-slate-700">
@@ -558,99 +563,185 @@ export default function OutsourceItemsPage() {
               </div>
             </div>
           )}
+
+          {/* Edit form modal */}
+          {showFormModal && (
+            <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/70 p-4">
+              <div className="w-full max-w-2xl rounded-[32px] border border-slate-200 bg-white p-6 shadow-2xl">
+                <div className="mb-5 flex items-center justify-between">
+                  <div>
+                    <h3 className="text-xl font-semibold text-slate-900">{editingId ? 'Edit Outsource' : 'Add Outsource'}</h3>
+                    <p className="text-sm text-slate-500">Create or update outsource entries.</p>
+                  </div>
+                  <button type="button" onClick={() => { setShowFormModal(false); if (!editingId) resetForm(); }} className="rounded-full bg-slate-100 p-2 text-slate-700 hover:bg-slate-200">✕</button>
+                </div>
+
+                <div className="space-y-5">
+                  {/* reuse same form fields as inline */}
+                  <div className="grid gap-4 lg:grid-cols-2">
+                    <label className="block text-sm text-slate-700">
+                      Party name
+                      <input
+                        type="text"
+                        list="party-names"
+                        value={form.partyName}
+                        onChange={(e) => setForm({ ...form, partyName: e.target.value })}
+                        placeholder="Party or event name"
+                        className="mt-2 w-full rounded-3xl border border-slate-300 bg-slate-50 px-4 py-3 text-slate-900 outline-none"
+                      />
+                    </label>
+                    <label className="block text-sm text-slate-700">
+                      Date
+                      <input
+                        type="date"
+                        value={form.date}
+                        onChange={(e) => setForm({ ...form, date: e.target.value })}
+                        className="mt-2 w-full rounded-3xl border border-slate-300 bg-slate-50 px-4 py-3 text-slate-900 outline-none"
+                      />
+                    </label>
+                  </div>
+
+                  <div className="grid gap-4 lg:grid-cols-3">
+                    <label className="block text-sm text-slate-700 relative">
+                      Menu item
+                      <input
+                        type="text"
+                        value={menuQuery}
+                        onChange={(e) => setMenuQuery(e.target.value)}
+                        placeholder="Search menu items by name"
+                        className="mt-2 w-full rounded-3xl border border-slate-300 bg-slate-50 px-4 py-3 text-slate-900 outline-none"
+                      />
+                      {menuQuery && (
+                        <ul className="absolute z-10 mt-1 max-h-48 w-full overflow-auto rounded-xl border border-slate-200 bg-white">
+                          {menuItems.filter((m) => m.name.toLowerCase().includes(menuQuery.toLowerCase())).slice(0, 10).map((m) => (
+                            <li key={m.id} onClick={() => handleSelectMenuItem(m.id)} className="cursor-pointer px-4 py-2 text-sm hover:bg-slate-100">{m.name}</li>
+                          ))}
+                        </ul>
+                      )}
+                    </label>
+                    <label className="block text-sm text-slate-700">
+                      Selling price per portion
+                      <input type="number" value={form.sellingPrice} onChange={(e) => setForm({ ...form, sellingPrice: Number(e.target.value) })} min="0" step="0.01" className="mt-2 w-full rounded-3xl border border-slate-300 bg-slate-50 px-4 py-3 text-slate-900 outline-none" />
+                    </label>
+                    <label className="block text-sm text-slate-700">
+                      Cost price per portion
+                      <input type="number" value={form.costPerPortion} onChange={(e) => setForm({ ...form, costPerPortion: Number(e.target.value) })} min="0" step="0.01" className="mt-2 w-full rounded-3xl border border-slate-300 bg-slate-50 px-4 py-3 text-slate-900 outline-none" />
+                    </label>
+                  </div>
+
+                  <div className="grid gap-4 lg:grid-cols-3">
+                    <label className="block text-sm text-slate-700">
+                      Number of portions
+                      <input type="number" value={form.portions} onChange={(e) => setForm({ ...form, portions: Number(e.target.value) })} min="1" step="1" className="mt-2 w-full rounded-3xl border border-slate-300 bg-slate-50 px-4 py-3 text-slate-900 outline-none" />
+                    </label>
+                    <label className="block text-sm text-slate-700">
+                      Menu item name
+                      <input type="text" value={selectedMenuItem?.name || ''} disabled className="mt-2 w-full rounded-3xl border border-slate-200 bg-slate-100 px-4 py-3 text-slate-500 outline-none" />
+                    </label>
+                    <label className="block text-sm text-slate-700">
+                      Notes (optional)
+                      <input type="text" value={form.notes} onChange={(e) => setForm({ ...form, notes: e.target.value })} placeholder="Customer / party note" className="mt-2 w-full rounded-3xl border border-slate-300 bg-slate-50 px-4 py-3 text-slate-900 outline-none" />
+                    </label>
+                  </div>
+
+                  <div className="rounded-3xl border border-slate-200 bg-slate-50 p-5">
+                    <div className="grid gap-4 sm:grid-cols-3">
+                      <div>
+                        <p className="text-xs uppercase tracking-[0.24em] text-slate-500">Total revenue</p>
+                        <p className="mt-2 text-2xl font-semibold text-slate-900">{formatMVR(form.sellingPrice * form.portions)}</p>
+                      </div>
+                      <div>
+                        <p className="text-xs uppercase tracking-[0.24em] text-slate-500">Total cost</p>
+                        <p className="mt-2 text-2xl font-semibold text-slate-900">{formatMVR(form.costPerPortion * form.portions)}</p>
+                      </div>
+                      <div>
+                        <p className="text-xs uppercase tracking-[0.24em] text-slate-500">Projected profit</p>
+                        <p className={`mt-2 text-2xl font-semibold ${form.sellingPrice - form.costPerPortion >= 0 ? 'text-emerald-600' : 'text-rose-600'}`}>{formatMVR((form.sellingPrice - form.costPerPortion) * form.portions)}</p>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="flex flex-wrap items-center gap-3">
+                    <button type="button" onClick={async () => { await saveOutsourceItem(); setShowFormModal(false); }} className="inline-flex items-center gap-2 rounded-full bg-emerald-600 px-5 py-3 text-sm font-semibold text-white hover:bg-emerald-500"><Plus className="h-4 w-4" /> {editingId ? 'Update Outsource' : 'Save Outsource'}</button>
+                    <button type="button" onClick={() => { setShowFormModal(false); resetForm(); }} className="rounded-full border border-slate-200 bg-white px-5 py-3 text-sm font-semibold text-slate-700 hover:bg-slate-50">Cancel</button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
         </section>
 
-        {paymentForm ? (
-          <section className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
-            <div className="mb-5 flex items-center justify-between">
-              <div>
-                <h3 className="text-xl font-semibold text-slate-900">Pay for party</h3>
-                <p className="text-sm text-slate-500">Record payment and choose source to deduct from.</p>
+        {showPaymentModal && paymentForm ? (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/70 p-4">
+            <div className="w-full max-w-xl rounded-[32px] border border-slate-200 bg-white p-6 shadow-2xl">
+              <div className="mb-4 flex items-center justify-between">
+                <div>
+                  <h3 className="text-xl font-semibold text-slate-900">Pay for party</h3>
+                  <p className="text-sm text-slate-500">Record payment and choose source to deduct from.</p>
+                </div>
+                <button type="button" onClick={() => { setShowPaymentModal(false); setPaymentForm(null); }} className="rounded-full bg-slate-100 p-2 text-slate-700 hover:bg-slate-200">✕</button>
               </div>
-              <span className="text-sm text-slate-600">{paymentForm.itemId}</span>
-            </div>
 
-            <div className="grid gap-4 lg:grid-cols-3">
-              <label className="block text-sm text-slate-700">
-                Amount (will use total cost)
-                <input
-                  type="number"
-                  value={paymentForm.amount}
-                  onChange={(e) => setPaymentForm({ ...paymentForm, amount: Number(e.target.value) })}
-                  min="0"
-                  step="0.01"
-                  className="mt-2 w-full rounded-3xl border border-slate-300 bg-slate-50 px-4 py-3 text-slate-900 outline-none"
-                />
-                <p className="mt-1 text-xs text-slate-500">Saved payment will be the outsource item's total cost.</p>
-              </label>
-
-              <label className="block text-sm text-slate-700">
-                Payment date
-                <input
-                  type="date"
-                  value={paymentForm.paymentDate}
-                  onChange={(e) => setPaymentForm({ ...paymentForm, paymentDate: e.target.value })}
-                  className="mt-2 w-full rounded-3xl border border-slate-300 bg-slate-50 px-4 py-3 text-slate-900 outline-none"
-                />
-              </label>
-
-              <label className="block text-sm text-slate-700">
-                Deduction date (for daily revenue)
-                <input
-                  type="date"
-                  value={paymentForm.deductionDate}
-                  onChange={(e) => setPaymentForm({ ...paymentForm, deductionDate: e.target.value })}
-                  className="mt-2 w-full rounded-3xl border border-slate-300 bg-slate-50 px-4 py-3 text-slate-900 outline-none"
-                />
-              </label>
-            </div>
-
-            <div className="mt-4">
-              <p className="text-sm text-slate-600">Payment source</p>
-              <div className="mt-2 flex gap-4">
-                <label className="inline-flex items-center gap-2 text-sm">
-                  <input type="radio" checked={paymentSource === 'dailyRevenue'} onChange={() => setPaymentSource('dailyRevenue')} />
-                  Daily revenue
+              <div className="grid gap-4 lg:grid-cols-3">
+                <label className="block text-sm text-slate-700">
+                  Amount (will use total cost)
+                  <input
+                    type="number"
+                    value={paymentForm.amount}
+                    onChange={(e) => setPaymentForm({ ...paymentForm, amount: Number(e.target.value) })}
+                    min="0"
+                    step="0.01"
+                    className="mt-2 w-full rounded-3xl border border-slate-300 bg-slate-50 px-4 py-3 text-slate-900 outline-none"
+                  />
+                  <p className="mt-1 text-xs text-slate-500">Saved payment will be the outsource item's total cost.</p>
                 </label>
-                <label className="inline-flex items-center gap-2 text-sm">
-                  <input type="radio" checked={paymentSource === 'companyAccount'} onChange={() => setPaymentSource('companyAccount')} />
-                  Company account
+
+                <label className="block text-sm text-slate-700">
+                  Payment date
+                  <input type="date" value={paymentForm.paymentDate} onChange={(e) => setPaymentForm({ ...paymentForm, paymentDate: e.target.value })} className="mt-2 w-full rounded-3xl border border-slate-300 bg-slate-50 px-4 py-3 text-slate-900 outline-none" />
+                </label>
+
+                <label className="block text-sm text-slate-700">
+                  Deduction date (for daily revenue)
+                  <input type="date" value={paymentForm.deductionDate} onChange={(e) => setPaymentForm({ ...paymentForm, deductionDate: e.target.value })} className="mt-2 w-full rounded-3xl border border-slate-300 bg-slate-50 px-4 py-3 text-slate-900 outline-none" />
                 </label>
               </div>
-            </div>
 
-            {paymentSource === 'dailyRevenue' && (
-              <div className="mt-4 rounded-3xl bg-slate-50 p-4">
-                <p className="text-sm text-slate-600">Selected date totals</p>
-                {directRevenueEntry ? (
-                  <div className="mt-2 text-sm text-slate-700">
-                    <p>Cash total: {formatMVR(directRevenueEntry.cashTotal || 0)}</p>
-                    <p>Card total: {formatMVR(directRevenueEntry.cardTotal || 0)}</p>
-                    <p>Total direct revenue: {formatMVR(directRevenueEntry.totalDirectRevenue || 0)}</p>
-                  </div>
-                ) : (
-                  <p className="mt-2 text-sm text-slate-500">No direct revenue entry found for selected date.</p>
-                )}
+              <div className="mt-4">
+                <p className="text-sm text-slate-600">Payment source</p>
+                <div className="mt-2 flex gap-4">
+                  <label className="inline-flex items-center gap-2 text-sm">
+                    <input type="radio" checked={paymentSource === 'dailyRevenue'} onChange={() => setPaymentSource('dailyRevenue')} />
+                    Daily revenue
+                  </label>
+                  <label className="inline-flex items-center gap-2 text-sm">
+                    <input type="radio" checked={paymentSource === 'companyAccount'} onChange={() => setPaymentSource('companyAccount')} />
+                    Company account
+                  </label>
+                </div>
               </div>
-            )}
 
-            <div className="mt-5 flex gap-3">
-              <button
-                type="button"
-                onClick={() => savePayment(paymentSource)}
-                className="rounded-full bg-emerald-600 px-5 py-3 text-sm font-semibold text-white hover:bg-emerald-500"
-              >
-                Save payment
-              </button>
-              <button
-                type="button"
-                onClick={() => setPaymentForm(null)}
-                className="rounded-full border border-slate-200 bg-white px-5 py-3 text-sm font-semibold text-slate-700 hover:bg-slate-50"
-              >
-                Cancel
-              </button>
+              {paymentSource === 'dailyRevenue' && (
+                <div className="mt-4 rounded-3xl bg-slate-50 p-4">
+                  <p className="text-sm text-slate-600">Selected date totals</p>
+                  {directRevenueEntry ? (
+                    <div className="mt-2 text-sm text-slate-700">
+                      <p>Cash total: {formatMVR(directRevenueEntry.cashTotal || 0)}</p>
+                      <p>Card total: {formatMVR(directRevenueEntry.cardTotal || 0)}</p>
+                      <p>Total direct revenue: {formatMVR(directRevenueEntry.totalDirectRevenue || 0)}</p>
+                    </div>
+                  ) : (
+                    <p className="mt-2 text-sm text-slate-500">No direct revenue entry found for selected date.</p>
+                  )}
+                </div>
+              )}
+
+              <div className="mt-5 flex gap-3">
+                <button type="button" onClick={() => savePayment(paymentSource)} className="rounded-full bg-emerald-600 px-5 py-3 text-sm font-semibold text-white hover:bg-emerald-500">Save payment</button>
+                <button type="button" onClick={() => { setShowPaymentModal(false); setPaymentForm(null); }} className="rounded-full border border-slate-200 bg-white px-5 py-3 text-sm font-semibold text-slate-700 hover:bg-slate-50">Cancel</button>
+              </div>
             </div>
-          </section>
+          </div>
         ) : null}
 
         <section className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">

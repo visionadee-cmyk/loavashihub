@@ -99,6 +99,14 @@ export default function OutsourceItemsPage() {
     setEditingId(null);
   };
 
+  const totalUnpaidCount = useMemo(() => items.filter((it) => !it.partyPaid).length, [items]);
+  const firstPartyWithUnpaid = useMemo(() => {
+    for (const it of items) {
+      if (!it.partyPaid && it.partyName) return it.partyName;
+    }
+    return null;
+  }, [items]);
+
   const handleSelectMenuItem = (menuItemId: string) => {
     const selected = menuItems.find((item) => item.id === menuItemId);
     setForm((current) => ({
@@ -499,6 +507,19 @@ export default function OutsourceItemsPage() {
             </div>
           ))}
         </div>
+
+        {/* Floating bulk-pay quick access when there are unpaid items */}
+        {totalUnpaidCount > 0 && firstPartyWithUnpaid ? (
+          <div className="fixed bottom-6 right-6 z-40">
+            <button
+              type="button"
+              onClick={() => beginBulkPay(firstPartyWithUnpaid)}
+              className="inline-flex items-center gap-2 rounded-full bg-indigo-600 px-4 py-3 text-sm font-semibold text-white shadow-lg hover:bg-indigo-500"
+            >
+              Pay multiple ({totalUnpaidCount})
+            </button>
+          </div>
+        ) : null}
 
         <section className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
           <div className="mb-5 flex flex-wrap items-center justify-between gap-3">

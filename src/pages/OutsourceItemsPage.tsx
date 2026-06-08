@@ -36,6 +36,14 @@ export default function OutsourceItemsPage() {
   const [showPaymentModal, setShowPaymentModal] = useState(false);
   const [paymentSource, setPaymentSource] = useState<'dailyRevenue' | 'companyAccount'>('dailyRevenue');
   const [directRevenueEntry, setDirectRevenueEntry] = useState<any | null>(null);
+  // bulk pay state
+  const [showBulkPayModal, setShowBulkPayModal] = useState(false);
+  const [bulkPartyName, setBulkPartyName] = useState<string | null>(null);
+  const [bulkItems, setBulkItems] = useState<OutsourceItem[]>([]);
+  const [bulkSelectedIds, setBulkSelectedIds] = useState<Record<string, boolean>>({});
+  const [bulkPaymentSource, setBulkPaymentSource] = useState<'dailyRevenue' | 'companyAccount'>('dailyRevenue');
+  const [bulkPaymentDate, setBulkPaymentDate] = useState<string>(new Date().toISOString().slice(0, 10));
+  const [bulkDeductionDate, setBulkDeductionDate] = useState<string>(new Date().toISOString().slice(0, 10));
 
   // load direct revenue entry for selected deductionDate when payment form opens/changes
   useEffect(() => {
@@ -217,6 +225,97 @@ export default function OutsourceItemsPage() {
       deductionDate: item.costDeductionDate ?? item.date,
     });
     setShowPaymentModal(true);
+  };
+
+  const beginBulkPay = (partyName: string) => {
+    const unpaid = items.filter((it) => (it.partyName || 'Unknown') === partyName && !it.partyPaid);
+    setBulkPartyName(partyName);
+    setBulkItems(unpaid);
+    const sel: Record<string, boolean> = {};
+    unpaid.forEach((i) => { sel[i.id] = true; });
+    setBulkSelectedIds(sel);
+    setBulkPaymentSource('dailyRevenue');
+    setBulkPaymentDate(new Date().toISOString().slice(0, 10));
+    setBulkDeductionDate(new Date().toISOString().slice(0, 10));
+    setShowBulkPayModal(true);
+  };
+
+  const saveBulkPayment = async (source: 'dailyRevenue' | 'companyAccount') => {
+    const selected = bulkItems.filter((it) => bulkSelectedIds[it.id]);
+    if (selected.length === 0) return;
+
+    const totalAmount = selected.reduce((s, it) => s + (it.totalCost || 0), 0);
+
+    // update items locally and in firestore
+    const updatedItems = selected.map((it) => ({ ...it, partyPaid: true, partyPaymentAmount: it.totalCost, partyPaymentDate: bulkPaymentDate, costDeductionDate: bulkDeductionDate }));
+    setItems((curr) => curr.map((it) => {
+      const upd = updatedItems.find((u) => u.id === it.id);
+      return upd ?? it;
+    }));
+
+    if (hasFirebaseConfig) {
+      try {
+        await Promise.all(updatedItems.map((u) => saveDocument('outsourceItems', u.id, u)));
+      } catch (err) {
+        console.error('Failed to save bulk outsource payment info:', err);
+      }
+    }
+
+    // handle deduction once for the total amount
+    if (source === 'dailyRevenue' && hasFirebaseConfig) {
+      try {
+        const entries: any[] = await loadCollection('dailyDirectRevenue', []);
+        const entry = entries.find((e) => e.date === bulkDeductionDate);
+        if (entry) {
+          let remaining = totalAmount;
+          const cash = Number(entry.cashTotal || 0);
+          const card = Number(entry.cardTotal || 0);
+          let newCash = cash;
+          let newCard = card;
+          if (cash >= remaining) {
+            newCash = cash - remaining;
+            remaining = 0;
+          } else {
+            remaining -= cash;
+            newCash = 0;
+            newCard = Math.max(0, card - remaining);
+            remaining = 0;
+          }
+          const newTotal = Number((newCash + newCard + (entry.purchasedFromCashDrawer || 0)).toFixed(2));
+          const updatedEntry = { ...entry, cashTotal: newCash, cardTotal: newCard, totalDirectRevenue: newTotal };
+          try {
+            await saveDocument('dailyDirectRevenue', updatedEntry.id, updatedEntry);
+            setDirectRevenueEntry(updatedEntry);
+          } catch (err) {
+            console.error('Failed to update dailyDirectRevenue entry:', err);
+          }
+        } else {
+          console.warn('No Daily Direct Revenue entry found for', bulkDeductionDate);
+        }
+      } catch (err) {
+        console.error('Failed to load dailyDirectRevenue to deduct bulk payment:', err);
+      }
+    }
+
+    if (source === 'companyAccount' && hasFirebaseConfig) {
+      try {
+        const accounts: any[] = await loadCollection('companyAccount', []);
+        const acc = accounts.find((a) => a.id === 'main') ?? { id: 'main', balance: 0, transactions: [] };
+        const updatedAcc = { ...acc, balance: Number((Number(acc.balance || 0) - totalAmount).toFixed(2)), transactions: [...(acc.transactions || []), { id: `txn-${Date.now()}`, date: bulkPaymentDate, amount: -totalAmount, type: 'outsourceBulkPayment', party: bulkPartyName, outsourceItemIds: selected.map((s) => s.id) }] };
+        try {
+          await saveDocument('companyAccount', 'main', updatedAcc);
+        } catch (err) {
+          console.error('Failed to update companyAccount:', err);
+        }
+      } catch (err) {
+        console.error('Failed to load companyAccount:', err);
+      }
+    }
+
+    setShowBulkPayModal(false);
+    setBulkPartyName(null);
+    setBulkItems([]);
+    setBulkSelectedIds({});
   };
 
   // compute stats per saved party name
@@ -769,6 +868,77 @@ export default function OutsourceItemsPage() {
           </div>
         ) : null}
 
+        {showBulkPayModal && bulkPartyName ? (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/70 p-4">
+            <div className="w-full max-w-3xl rounded-[20px] border border-slate-200 bg-white p-6 shadow-2xl">
+              <div className="mb-4 flex items-center justify-between">
+                <div>
+                  <h3 className="text-lg font-semibold text-slate-900">Pay multiple items — {bulkPartyName}</h3>
+                  <p className="text-sm text-slate-500">Select items to mark as paid and choose payment source.</p>
+                </div>
+                <button type="button" onClick={() => setShowBulkPayModal(false)} className="rounded-full bg-slate-100 p-2 text-slate-700 hover:bg-slate-200">✕</button>
+              </div>
+
+              <div className="grid gap-4 sm:grid-cols-2">
+                <div>
+                  <p className="text-sm text-slate-600">Items</p>
+                  <div className="mt-2 space-y-2 max-h-64 overflow-auto">
+                    {bulkItems.length === 0 ? (
+                      <p className="text-sm text-slate-500">No unpaid items for this party.</p>
+                    ) : (
+                      bulkItems.map((it) => (
+                        <label key={it.id} className="flex items-center justify-between rounded-2xl border border-slate-200 bg-slate-50 px-3 py-2">
+                          <div className="flex-1">
+                            <div className="font-semibold">{it.menuItemName}</div>
+                            <div className="text-sm text-slate-500">{it.date} · {it.portions} portions</div>
+                          </div>
+                          <div className="ml-4 flex items-center gap-4">
+                            <div className="text-sm font-semibold">{formatMVR(it.totalCost)}</div>
+                            <input type="checkbox" checked={!!bulkSelectedIds[it.id]} onChange={() => setBulkSelectedIds((s) => ({ ...s, [it.id]: !s[it.id] }))} />
+                          </div>
+                        </label>
+                      ))
+                    )}
+                  </div>
+                </div>
+
+                <div>
+                  <p className="text-sm text-slate-600">Payment</p>
+                  <div className="mt-2 space-y-3 rounded-2xl border border-slate-200 bg-slate-50 p-3">
+                    <div>
+                      <p className="text-xs text-slate-500">Total selected</p>
+                      <p className="text-xl font-semibold text-slate-900">{formatMVR(bulkItems.reduce((s, it) => s + (bulkSelectedIds[it.id] ? it.totalCost : 0), 0))}</p>
+                    </div>
+
+                    <label className="block text-sm text-slate-700">
+                      Payment date
+                      <input type="date" value={bulkPaymentDate} onChange={(e) => setBulkPaymentDate(e.target.value)} className="mt-2 w-full rounded-3xl border border-slate-300 bg-white px-3 py-2 text-slate-900 outline-none" />
+                    </label>
+
+                    <label className="block text-sm text-slate-700">
+                      Deduction date (for daily revenue)
+                      <input type="date" value={bulkDeductionDate} onChange={(e) => setBulkDeductionDate(e.target.value)} className="mt-2 w-full rounded-3xl border border-slate-300 bg-white px-3 py-2 text-slate-900 outline-none" />
+                    </label>
+
+                    <div>
+                      <p className="text-sm text-slate-600">Payment source</p>
+                      <div className="mt-2 flex gap-3">
+                        <label className="inline-flex items-center gap-2 text-sm"><input type="radio" checked={bulkPaymentSource === 'dailyRevenue'} onChange={() => setBulkPaymentSource('dailyRevenue')} /> Daily revenue</label>
+                        <label className="inline-flex items-center gap-2 text-sm"><input type="radio" checked={bulkPaymentSource === 'companyAccount'} onChange={() => setBulkPaymentSource('companyAccount')} /> Company account</label>
+                      </div>
+                    </div>
+
+                    <div className="mt-3 flex gap-2">
+                      <button type="button" onClick={() => saveBulkPayment(bulkPaymentSource)} className="rounded-full bg-emerald-600 px-4 py-2 text-sm font-semibold text-white">Save payments</button>
+                      <button type="button" onClick={() => setShowBulkPayModal(false)} className="rounded-full border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700">Cancel</button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        ) : null}
+
         <section className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
           <div className="mb-5 flex items-center justify-between gap-3">
             <div>
@@ -837,6 +1007,10 @@ export default function OutsourceItemsPage() {
                       <p className="text-xs text-slate-500 mt-1">Profit</p>
                       <p className={`font-semibold ${party.totals.profit >= 0 ? 'text-emerald-600' : 'text-rose-600'}`}>{formatMVR(party.totals.profit)}</p>
                     </div>
+                  </div>
+
+                  <div className="mt-3 flex items-center justify-end gap-2">
+                    <button type="button" onClick={() => beginBulkPay(party.name)} className="inline-flex items-center gap-2 rounded-full bg-indigo-600 px-3 py-1 text-sm font-semibold text-white hover:bg-indigo-500">Pay All</button>
                   </div>
 
                   <div className="mt-4 space-y-3">

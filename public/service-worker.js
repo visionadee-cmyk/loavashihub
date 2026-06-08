@@ -1,4 +1,5 @@
-const CACHE_NAME = 'loavashi-hub-cache-v2';
+// Bump cache name to force clients to install the updated service worker
+const CACHE_NAME = 'loavashi-hub-cache-v3';
 const ASSETS = ['/', '/index.html', '/manifest.json', '/logo.jpeg'];
 
 console.log('🔧 Service Worker Loading...');
@@ -17,7 +18,10 @@ async function safeCachePut(cache, request, response) {
     return;
   }
 
+  // Only cache GET requests — cache.put does not support POST/PUT/etc.
   try {
+    const method = request && request.method ? request.method.toUpperCase() : 'GET';
+    if (method !== 'GET') return;
     await cache.put(request, response);
   } catch (error) {
     console.warn('Service worker cache.put failed:', error);

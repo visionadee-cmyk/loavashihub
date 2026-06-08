@@ -712,7 +712,7 @@ export default function OutsourceItemsPage() {
                       </button>
                     </div>
                   </div>
-                  <div className="mt-4 grid gap-3 sm:grid-cols-3">
+                  <div className="mt-4 grid gap-3 sm:grid-cols-4">
                     <div className="rounded-3xl bg-white p-4">
                       <p className="text-xs uppercase tracking-[0.24em] text-slate-500">Portions</p>
                       <p className="mt-2 text-lg font-semibold text-slate-900">{item.portions}</p>
@@ -720,6 +720,10 @@ export default function OutsourceItemsPage() {
                     <div className="rounded-3xl bg-white p-4">
                       <p className="text-xs uppercase tracking-[0.24em] text-slate-500">Revenue</p>
                       <p className="mt-2 text-lg font-semibold text-emerald-600">{formatMVR(item.totalRevenue)}</p>
+                    </div>
+                    <div className="rounded-3xl bg-white p-4">
+                      <p className="text-xs uppercase tracking-[0.24em] text-slate-500">Cost</p>
+                      <p className="mt-2 text-lg font-semibold text-slate-900">{formatMVR(item.totalCost)}</p>
                     </div>
                     <div className="rounded-3xl bg-white p-4">
                       <p className="text-xs uppercase tracking-[0.24em] text-slate-500">Profit</p>

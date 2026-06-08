@@ -219,6 +219,31 @@ export default function OutsourceItemsPage() {
     return Array.from(map.entries()).map(([name, data]) => ({ name, ...data }));
   }, [items]);
 
+  // group items by party and compute totals per party
+  const partyGroups = useMemo(() => {
+    const map = new Map<string, OutsourceItem[]>();
+    items.forEach((it) => {
+      const name = it.partyName || 'Unknown';
+      const arr = map.get(name) ?? [];
+      arr.push(it);
+      map.set(name, arr);
+    });
+
+    return Array.from(map.entries()).map(([name, arr]) => {
+      const totals = arr.reduce(
+        (s, it) => ({
+          totalCost: s.totalCost + (it.totalCost || 0),
+          totalRevenue: s.totalRevenue + (it.totalRevenue || 0),
+          profit: s.profit + (it.profit || 0),
+        }),
+        { totalCost: 0, totalRevenue: 0, profit: 0 },
+      );
+      // sort items newest first
+      arr.sort((a, b) => b.date.localeCompare(a.date));
+      return { name, items: arr, totals };
+    });
+  }, [items]);
+
   const savePayment = async (source: 'dailyRevenue' | 'companyAccount') => {
     if (!paymentForm) return;
     const { itemId, paymentDate, deductionDate } = paymentForm;
@@ -680,70 +705,63 @@ export default function OutsourceItemsPage() {
               No outsource items yet. Add one to begin tracking party costs and profits.
             </div>
           ) : (
-            <div className="space-y-4">
-              {items.map((item) => (
-                <div key={item.id} className="rounded-3xl border border-slate-200 bg-slate-50 p-4">
-                  <div className="flex flex-wrap items-start justify-between gap-3">
+            <div className="space-y-6">
+              {partyGroups.map((party) => (
+                <div key={party.name} className="rounded-3xl border border-slate-200 bg-slate-50 p-4">
+                  <div className="flex items-center justify-between">
                     <div>
-                      <p className="font-semibold text-slate-900">{item.partyName}</p>
-                      <p className="text-sm text-slate-500">{item.date} · {item.menuItemName}</p>
+                      <p className="font-semibold text-slate-900">{party.name}</p>
+                      <p className="text-sm text-slate-500">{party.items.length} record{party.items.length !== 1 ? 's' : ''}</p>
                     </div>
-                    <div className="flex flex-wrap items-center gap-2">
-                      <button
-                        type="button"
-                        onClick={() => beginEdit(item)}
-                        className="inline-flex items-center gap-2 rounded-full bg-yellow-300 px-4 py-2 text-sm font-semibold text-slate-900 hover:bg-yellow-200"
-                      >
-                        <Edit3 className="h-4 w-4" /> Edit
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => beginPayParty(item)}
-                        className="inline-flex items-center gap-2 rounded-full bg-slate-900 px-4 py-2 text-sm font-semibold text-white hover:bg-slate-800"
-                      >
-                        {item.partyPaid ? 'Edit payment' : 'Pay for party'}
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => deleteOutsourceItem(item.id)}
-                        className="inline-flex items-center gap-2 rounded-full bg-red-50 px-4 py-2 text-sm font-semibold text-red-600 hover:bg-red-100"
-                      >
-                        <Trash2 className="h-4 w-4" /> Delete
-                      </button>
+                    <div className="text-right">
+                      <p className="text-xs text-slate-500">Total revenue</p>
+                      <p className="font-semibold text-emerald-600">{formatMVR(party.totals.totalRevenue)}</p>
+                      <p className="text-xs text-slate-500 mt-1">Total cost</p>
+                      <p className="font-semibold text-slate-900">{formatMVR(party.totals.totalCost)}</p>
+                      <p className="text-xs text-slate-500 mt-1">Profit</p>
+                      <p className={`font-semibold ${party.totals.profit >= 0 ? 'text-emerald-600' : 'text-rose-600'}`}>{formatMVR(party.totals.profit)}</p>
                     </div>
                   </div>
-                  <div className="mt-4 grid gap-3 grid-cols-1 sm:grid-cols-2 md:grid-cols-4">
-                    <div className="rounded-3xl bg-white p-4">
-                      <p className="text-xs uppercase tracking-[0.24em] text-slate-500">Portions</p>
-                      <p className="mt-2 text-lg font-semibold text-slate-900">{item.portions}</p>
-                    </div>
-                    <div className="rounded-3xl bg-white p-4">
-                      <p className="text-xs uppercase tracking-[0.24em] text-slate-500">Revenue</p>
-                      <p className="mt-2 text-lg font-semibold text-emerald-600">{formatMVR(item.totalRevenue)}</p>
-                    </div>
-                    <div className="rounded-3xl bg-white p-4">
-                      <p className="text-xs uppercase tracking-[0.24em] text-slate-500">Cost</p>
-                      <p className="mt-2 text-lg font-semibold text-slate-900">{formatMVR(item.totalCost)}</p>
-                    </div>
-                    <div className="rounded-3xl bg-white p-4">
-                      <p className="text-xs uppercase tracking-[0.24em] text-slate-500">Profit</p>
-                      <p className={`mt-2 text-lg font-semibold ${item.profit >= 0 ? 'text-emerald-600' : 'text-rose-600'}`}>{formatMVR(item.profit)}</p>
-                    </div>
-                  </div>
-                  <div className="mt-4">
-                    <div className="rounded-3xl bg-slate-100 p-4">
-                      <p className="text-xs uppercase tracking-[0.24em] text-slate-500">Party payment status</p>
-                      <p className={`mt-2 text-lg font-semibold ${item.partyPaid ? 'text-emerald-600' : 'text-slate-700'}`}>
-                        {item.partyPaid ? 'Paid' : 'Unpaid'}
-                      </p>
-                      {item.partyPaid ? (
-                        <div className="mt-2 space-y-1 text-sm text-slate-600">
-                          <p>Paid amount: {formatMVR(item.partyPaymentAmount ?? item.totalCost)}</p>
-                          <p>Payment date: {item.partyPaymentDate}</p>
-                          <p>Cost deduction date: {item.costDeductionDate}</p>
+
+                  <div className="mt-4 space-y-3">
+                    {party.items.map((item) => (
+                      <div key={item.id} className="rounded-2xl border border-slate-200 bg-white p-3">
+                        <div className="flex items-start justify-between gap-3">
+                          <div>
+                            <p className="font-semibold text-slate-900">{item.menuItemName}</p>
+                            <p className="text-sm text-slate-500">{item.date} · Portions: {item.portions}</p>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <button
+                              type="button"
+                              onClick={() => beginEdit(item)}
+                              className="inline-flex items-center gap-2 rounded-full bg-yellow-300 px-3 py-1 text-sm font-semibold text-slate-900 hover:bg-yellow-200"
+                            >
+                              <Edit3 className="h-4 w-4" /> Edit
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => beginPayParty(item)}
+                              className="inline-flex items-center gap-2 rounded-full bg-slate-900 px-3 py-1 text-sm font-semibold text-white hover:bg-slate-800"
+                            >
+                              {item.partyPaid ? 'Edit payment' : 'Pay'}
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => deleteOutsourceItem(item.id)}
+                              className="inline-flex items-center gap-2 rounded-full bg-red-50 px-3 py-1 text-sm font-semibold text-red-600 hover:bg-red-100"
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </button>
+                          </div>
                         </div>
-                      ) : null}
-                    </div>
+                        <div className="mt-3 flex gap-3 text-sm text-slate-600">
+                          <div className="flex-1">Revenue: <span className="font-semibold text-emerald-600">{formatMVR(item.totalRevenue)}</span></div>
+                          <div className="flex-1">Cost: <span className="font-semibold text-slate-900">{formatMVR(item.totalCost)}</span></div>
+                          <div className="flex-1">Profit: <span className={`font-semibold ${item.profit >= 0 ? 'text-emerald-600' : 'text-rose-600'}`}>{formatMVR(item.profit)}</span></div>
+                        </div>
+                      </div>
+                    ))}
                   </div>
                 </div>
               ))}

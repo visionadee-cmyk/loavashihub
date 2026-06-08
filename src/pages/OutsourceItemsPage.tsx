@@ -32,6 +32,23 @@ export default function OutsourceItemsPage() {
     paymentDate: string;
     deductionDate: string;
   } | null>(null);
+  const [paymentSource, setPaymentSource] = useState<'dailyRevenue' | 'companyAccount'>('dailyRevenue');
+  const [directRevenueEntry, setDirectRevenueEntry] = useState<any | null>(null);
+
+  // load direct revenue entry for selected deductionDate when payment form opens/changes
+  useEffect(() => {
+    if (!paymentForm || !paymentForm.deductionDate || !hasFirebaseConfig) {
+      setDirectRevenueEntry(null);
+      return;
+    }
+    let mounted = true;
+    loadCollection('dailyDirectRevenue', []).then((entries) => {
+      if (!mounted) return;
+      const found = entries.find((e: any) => e.date === paymentForm.deductionDate);
+      setDirectRevenueEntry(found ?? null);
+    }).catch(() => setDirectRevenueEntry(null));
+    return () => { mounted = false; };
+  }, [paymentForm?.deductionDate]);
 
   useEffect(() => {
     if (!hasFirebaseConfig) return;
@@ -184,6 +201,98 @@ export default function OutsourceItemsPage() {
       paymentDate: item.partyPaymentDate ?? new Date().toISOString().slice(0, 10),
       deductionDate: item.costDeductionDate ?? item.date,
     });
+  };
+
+  // compute stats per saved party name
+  const partyStats = useMemo(() => {
+    const map = new Map<string, { paid: number; pending: number; remaining: number }>();
+    items.forEach((it) => {
+      const name = it.partyName || 'Unknown';
+      const entry = map.get(name) ?? { paid: 0, pending: 0, remaining: 0 };
+      const paid = it.partyPaid ? (it.partyPaymentAmount ?? it.totalCost) : 0;
+      const pending = it.totalCost - paid;
+      entry.paid += paid;
+      entry.pending += pending > 0 ? pending : 0;
+      entry.remaining = entry.pending;
+      map.set(name, entry);
+    });
+    return Array.from(map.entries()).map(([name, data]) => ({ name, ...data }));
+  }, [items]);
+
+  const savePayment = async (source: 'dailyRevenue' | 'companyAccount') => {
+    if (!paymentForm) return;
+    const { itemId, amount, paymentDate, deductionDate } = paymentForm;
+
+    const item = items.find((it) => it.id === itemId);
+    if (!item) return;
+
+    // update outsource item locally
+    const updated: OutsourceItem = { ...item, partyPaid: true, partyPaymentAmount: amount, partyPaymentDate: paymentDate, costDeductionDate: deductionDate };
+    setItems((curr) => curr.map((it) => (it.id === itemId ? updated : it)));
+
+    if (hasFirebaseConfig) {
+      try {
+        await saveDocument('outsourceItems', updated.id, updated);
+      } catch (err) {
+        console.error('Failed to save outsource payment info:', err);
+      }
+    }
+
+    // handle source-specific deductions
+    if (source === 'dailyRevenue' && hasFirebaseConfig) {
+      try {
+        const entries: any[] = await loadCollection('dailyDirectRevenue', []);
+        const entry = entries.find((e) => e.date === deductionDate);
+        if (!entry) {
+          // no direct revenue for date: notify and finish
+          // keep update on outsource item but warn in console
+          console.warn('No Daily Direct Revenue entry found for', deductionDate);
+        } else {
+          // preferentially deduct from cashTotal, then cardTotal
+          let remaining = amount;
+          const cash = Number(entry.cashTotal || 0);
+          const card = Number(entry.cardTotal || 0);
+          let newCash = cash;
+          let newCard = card;
+          if (cash >= remaining) {
+            newCash = cash - remaining;
+            remaining = 0;
+          } else {
+            remaining -= cash;
+            newCash = 0;
+            newCard = Math.max(0, card - remaining);
+            remaining = 0;
+          }
+          const newTotal = Number((newCash + newCard + (entry.purchasedFromCashDrawer || 0)).toFixed(2));
+          const updatedEntry = { ...entry, cashTotal: newCash, cardTotal: newCard, totalDirectRevenue: newTotal };
+          try {
+            await saveDocument('dailyDirectRevenue', updatedEntry.id, updatedEntry);
+            setDirectRevenueEntry(updatedEntry);
+          } catch (err) {
+            console.error('Failed to update dailyDirectRevenue entry:', err);
+          }
+        }
+      } catch (err) {
+        console.error('Failed to load dailyDirectRevenue to deduct payment:', err);
+      }
+    }
+
+    if (source === 'companyAccount' && hasFirebaseConfig) {
+      try {
+        const accounts: any[] = await loadCollection('companyAccount', []);
+        const acc = accounts.find((a) => a.id === 'main') ?? { id: 'main', balance: 0, transactions: [] };
+        const updatedAcc = { ...acc, balance: Number((Number(acc.balance || 0) - amount).toFixed(2)), transactions: [...(acc.transactions || []), { id: `txn-${Date.now()}`, date: paymentDate, amount: -amount, type: 'outsourcePayment', party: item.partyName, outsourceItemId: item.id }] };
+        try {
+          await saveDocument('companyAccount', 'main', updatedAcc);
+        } catch (err) {
+          console.error('Failed to update companyAccount:', err);
+        }
+      } catch (err) {
+        console.error('Failed to load companyAccount:', err);
+      }
+    }
+
+    setPaymentForm(null);
   };
 
   
@@ -419,6 +528,136 @@ export default function OutsourceItemsPage() {
                   </button>
                 ) : null}
               </div>
+            </div>
+          )}
+        </section>
+
+        {paymentForm ? (
+          <section className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
+            <div className="mb-5 flex items-center justify-between">
+              <div>
+                <h3 className="text-xl font-semibold text-slate-900">Pay for party</h3>
+                <p className="text-sm text-slate-500">Record payment and choose source to deduct from.</p>
+              </div>
+              <span className="text-sm text-slate-600">{paymentForm.itemId}</span>
+            </div>
+
+            <div className="grid gap-4 lg:grid-cols-3">
+              <label className="block text-sm text-slate-700">
+                Amount
+                <input
+                  type="number"
+                  value={paymentForm.amount}
+                  onChange={(e) => setPaymentForm({ ...paymentForm, amount: Number(e.target.value) })}
+                  min="0"
+                  step="0.01"
+                  className="mt-2 w-full rounded-3xl border border-slate-300 bg-slate-50 px-4 py-3 text-slate-900 outline-none"
+                />
+              </label>
+
+              <label className="block text-sm text-slate-700">
+                Payment date
+                <input
+                  type="date"
+                  value={paymentForm.paymentDate}
+                  onChange={(e) => setPaymentForm({ ...paymentForm, paymentDate: e.target.value })}
+                  className="mt-2 w-full rounded-3xl border border-slate-300 bg-slate-50 px-4 py-3 text-slate-900 outline-none"
+                />
+              </label>
+
+              <label className="block text-sm text-slate-700">
+                Deduction date (for daily revenue)
+                <input
+                  type="date"
+                  value={paymentForm.deductionDate}
+                  onChange={(e) => setPaymentForm({ ...paymentForm, deductionDate: e.target.value })}
+                  className="mt-2 w-full rounded-3xl border border-slate-300 bg-slate-50 px-4 py-3 text-slate-900 outline-none"
+                />
+              </label>
+            </div>
+
+            <div className="mt-4">
+              <p className="text-sm text-slate-600">Payment source</p>
+              <div className="mt-2 flex gap-4">
+                <label className="inline-flex items-center gap-2 text-sm">
+                  <input type="radio" checked={paymentSource === 'dailyRevenue'} onChange={() => setPaymentSource('dailyRevenue')} />
+                  Daily revenue
+                </label>
+                <label className="inline-flex items-center gap-2 text-sm">
+                  <input type="radio" checked={paymentSource === 'companyAccount'} onChange={() => setPaymentSource('companyAccount')} />
+                  Company account
+                </label>
+              </div>
+            </div>
+
+            {paymentSource === 'dailyRevenue' && (
+              <div className="mt-4 rounded-3xl bg-slate-50 p-4">
+                <p className="text-sm text-slate-600">Selected date totals</p>
+                {directRevenueEntry ? (
+                  <div className="mt-2 text-sm text-slate-700">
+                    <p>Cash total: {formatMVR(directRevenueEntry.cashTotal || 0)}</p>
+                    <p>Card total: {formatMVR(directRevenueEntry.cardTotal || 0)}</p>
+                    <p>Total direct revenue: {formatMVR(directRevenueEntry.totalDirectRevenue || 0)}</p>
+                  </div>
+                ) : (
+                  <p className="mt-2 text-sm text-slate-500">No direct revenue entry found for selected date.</p>
+                )}
+              </div>
+            )}
+
+            <div className="mt-5 flex gap-3">
+              <button
+                type="button"
+                onClick={() => savePayment(paymentSource)}
+                className="rounded-full bg-emerald-600 px-5 py-3 text-sm font-semibold text-white hover:bg-emerald-500"
+              >
+                Save payment
+              </button>
+              <button
+                type="button"
+                onClick={() => setPaymentForm(null)}
+                className="rounded-full border border-slate-200 bg-white px-5 py-3 text-sm font-semibold text-slate-700 hover:bg-slate-50"
+              >
+                Cancel
+              </button>
+            </div>
+          </section>
+        ) : null}
+
+        <section className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
+          <div className="mb-5 flex items-center justify-between gap-3">
+            <div>
+              <h3 className="text-xl font-semibold text-slate-900">Saved party stats</h3>
+              <p className="text-sm text-slate-500">Totals per party: paid, pending and remaining balances.</p>
+            </div>
+            <span className="rounded-full bg-slate-100 px-4 py-2 text-sm text-slate-600">{partyStats.length} parties</span>
+          </div>
+
+          {partyStats.length === 0 ? (
+            <div className="rounded-3xl border border-dashed border-slate-300 bg-slate-50 p-8 text-center text-slate-500">
+              No party stats to show.
+            </div>
+          ) : (
+            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+              {partyStats.map((p) => (
+                <div key={p.name} className="rounded-3xl border border-slate-200 bg-white p-4">
+                  <p className="text-sm font-semibold text-slate-900">{p.name}</p>
+                  <div className="mt-3 grid gap-2 grid-cols-3 text-sm">
+                    <div>
+                      <p className="text-xs uppercase text-slate-500">Paid</p>
+                      <p className="font-semibold text-emerald-600">{formatMVR(p.paid)}</p>
+                    </div>
+                    <div>
+                      <p className="text-xs uppercase text-slate-500">Pending</p>
+                      <p className="font-semibold text-slate-900">{formatMVR(p.pending)}</p>
+                    </div>
+                    <div>
+                      <p className="text-xs uppercase text-slate-500">Remaining</p>
+                      <p className="font-semibold text-rose-600">{formatMVR(p.remaining)}</p>
+                    </div>
+                  </div>
+                </div>
+              ))}
             </div>
           )}
         </section>

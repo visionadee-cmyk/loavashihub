@@ -328,6 +328,110 @@ export default function OutsourceItemsPage() {
     setShowPaymentModal(false);
   };
 
+  const [showBulkPayModal, setShowBulkPayModal] = useState(false);
+  const [bulkItems, setBulkItems] = useState<OutsourceItem[]>([]);
+  const [bulkSelectedIds, setBulkSelectedIds] = useState<Record<string, boolean>>({});
+  const [bulkPaymentDate, setBulkPaymentDate] = useState(new Date().toISOString().slice(0, 10));
+  const [bulkDeductionDate, setBulkDeductionDate] = useState(new Date().toISOString().slice(0, 10));
+  const [bulkPaymentSource, setBulkPaymentSource] = useState<'dailyRevenue' | 'companyAccount'>('dailyRevenue');
+
+  const beginBulkPay = (partyName: string) => {
+    const group = partyGroups.find((g) => g.name === partyName);
+    if (!group) return;
+    const unpaid = group.items.filter((it) => !it.partyPaid);
+    setBulkItems(unpaid);
+    const sel: Record<string, boolean> = {};
+    unpaid.forEach((it) => { sel[it.id] = true; });
+    setBulkSelectedIds(sel);
+    setBulkPaymentDate(new Date().toISOString().slice(0, 10));
+    setBulkDeductionDate(new Date().toISOString().slice(0, 10));
+    setBulkPaymentSource('dailyRevenue');
+    setShowBulkPayModal(true);
+  };
+
+  const saveBulkPayment = async (source: 'dailyRevenue' | 'companyAccount') => {
+    const ids = Object.keys(bulkSelectedIds).filter((id) => bulkSelectedIds[id]);
+    if (!ids.length) return;
+
+    const selectedItems = bulkItems.filter((it) => ids.includes(it.id));
+    const totalAmount = selectedItems.reduce((s, it) => s + it.totalCost, 0);
+
+    if (!window.confirm(`Mark ${ids.length} item${ids.length !== 1 ? 's' : ''} as paid? This will update records and deduct ${formatMVR(totalAmount)} from the selected source.`)) {
+      return;
+    }
+
+    // update items locally
+    setItems((curr) => curr.map((it) => (ids.includes(it.id) ? { ...it, partyPaid: true, partyPaymentAmount: it.totalCost, partyPaymentDate: bulkPaymentDate, costDeductionDate: bulkDeductionDate } : it)));
+
+    if (hasFirebaseConfig) {
+      try {
+        // save each updated outsource item
+        for (const it of selectedItems) {
+          const updated = { ...it, partyPaid: true, partyPaymentAmount: it.totalCost, partyPaymentDate: bulkPaymentDate, costDeductionDate: bulkDeductionDate };
+          try {
+            // save without awaiting sequentially to be safe but sequential here for clarity
+            // eslint-disable-next-line no-await-in-loop
+            await saveDocument('outsourceItems', updated.id, updated);
+          } catch (err) {
+            console.error('Failed to save outsource item in bulk:', err);
+          }
+        }
+
+        if (source === 'dailyRevenue') {
+          // deduct totalAmount from dailyDirectRevenue entry
+          const entries: any[] = await loadCollection('dailyDirectRevenue', []);
+          const entry = entries.find((e) => e.date === bulkDeductionDate);
+          if (entry) {
+            let remaining = totalAmount;
+            const cash = Number(entry.cashTotal || 0);
+            const card = Number(entry.cardTotal || 0);
+            let newCash = cash;
+            let newCard = card;
+            if (cash >= remaining) {
+              newCash = cash - remaining;
+              remaining = 0;
+            } else {
+              remaining -= cash;
+              newCash = 0;
+              newCard = Math.max(0, card - remaining);
+              remaining = 0;
+            }
+            const newTotal = Number((newCash + newCard + (entry.purchasedFromCashDrawer || 0)).toFixed(2));
+            const updatedEntry = { ...entry, cashTotal: newCash, cardTotal: newCard, totalDirectRevenue: newTotal };
+            try {
+              await saveDocument('dailyDirectRevenue', updatedEntry.id, updatedEntry);
+              setDirectRevenueEntry(updatedEntry);
+            } catch (err) {
+              console.error('Failed to update dailyDirectRevenue in bulk:', err);
+            }
+          } else {
+            console.warn('No dailyDirectRevenue entry found for bulk deduction date', bulkDeductionDate);
+          }
+        }
+
+        if (source === 'companyAccount') {
+          const accounts: any[] = await loadCollection('companyAccount', []);
+          const acc = accounts.find((a) => a.id === 'main') ?? { id: 'main', balance: 0, transactions: [] };
+          const updatedAcc = { ...acc, balance: Number((Number(acc.balance || 0) - totalAmount).toFixed(2)), transactions: [...(acc.transactions || []), { id: `txn-bulk-${Date.now()}`, date: bulkPaymentDate, amount: -totalAmount, type: 'outsourceBulkPayment', count: ids.length }] };
+          try {
+            await saveDocument('companyAccount', 'main', updatedAcc);
+          } catch (err) {
+            console.error('Failed to update companyAccount in bulk:', err);
+          }
+        }
+      } catch (err) {
+        console.error('Failed during bulk payment save:', err);
+      }
+    }
+
+    setShowBulkPayModal(false);
+    setBulkItems([]);
+    setBulkSelectedIds({});
+  };
+
+  const bulkSelectedCount = useMemo(() => Object.values(bulkSelectedIds).filter(Boolean).length, [bulkSelectedIds]);
+  const bulkAllSelected = bulkItems.length > 0 && bulkItems.every((it) => !!bulkSelectedIds[it.id]);
+
   
 
   const deleteParty = async (id: string) => {
@@ -744,6 +848,99 @@ export default function OutsourceItemsPage() {
           </div>
         ) : null}
 
+        {showBulkPayModal ? (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/70 p-4">
+            <div className="w-full max-w-2xl rounded-[32px] border border-slate-200 bg-white p-6 shadow-2xl">
+              <div className="mb-4 flex items-center justify-between">
+                <div>
+                  <h3 className="text-xl font-semibold text-slate-900">Bulk pay party items</h3>
+                  <p className="text-sm text-slate-500">Select items to mark as paid and deduct from chosen source.</p>
+                </div>
+                <button type="button" onClick={() => setShowBulkPayModal(false)} className="rounded-full bg-slate-100 p-2 text-slate-700 hover:bg-slate-200">✕</button>
+              </div>
+
+              <div className="space-y-4">
+                <div>
+                  <div className="mb-2 flex items-center justify-between">
+                    <div className="text-sm text-slate-600">Unpaid items</div>
+                    <label className="inline-flex items-center gap-2 text-sm">
+                      <input
+                        type="checkbox"
+                        checked={bulkAllSelected}
+                        onChange={() => {
+                          if (bulkAllSelected) {
+                            setBulkSelectedIds({});
+                          } else {
+                            const sel: Record<string, boolean> = {};
+                            bulkItems.forEach((it) => { sel[it.id] = true; });
+                            setBulkSelectedIds(sel);
+                          }
+                        }}
+                      />
+                      Select all
+                    </label>
+                  </div>
+                  <div className="space-y-2 max-h-64 overflow-auto">
+                    {bulkItems.length === 0 ? (
+                      <div className="text-sm text-slate-500">No unpaid items for this party.</div>
+                    ) : (
+                      bulkItems.map((it) => (
+                        <label key={it.id} className="flex items-center justify-between rounded-2xl border border-slate-200 bg-slate-50 px-3 py-2">
+                          <div className="flex-1">
+                            <div className="font-semibold">{it.menuItemName}</div>
+                            <div className="text-sm text-slate-500">{it.date} · {it.portions} portions</div>
+                          </div>
+                          <div className="ml-4 flex items-center gap-4">
+                            <div className="text-sm font-semibold">{formatMVR(it.totalCost)}</div>
+                            <input type="checkbox" checked={!!bulkSelectedIds[it.id]} onChange={() => setBulkSelectedIds((s) => ({ ...s, [it.id]: !s[it.id] }))} />
+                          </div>
+                        </label>
+                      ))
+                    )}
+                  </div>
+                </div>
+
+                <div className="mt-2 space-y-3 rounded-2xl border border-slate-200 bg-slate-50 p-3">
+                  <div>
+                    <p className="text-xs text-slate-500">Total selected</p>
+                    <p className="text-xl font-semibold text-slate-900">{formatMVR(bulkItems.reduce((s, it) => s + (bulkSelectedIds[it.id] ? it.totalCost : 0), 0))}</p>
+                  </div>
+
+                  <label className="block text-sm text-slate-700">
+                    Payment date
+                    <input type="date" value={bulkPaymentDate} onChange={(e) => setBulkPaymentDate(e.target.value)} className="mt-2 w-full rounded-3xl border border-slate-300 bg-white px-3 py-2 text-slate-900 outline-none" />
+                  </label>
+
+                  <label className="block text-sm text-slate-700">
+                    Deduction date (for daily revenue)
+                    <input type="date" value={bulkDeductionDate} onChange={(e) => setBulkDeductionDate(e.target.value)} className="mt-2 w-full rounded-3xl border border-slate-300 bg-white px-3 py-2 text-slate-900 outline-none" />
+                  </label>
+
+                  <div>
+                    <p className="text-sm text-slate-600">Payment source</p>
+                    <div className="mt-2 flex gap-3">
+                      <label className="inline-flex items-center gap-2 text-sm"><input type="radio" checked={bulkPaymentSource === 'dailyRevenue'} onChange={() => setBulkPaymentSource('dailyRevenue')} /> Daily revenue</label>
+                      <label className="inline-flex items-center gap-2 text-sm"><input type="radio" checked={bulkPaymentSource === 'companyAccount'} onChange={() => setBulkPaymentSource('companyAccount')} /> Company account</label>
+                    </div>
+                  </div>
+
+                  <div className="mt-3 flex gap-2">
+                    <button
+                      type="button"
+                      onClick={() => saveBulkPayment(bulkPaymentSource)}
+                      disabled={bulkSelectedCount === 0}
+                      className={`rounded-full bg-emerald-600 px-4 py-2 text-sm font-semibold text-white ${bulkSelectedCount === 0 ? 'opacity-50 pointer-events-none' : ''}`}
+                    >
+                      Save payments
+                    </button>
+                    <button type="button" onClick={() => setShowBulkPayModal(false)} className="rounded-full border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700">Cancel</button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        ) : null}
+
         <section className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
           <div className="mb-5 flex items-center justify-between gap-3">
             <div>
@@ -804,13 +1001,18 @@ export default function OutsourceItemsPage() {
                       <p className="font-semibold text-slate-900">{party.name}</p>
                       <p className="text-sm text-slate-500">{party.items.length} record{party.items.length !== 1 ? 's' : ''}</p>
                     </div>
-                    <div className="text-right">
-                      <p className="text-xs text-slate-500">Total revenue</p>
-                      <p className="font-semibold text-emerald-600">{formatMVR(party.totals.totalRevenue)}</p>
-                      <p className="text-xs text-slate-500 mt-1">Total cost</p>
-                      <p className="font-semibold text-slate-900">{formatMVR(party.totals.totalCost)}</p>
-                      <p className="text-xs text-slate-500 mt-1">Profit</p>
-                      <p className={`font-semibold ${party.totals.profit >= 0 ? 'text-emerald-600' : 'text-rose-600'}`}>{formatMVR(party.totals.profit)}</p>
+                    <div className="flex items-center gap-4">
+                      <div className="text-right">
+                        <p className="text-xs text-slate-500">Total revenue</p>
+                        <p className="font-semibold text-emerald-600">{formatMVR(party.totals.totalRevenue)}</p>
+                        <p className="text-xs text-slate-500 mt-1">Total cost</p>
+                        <p className="font-semibold text-slate-900">{formatMVR(party.totals.totalCost)}</p>
+                        <p className="text-xs text-slate-500 mt-1">Profit</p>
+                        <p className={`font-semibold ${party.totals.profit >= 0 ? 'text-emerald-600' : 'text-rose-600'}`}>{formatMVR(party.totals.profit)}</p>
+                      </div>
+                      <div>
+                        <button type="button" onClick={() => beginBulkPay(party.name)} className="inline-flex items-center gap-2 rounded-full bg-indigo-600 px-3 py-1 text-sm font-semibold text-white hover:bg-indigo-500">Pay All</button>
+                      </div>
                     </div>
                   </div>
 

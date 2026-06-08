@@ -221,13 +221,16 @@ export default function OutsourceItemsPage() {
 
   const savePayment = async (source: 'dailyRevenue' | 'companyAccount') => {
     if (!paymentForm) return;
-    const { itemId, amount, paymentDate, deductionDate } = paymentForm;
+    const { itemId, paymentDate, deductionDate } = paymentForm;
 
     const item = items.find((it) => it.id === itemId);
     if (!item) return;
 
+    // always use the outsource total cost as the payment amount
+    const amountToUse = item.totalCost;
+
     // update outsource item locally
-    const updated: OutsourceItem = { ...item, partyPaid: true, partyPaymentAmount: amount, partyPaymentDate: paymentDate, costDeductionDate: deductionDate };
+    const updated: OutsourceItem = { ...item, partyPaid: true, partyPaymentAmount: amountToUse, partyPaymentDate: paymentDate, costDeductionDate: deductionDate };
     setItems((curr) => curr.map((it) => (it.id === itemId ? updated : it)));
 
     if (hasFirebaseConfig) {
@@ -249,7 +252,7 @@ export default function OutsourceItemsPage() {
           console.warn('No Daily Direct Revenue entry found for', deductionDate);
         } else {
           // preferentially deduct from cashTotal, then cardTotal
-          let remaining = amount;
+          let remaining = amountToUse;
           const cash = Number(entry.cashTotal || 0);
           const card = Number(entry.cardTotal || 0);
           let newCash = cash;
@@ -281,7 +284,7 @@ export default function OutsourceItemsPage() {
       try {
         const accounts: any[] = await loadCollection('companyAccount', []);
         const acc = accounts.find((a) => a.id === 'main') ?? { id: 'main', balance: 0, transactions: [] };
-        const updatedAcc = { ...acc, balance: Number((Number(acc.balance || 0) - amount).toFixed(2)), transactions: [...(acc.transactions || []), { id: `txn-${Date.now()}`, date: paymentDate, amount: -amount, type: 'outsourcePayment', party: item.partyName, outsourceItemId: item.id }] };
+        const updatedAcc = { ...acc, balance: Number((Number(acc.balance || 0) - amountToUse).toFixed(2)), transactions: [...(acc.transactions || []), { id: `txn-${Date.now()}`, date: paymentDate, amount: -amountToUse, type: 'outsourcePayment', party: item.partyName, outsourceItemId: item.id }] };
         try {
           await saveDocument('companyAccount', 'main', updatedAcc);
         } catch (err) {
@@ -544,7 +547,7 @@ export default function OutsourceItemsPage() {
 
             <div className="grid gap-4 lg:grid-cols-3">
               <label className="block text-sm text-slate-700">
-                Amount
+                Amount (will use total cost)
                 <input
                   type="number"
                   value={paymentForm.amount}
@@ -553,6 +556,7 @@ export default function OutsourceItemsPage() {
                   step="0.01"
                   className="mt-2 w-full rounded-3xl border border-slate-300 bg-slate-50 px-4 py-3 text-slate-900 outline-none"
                 />
+                <p className="mt-1 text-xs text-slate-500">Saved payment will be the outsource item's total cost.</p>
               </label>
 
               <label className="block text-sm text-slate-700">

@@ -879,31 +879,61 @@ export default function OutsourceItemsPage() {
                 <button type="button" onClick={() => setShowBulkPayModal(false)} className="rounded-full bg-slate-100 p-2 text-slate-700 hover:bg-slate-200">✕</button>
               </div>
 
-              <div className="grid gap-4 sm:grid-cols-2">
-                <div>
-                  <p className="text-sm text-slate-600">Items</p>
-                  <div className="mt-2 space-y-2 max-h-64 overflow-auto">
-                    {bulkItems.length === 0 ? (
-                      <p className="text-sm text-slate-500">No unpaid items for this party.</p>
-                    ) : (
-                      bulkItems.map((it) => (
-                        <label key={it.id} className="flex items-center justify-between rounded-2xl border border-slate-200 bg-slate-50 px-3 py-2">
-                          <div className="flex-1">
-                            <div className="font-semibold">{it.menuItemName}</div>
-                            <div className="text-sm text-slate-500">{it.date} · {it.portions} portions</div>
-                          </div>
-                          <div className="ml-4 flex items-center gap-4">
-                            <div className="text-sm font-semibold">{formatMVR(it.totalCost)}</div>
-                            <input type="checkbox" checked={!!bulkSelectedIds[it.id]} onChange={() => setBulkSelectedIds((s) => ({ ...s, [it.id]: !s[it.id] }))} />
-                          </div>
-                        </label>
-                      ))
-                    )}
+              <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
+                <div className="flex items-center gap-4 rounded-3xl border border-slate-200 bg-white p-4 shadow-sm">
+                  <div className="h-12 w-3 rounded-full bg-amber-400" />
+                  <div className="flex-1">
+                    <p className="text-xs uppercase tracking-[0.18em] text-slate-500">Total To Pay</p>
+                    <p className="mt-1 text-2xl font-semibold text-slate-900">{formatMVR(totalToPay)}</p>
+                    <p className="text-sm text-slate-500">All parties combined</p>
                   </div>
                 </div>
 
-                <div>
-                  <p className="text-sm text-slate-600">Payment</p>
+                <div className="flex items-center gap-4 rounded-3xl border border-slate-200 bg-white p-4 shadow-sm">
+                  <div className="h-12 w-3 rounded-full bg-emerald-500" />
+                  <div className="flex-1">
+                    <p className="text-xs uppercase tracking-[0.18em] text-slate-500">Total Paid</p>
+                    <p className="mt-1 text-2xl font-semibold text-emerald-600">{formatMVR(totalPaid)}</p>
+                    <p className="text-sm text-slate-500">Amount already paid to parties</p>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-4 rounded-3xl border border-slate-200 bg-white p-4 shadow-sm">
+                  <div className="h-12 w-3 rounded-full bg-rose-500" />
+                  <div className="flex-1">
+                    <p className="text-xs uppercase tracking-[0.18em] text-slate-500">Remaining To Pay</p>
+                    <p className="mt-1 text-2xl font-semibold text-rose-600">{formatMVR(totalRemaining)}</p>
+                    <p className="text-sm text-slate-500">Outstanding amount to pay</p>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-4 rounded-3xl border border-slate-200 bg-white p-4 shadow-sm">
+                  <div className="h-12 w-3 rounded-full bg-emerald-600" />
+                  <div className="flex-1">
+                    <p className="text-xs uppercase tracking-[0.18em] text-slate-500">Outsource Revenue</p>
+                    <p className="mt-1 text-2xl font-semibold text-emerald-700">{formatMVR(totalOutsourceRevenue)}</p>
+                    <p className="text-sm text-slate-500">Gross revenue from outsource items</p>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-4 rounded-3xl border border-slate-200 bg-white p-4 shadow-sm">
+                  <div className="h-12 w-3 rounded-full bg-slate-700" />
+                  <div className="flex-1">
+                    <p className="text-xs uppercase tracking-[0.18em] text-slate-500">Outsource Cost</p>
+                    <p className="mt-1 text-2xl font-semibold text-slate-900">{formatMVR(totalOutsourceCost)}</p>
+                    <p className="text-sm text-slate-500">Total cost of outsourced items</p>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-4 rounded-3xl border border-slate-200 bg-white p-4 shadow-sm">
+                  <div className="h-12 w-3 rounded-full bg-indigo-600" />
+                  <div className="flex-1">
+                    <p className="text-xs uppercase tracking-[0.18em] text-slate-500">Total Profit</p>
+                    <p className="mt-1 text-2xl font-semibold text-indigo-600">{formatMVR(totalOutsourceProfit)}</p>
+                    <p className="text-sm text-slate-500">Revenue minus cost</p>
+                  </div>
+                </div>
+              </div>
                   <div className="mt-2 space-y-3 rounded-2xl border border-slate-200 bg-slate-50 p-3">
                     <div>
                       <p className="text-xs text-slate-500">Total selected</p>

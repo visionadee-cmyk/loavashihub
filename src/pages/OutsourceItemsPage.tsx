@@ -94,6 +94,18 @@ export default function OutsourceItemsPage() {
     [items],
   );
 
+  const totalPaid = useMemo(
+    () => items.reduce((sum, item) => sum + (item.partyPaid ? (item.partyPaymentAmount ?? item.totalCost) : 0), 0),
+    [items],
+  );
+
+  const totalToPay = useMemo(
+    () => items.reduce((sum, item) => sum + (item.totalCost || 0), 0),
+    [items],
+  );
+
+  const totalRemaining = useMemo(() => Math.max(0, totalToPay - totalPaid), [totalToPay, totalPaid]);
+
   const resetForm = () => {
     setForm(initialForm);
     setEditingId(null);
@@ -378,6 +390,19 @@ export default function OutsourceItemsPage() {
         <div className="flex items-center gap-2">
           <span className="inline-block rounded-full bg-rose-600 px-3 py-1 text-xs font-semibold text-white">UPDATED</span>
           <span className="text-sm text-slate-500">Deploy check: {new Date().toISOString()}</span>
+        </div>
+
+        <div className="grid gap-4 xl:grid-cols-3">
+          {[
+            { label: 'Total To Pay (all parties)', value: formatMVR(totalToPay) },
+            { label: 'Total Paid', value: formatMVR(totalPaid) },
+            { label: 'Remaining To Pay', value: formatMVR(totalRemaining) },
+          ].map((card) => (
+            <div key={card.label} className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
+              <p className="text-sm uppercase tracking-[0.24em] text-slate-500">{card.label}</p>
+              <p className="mt-4 text-3xl font-semibold text-slate-900">{card.value}</p>
+            </div>
+          ))}
         </div>
         <div className="grid gap-4 xl:grid-cols-3">
           {[

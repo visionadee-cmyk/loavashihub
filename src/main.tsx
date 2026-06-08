@@ -37,7 +37,15 @@ if ('serviceWorker' in navigator) {
         new URL('/service-worker.js', import.meta.url),
         { scope: '/' }
       );
+      // Log more details to help debug SW lifecycle and state on clients
       console.log('✅ Service Worker registered successfully:', registration);
+      try {
+        const reg = await navigator.serviceWorker.getRegistration();
+        console.log('Current SW registration (getRegistration):', reg);
+      } catch (e) {
+        console.warn('Failed to get SW registration via getRegistration:', e);
+      }
+      
       
       // Check for updates periodically
       setInterval(() => {

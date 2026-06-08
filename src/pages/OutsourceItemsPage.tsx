@@ -132,9 +132,9 @@ export default function OutsourceItemsPage() {
       notes: form.notes.trim(),
       createdAt: existing?.createdAt ?? new Date().toISOString(),
       partyPaid: existing?.partyPaid ?? false,
-      partyPaymentAmount: existing?.partyPaymentAmount,
-      partyPaymentDate: existing?.partyPaymentDate,
-      costDeductionDate: existing?.costDeductionDate,
+      partyPaymentAmount: existing?.partyPaymentAmount ?? null,
+      partyPaymentDate: existing?.partyPaymentDate ?? null,
+      costDeductionDate: existing?.costDeductionDate ?? null,
     };
 
     setItems((current) => {

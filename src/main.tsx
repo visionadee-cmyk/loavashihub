@@ -56,9 +56,9 @@ if ('serviceWorker' in navigator) {
       }
       
       
-      // Check for updates periodically
+      // Check for updates periodically (catch errors to avoid unhandled rejections)
       setInterval(() => {
-        registration.update();
+        registration.update().catch((err) => console.warn('Service Worker update failed:', err));
       }, 60000); // Check every minute
       
         // Notify app when a new update is available

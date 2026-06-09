@@ -18,12 +18,21 @@ window.addEventListener('unhandledrejection', (ev) => {
 window.addEventListener('message', (ev) => {
   try {
     const data = ev?.data;
-    if (!data || typeof data !== 'object') {
-      // ignore non-object messages (extensions sometimes send strings)
-      return;
-    }
-    // If your app expects specific message shapes, add checks here, e.g.:
-    // if (!('type' in data)) return;
+    // ignore non-object messages (extensions sometimes send strings)
+    if (!data || typeof data !== 'object') return;
+
+    // Basic sanitization: only forward messages that have an expected shape.
+    // If your app uses a `type` or `query` property, we only re-dispatch safe messages.
+    const safe: Record<string, any> = {};
+    if (typeof data.type === 'string') safe.type = data.type;
+    if (data.query && typeof data.query === 'object') safe.query = data.query;
+    if (data.payload && typeof data.payload === 'object') safe.payload = data.payload;
+
+    // If nothing looks usable, ignore the message to avoid downstream errors.
+    if (Object.keys(safe).length === 0) return;
+
+    // Re-dispatch a sanitized event for app listeners to consume safely.
+    window.dispatchEvent(new CustomEvent('app:safe-message', { detail: safe }));
   } catch (err) {
     console.warn('Error while processing incoming message:', err);
   }

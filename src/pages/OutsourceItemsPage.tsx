@@ -19,6 +19,7 @@ const initialForm = {
 export default function OutsourceItemsPage() {
   const [menuItems, setMenuItems] = useState<MenuItem[]>([]);
   const [items, setItems] = useState<OutsourceItem[]>([]);
+  const [firestoreError, setFirestoreError] = useState<string | null>(null);
   const [partyNames, setPartyNames] = useState<{ id: string; name: string }[]>([]);
   const [partyEditId, setPartyEditId] = useState<string | null>(null);
   const [partyEditName, setPartyEditName] = useState('');
@@ -61,6 +62,7 @@ export default function OutsourceItemsPage() {
       loadCollection<{ id: string; name: string }>('partyNames', []),
     ])
       .then(([loadedMenuItems, loadedOutsourceItems, loadedPartyNames]) => {
+        setFirestoreError(null);
         if (loadedMenuItems.length) setMenuItems(loadedMenuItems);
         if (loadedOutsourceItems.length) setItems(loadedOutsourceItems.sort((a, b) => b.date.localeCompare(a.date)));
         // populate party names from collection and also fallback to existing outsource items
@@ -74,7 +76,10 @@ export default function OutsourceItemsPage() {
           setPartyNames(names.map((n, i) => ({ id: `party-fallback-${i}`, name: n })));
         }
       })
-      .catch((error) => console.error('Failed to load outsource items or menu items:', error));
+      .catch((error) => {
+        console.error('Failed to load outsource items or menu items:', error);
+        setFirestoreError(error?.message ?? String(error));
+      });
   }, []);
 
   const selectedMenuItem = menuItems.find((item) => item.id === form.menuItemId);
@@ -506,6 +511,11 @@ export default function OutsourceItemsPage() {
   return (
     <AppShell title="Outsource Items">
       <div className="space-y-6">
+        {firestoreError ? (
+          <div className="rounded-2xl border border-rose-200 bg-rose-50 p-4 text-sm text-rose-700">
+            <strong>Firestore error:</strong> {firestoreError}. Please sign in with an account that has read access.
+          </div>
+        ) : null}
         <div className="flex items-center gap-2">
           <span className="inline-block rounded-full bg-rose-600 px-3 py-1 text-xs font-semibold text-white">UPDATED</span>
           <span className="text-sm text-slate-500">Deploy check: {new Date().toISOString()}</span>

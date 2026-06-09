@@ -736,7 +736,7 @@ export default function OutsourceItemsPage() {
           {/* Edit form modal */}
           {showFormModal && (
             <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/70 p-4">
-              <div className="w-full max-w-2xl rounded-[32px] border border-slate-200 bg-white p-6 shadow-2xl">
+              <div className="w-full max-w-2xl rounded-[32px] border border-slate-200 bg-white p-6 shadow-2xl max-h-[90vh] overflow-auto">
                 <div className="mb-5 flex items-center justify-between">
                   <div>
                     <h3 className="text-xl font-semibold text-slate-900">{editingId ? 'Edit Outsource' : 'Add Outsource'}</h3>
@@ -842,7 +842,7 @@ export default function OutsourceItemsPage() {
 
         {showPaymentModal && paymentForm ? (
           <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/70 p-4">
-            <div className="w-full max-w-xl rounded-[32px] border border-slate-200 bg-white p-6 shadow-2xl">
+            <div className="w-full max-w-xl rounded-[32px] border border-slate-200 bg-white p-6 shadow-2xl max-h-[90vh] overflow-auto">
               <div className="mb-4 flex items-center justify-between">
                 <div>
                   <h3 className="text-xl font-semibold text-slate-900">Pay for party</h3>
@@ -915,7 +915,7 @@ export default function OutsourceItemsPage() {
 
         {showBulkPayModal ? (
           <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/70 p-4">
-            <div className="w-full max-w-2xl rounded-[32px] border border-slate-200 bg-white p-6 shadow-2xl">
+            <div className="w-full max-w-2xl rounded-[32px] border border-slate-200 bg-white p-6 shadow-2xl max-h-[90vh] overflow-auto">
               <div className="mb-4 flex items-center justify-between">
                 <div>
                   <h3 className="text-xl font-semibold text-slate-900">Bulk pay party items</h3>

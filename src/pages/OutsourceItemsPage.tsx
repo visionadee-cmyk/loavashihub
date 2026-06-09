@@ -234,14 +234,17 @@ export default function OutsourceItemsPage() {
 
   // compute stats per saved party name
   const partyStats = useMemo(() => {
-    const map = new Map<string, { paid: number; pending: number; remaining: number }>();
+    const map = new Map<string, { total: number; paid: number; pending: number; remaining: number }>();
     items.forEach((it) => {
       const name = it.partyName || 'Unknown';
-      const entry = map.get(name) ?? { paid: 0, pending: 0, remaining: 0 };
+      const entry = map.get(name) ?? { total: 0, paid: 0, pending: 0, remaining: 0 };
+      const total = Number(it.totalCost || 0);
       const paid = it.partyPaid ? (it.partyPaymentAmount ?? it.totalCost) : 0;
-      const pending = it.totalCost - paid;
+      entry.total += total;
       entry.paid += paid;
-      entry.pending += pending > 0 ? pending : 0;
+      // pending is amount not yet paid (total - paid so far)
+      const pending = entry.total - entry.paid;
+      entry.pending = pending > 0 ? Number(pending.toFixed(2)) : 0;
       entry.remaining = entry.pending;
       map.set(name, entry);
     });
@@ -1024,20 +1027,24 @@ export default function OutsourceItemsPage() {
               {partyStats.map((p) => (
                 <div key={p.name} className="rounded-3xl border border-slate-200 bg-white p-4">
                   <p className="text-sm font-semibold text-slate-900">{p.name}</p>
-                  <div className="mt-3 grid gap-2 grid-cols-3 text-sm">
-                    <div>
-                      <p className="text-xs uppercase text-slate-500">Paid</p>
-                      <p className="font-semibold text-emerald-600">{formatMVR(p.paid)}</p>
-                    </div>
-                    <div>
-                      <p className="text-xs uppercase text-slate-500">Pending</p>
-                      <p className="font-semibold text-slate-900">{formatMVR(p.pending)}</p>
-                    </div>
-                    <div>
-                      <p className="text-xs uppercase text-slate-500">Remaining</p>
-                      <p className="font-semibold text-rose-600">{formatMVR(p.remaining)}</p>
-                    </div>
-                  </div>
+                          <div className="mt-3 grid gap-2 grid-cols-4 text-sm">
+                            <div>
+                              <p className="text-xs uppercase text-slate-500">Total</p>
+                              <p className="font-semibold text-slate-900">{formatMVR(p.total)}</p>
+                            </div>
+                            <div>
+                              <p className="text-xs uppercase text-slate-500">Paid</p>
+                              <p className="font-semibold text-emerald-600">{formatMVR(p.paid)}</p>
+                            </div>
+                            <div>
+                              <p className="text-xs uppercase text-slate-500">Pending</p>
+                              <p className="font-semibold text-slate-900">{formatMVR(p.pending)}</p>
+                            </div>
+                            <div>
+                              <p className="text-xs uppercase text-slate-500">Remaining</p>
+                              <p className="font-semibold text-rose-600">{formatMVR(p.remaining)}</p>
+                            </div>
+                          </div>
                 </div>
               ))}
             </div>

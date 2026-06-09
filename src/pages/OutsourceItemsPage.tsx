@@ -5,6 +5,7 @@ import { hasFirebaseConfig } from '../lib/firebase';
 import { loadCollection, saveDocument, deleteDocument } from '../lib/firestore';
 import { formatMVR } from '../lib/mvr';
 import type { MenuItem, OutsourceItem } from '../types';
+import { useAuth } from '../context/AuthContext';
 
 const initialForm = {
   date: new Date().toISOString().slice(0, 10),
@@ -17,6 +18,7 @@ const initialForm = {
 };
 
 export default function OutsourceItemsPage() {
+  const { user } = useAuth();
   const [menuItems, setMenuItems] = useState<MenuItem[]>([]);
   const [items, setItems] = useState<OutsourceItem[]>([]);
   const [firestoreError, setFirestoreError] = useState<string | null>(null);
@@ -215,6 +217,12 @@ export default function OutsourceItemsPage() {
   };
 
   const beginPayParty = (item: OutsourceItem) => {
+    // if user has selected multiple items for bulk pay, open bulk modal instead
+    const selectedIds = Object.keys(selectedForBulk).filter((id) => selectedForBulk[id]);
+    if (selectedIds.length > 1) {
+      beginBulkPayForSelected(selectedIds);
+      return;
+    }
     setPaymentForm({
       itemId: item.id,
       amount: item.partyPaymentAmount ?? item.totalCost,
@@ -513,7 +521,14 @@ export default function OutsourceItemsPage() {
       <div className="space-y-6">
         {firestoreError ? (
           <div className="rounded-2xl border border-rose-200 bg-rose-50 p-4 text-sm text-rose-700">
-            <strong>Firestore error:</strong> {firestoreError}. Please sign in with an account that has read access.
+            <strong>Firestore error:</strong> {firestoreError}.
+            <div className="mt-2">
+              {user ? (
+                <span>Signed in as <strong>{user.email}</strong>. This account lacks permission for the requested read.</span>
+              ) : (
+                <span>You are not signed in. Please sign in via the Login page and try again.</span>
+              )}
+            </div>
           </div>
         ) : null}
         <div className="flex items-center gap-2">

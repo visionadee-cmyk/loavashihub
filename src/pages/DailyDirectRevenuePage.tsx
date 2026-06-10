@@ -404,6 +404,31 @@ export default function DailyDirectRevenuePage() {
     return grouped;
   }, [entries]);
 
+  const shareDayReport = (date: string, dayEntries: DailyDirectRevenue[]) => {
+    const totalIn = dayEntries.reduce((sum, e) => sum + (e.cashTotal || 0) + (e.cardTotal || 0), 0);
+    const totalExpenses = expenses
+      .filter((ex) => ex.date === date)
+      .reduce((sum, ex) => sum + (ex.amount || 0), 0);
+    const totalPurchases = directPurchases
+      .filter((p) => p.date === date)
+      .reduce((sum, p) => sum + (p.total || 0), 0);
+    const totalOut = totalExpenses + totalPurchases;
+    const net = totalIn - totalOut;
+
+    const formattedDate = new Date(date).toLocaleDateString('en-US', { weekday: 'short', year: 'numeric', month: 'short', day: 'numeric' });
+
+    const text = `${formattedDate}\nCash flow..\n\nTotal cash in (Total sales) ${formatMVR(totalIn)}\nTotal Cash out flow: ${formatMVR(totalOut)}\n\n${net < 0 ? 'Net cash outflow' : 'Net cash inflow'} (${formatMVR(Math.abs(net))})`;
+
+    // Copy to clipboard and open WhatsApp Web share (falls back to wa.me)
+    try {
+      navigator.clipboard?.writeText(text);
+    } catch (e) {
+      // ignore clipboard errors
+    }
+    const url = `https://web.whatsapp.com/send?text=${encodeURIComponent(text)}`;
+    window.open(url, '_blank');
+  };
+
   useEffect(() => {
     if (!hasManuallyChangedDrawer) {
       setForm((current) => ({
@@ -917,6 +942,15 @@ export default function DailyDirectRevenuePage() {
                       </div>
                       <p className="text-xs text-slate-500">Daily Total</p>
                       <p className="text-lg font-bold text-emerald-600">{formatMVR(dailyRevenue)}</p>
+                      <div className="mt-2">
+                        <button
+                          type="button"
+                          onClick={() => shareDayReport(date, dayEntries)}
+                          className="inline-flex items-center gap-2 rounded-full bg-sky-600 px-3 py-1 text-xs font-semibold text-white hover:bg-sky-500"
+                        >
+                          Share
+                        </button>
+                      </div>
                     </div>
                   </div>
                   

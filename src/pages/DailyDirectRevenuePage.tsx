@@ -71,6 +71,7 @@ export default function DailyDirectRevenuePage() {
 
   const [hasManuallyChangedDrawer, setHasManuallyChangedDrawer] = useState(false);
   const [hasManuallyChangedSalary, setHasManuallyChangedSalary] = useState(false);
+  const [hasManuallyChangedOpeningFloat, setHasManuallyChangedOpeningFloat] = useState(false);
 
   useEffect(() => {
     if (!hasFirebaseConfig) return;
@@ -87,6 +88,22 @@ export default function DailyDirectRevenuePage() {
       })
       .catch((error) => console.error('Failed to load daily direct revenue data:', error));
   }, []);
+
+  // Prefill opening petty cash from the most recent previous entry's closing float
+  useEffect(() => {
+    if (!showForm) return;
+    if (editingId) return; // don't override when editing
+    if (hasManuallyChangedOpeningFloat) return; // respect manual changes
+
+    // find latest entry with date < form.date
+    const prev = [...entries]
+      .filter((e) => e.date < form.date)
+      .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())[0];
+
+    if (prev && prev.closingPettyCash !== undefined && (form.openingPettyCash === 0 || form.openingPettyCash === null)) {
+      setForm((current) => ({ ...current, openingPettyCash: prev.closingPettyCash }));
+    }
+  }, [showForm, form.date, entries, editingId, hasManuallyChangedOpeningFloat]);
 
   const cashTotal = useMemo(() => computeCashTotal(form.cashCounts), [form.cashCounts]);
   const cardTotal = useMemo(
@@ -313,6 +330,7 @@ export default function DailyDirectRevenuePage() {
         cardPayments: createDefaultCardPayments(),
         cashDrawerPurchases: [],
       });
+      setHasManuallyChangedOpeningFloat(false);
       setEditingId(null);
     } catch (error) {
       console.error('Failed to save direct revenue entry:', error);
@@ -356,6 +374,7 @@ export default function DailyDirectRevenuePage() {
     setEditingId(null);
     setHasManuallyChangedDrawer(false);
     setHasManuallyChangedSalary(false);
+    setHasManuallyChangedOpeningFloat(false);
     setForm({
       date: new Date().toISOString().slice(0, 10),
       closedBy: '',
@@ -470,7 +489,10 @@ export default function DailyDirectRevenuePage() {
                 <input
                   type="number"
                   value={form.openingPettyCash}
-                  onChange={(e) => setForm({ ...form, openingPettyCash: Number(e.target.value) })}
+                  onChange={(e) => {
+                    setHasManuallyChangedOpeningFloat(true);
+                    setForm({ ...form, openingPettyCash: Number(e.target.value) });
+                  }}
                   placeholder="e.g., 1000"
                   min="0"
                   step="0.01"

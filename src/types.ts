@@ -129,6 +129,9 @@ export interface DailyDirectRevenue {
   openingPettyCash?: number;
   closingPettyCash?: number;
   dailySalary?: number;
+  salaryPaidFromCompany?: number;
+  purchasedFromCompanyAccount?: number;
+  bankTransfer?: number;
   cashCounts: {
     fiftyLari: number;
     oneRf: number;

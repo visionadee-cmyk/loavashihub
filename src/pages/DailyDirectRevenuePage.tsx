@@ -56,6 +56,9 @@ export default function DailyDirectRevenuePage() {
     vikuraAmount: 0,
     purchasedFromCashDrawer: 0,
     dailySalary: 0,
+    salaryPaidFromCompany: 0,
+    purchasedFromCompanyAccount: 0,
+    bankTransfer: 0,
     cashCounts: { ...initialCashCounts },
     cardPayments: createDefaultCardPayments(),
     cashDrawerPurchases: [] as Array<{
@@ -106,13 +109,27 @@ export default function DailyDirectRevenuePage() {
   }, [showForm, form.date, entries, editingId, hasManuallyChangedOpeningFloat]);
 
   const cashTotal = useMemo(() => computeCashTotal(form.cashCounts), [form.cashCounts]);
+  const notesTotal = useMemo(() => (
+    (form.cashCounts.note5 || 0) * 5 +
+    (form.cashCounts.note10 || 0) * 10 +
+    (form.cashCounts.note20 || 0) * 20 +
+    (form.cashCounts.note50 || 0) * 50 +
+    (form.cashCounts.note100 || 0) * 100 +
+    (form.cashCounts.note500 || 0) * 500 +
+    (form.cashCounts.note1000 || 0) * 1000
+  ), [form.cashCounts]);
+  const coinsTotal = useMemo(() => (
+    (form.cashCounts.fiftyLari || 0) * 0.5 +
+    (form.cashCounts.oneRf || 0) * 1 +
+    (form.cashCounts.twoRf || 0) * 2
+  ), [form.cashCounts]);
   const cardTotal = useMemo(
     () => form.cardPayments.reduce((sum, payment) => sum + (payment.amount || 0), 0),
     [form.cardPayments],
   );
   const vikuraAmount = form.vikuraAmount || 0;
   const totalDirectRevenue = useMemo(
-    () => cashTotal + cardTotal + (form.purchasedFromCashDrawer || 0),
+    () => cashTotal + cardTotal + (form.purchasedFromCashDrawer || 0) + (form.bankTransfer || 0),
     [cashTotal, cardTotal, form.purchasedFromCashDrawer],
   );
 
@@ -272,6 +289,9 @@ export default function DailyDirectRevenuePage() {
       openingPettyCash: form.openingPettyCash,
       closingPettyCash: form.closingPettyCash,
       dailySalary: form.dailySalary,
+      salaryPaidFromCompany: form.salaryPaidFromCompany,
+      purchasedFromCompanyAccount: form.purchasedFromCompanyAccount,
+      bankTransfer: form.bankTransfer,
       vikuraAmount: form.vikuraAmount,
       purchasedFromCashDrawer: form.purchasedFromCashDrawer,
       cashCounts: { ...form.cashCounts },
@@ -326,6 +346,9 @@ export default function DailyDirectRevenuePage() {
         vikuraAmount: 0,
         purchasedFromCashDrawer: 0,
         dailySalary: 0,
+        salaryPaidFromCompany: 0,
+        purchasedFromCompanyAccount: 0,
+        bankTransfer: 0,
         cashCounts: { ...initialCashCounts },
         cardPayments: createDefaultCardPayments(),
         cashDrawerPurchases: [],
@@ -364,6 +387,9 @@ export default function DailyDirectRevenuePage() {
       vikuraAmount: (entry as any).vikuraAmount || 0,
       purchasedFromCashDrawer: (entry as any).purchasedFromCashDrawer || 0,
       dailySalary: (entry as any).dailySalary || 0,
+      salaryPaidFromCompany: (entry as any).salaryPaidFromCompany || 0,
+      purchasedFromCompanyAccount: (entry as any).purchasedFromCompanyAccount || 0,
+      bankTransfer: (entry as any).bankTransfer || 0,
       cashCounts: { ...entry.cashCounts },
       cardPayments: [...mergedPayments, ...extraPayments],
       cashDrawerPurchases: [],
@@ -383,6 +409,9 @@ export default function DailyDirectRevenuePage() {
       vikuraAmount: 0,
       purchasedFromCashDrawer: 0,
       dailySalary: 0,
+      salaryPaidFromCompany: 0,
+      purchasedFromCompanyAccount: 0,
+      bankTransfer: 0,
       cashCounts: { ...initialCashCounts },
       cardPayments: createDefaultCardPayments(),
       cashDrawerPurchases: [],
@@ -411,21 +440,66 @@ export default function DailyDirectRevenuePage() {
     const cashBreakdown = dayEntries.reduce((sum, e) => sum + (e.cashTotal || 0), 0);
     const purchasedFromCashDrawer = dayEntries.reduce((sum, e) => sum + (e.purchasedFromCashDrawer || 0), 0);
     const dailySalaryTotal = dayEntries.reduce((sum, e) => sum + (e.dailySalary || 0), 0);
+    const cardTotal = dayEntries.reduce((sum, e) => sum + (e.cardTotal || 0), 0);
+    const bankTransferTotal = dayEntries.reduce((sum, e) => sum + ((e as any).bankTransfer || 0), 0);
+    const purchasedFromCompanyTotal = dayEntries.reduce((sum, e) => sum + ((e as any).purchasedFromCompanyAccount || 0), 0);
+    const salaryPaidFromCompanyTotal = dayEntries.reduce((sum, e) => sum + ((e as any).salaryPaidFromCompany || 0), 0);
+    const vikuraTotal = dayEntries.reduce((sum, e) => sum + ((e as any).vikuraAmount || 0), 0);
 
-    const revenue = floatDifference + cashBreakdown + purchasedFromCashDrawer + dailySalaryTotal;
+    // include cash drawer direct purchases saved in directPurchases collection for the date
+    const cashDrawerTotal = directPurchases
+      .filter((p) => p.date === date && (p.total || 0) > 0)
+      .reduce((sum, p) => sum + (p.total || 0), 0);
+
+    // include card totals and only include positive cash-drawer direct purchases in revenue
+    const revenue = floatDifference + cashBreakdown + cardTotal + purchasedFromCashDrawer + dailySalaryTotal + cashDrawerTotal + bankTransferTotal + purchasedFromCompanyTotal - salaryPaidFromCompanyTotal;
+
+    // compute expenses for the date from expenses collection and include purchases and salaries
+    const expensesForDate = expenses
+      .filter((ex) => ex.date === date)
+      .reduce((sum, ex) => sum + (ex.amount || 0), 0);
+
+    const totalExpenses = expensesForDate + cashDrawerTotal + purchasedFromCashDrawer + purchasedFromCompanyTotal + dailySalaryTotal + salaryPaidFromCompanyTotal;
+    const netRevenue = revenue - totalExpenses;
 
     const formattedDate = new Date(date).toLocaleDateString('en-US', { weekday: 'short', year: 'numeric', month: 'short', day: 'numeric' });
 
-    const text = `${formattedDate}\nCash flow..\n\nPetty cash difference: ${formatMVR(floatDifference)}\nCash breakdown (counts): ${formatMVR(cashBreakdown)}\nPurchased from Cash Drawer: ${formatMVR(purchasedFromCashDrawer)}\nDaily salary: ${formatMVR(dailySalaryTotal)}\n\nCalculated revenue: ${formatMVR(revenue)}`;
+    let text = `${formattedDate}\nCash flow..\n\n`;
+    text += `Petty cash difference: ${formatMVR(floatDifference)}\n`;
+    text += `Cash breakdown (counts): ${formatMVR(cashBreakdown)}\n`;
+    text += `Card payments: ${formatMVR(cardTotal)}\n`;
+    text += `Purchased from Cash Drawer (form): ${formatMVR(purchasedFromCashDrawer)}\n`;
+    text += `Purchased from Cash Drawer (direct purchases): ${formatMVR(cashDrawerTotal)}\n`;
+    text += `Vikura (Manual POS): ${formatMVR(vikuraTotal)}\n`;
+    text += `Salary paid (Cash Drawer): ${formatMVR(dailySalaryTotal)}\n`;
+    text += `Purchased from Company Account: ${formatMVR(purchasedFromCompanyTotal)}\n`;
+    text += `Salary paid from Company Account: ${formatMVR(salaryPaidFromCompanyTotal)}\n`;
+    text += `Bank transfer: ${formatMVR(bankTransferTotal)}\n\n`;
+    text += `Calculated revenue: ${formatMVR(revenue)}\n`;
+    text += `Total Expenses: ${formatMVR(totalExpenses)}\n`;
+    text += `Net Revenue: ${formatMVR(netRevenue)}`;
 
-    // Copy to clipboard and open WhatsApp Web share (falls back to wa.me)
+    // show preview modal before sharing
+    setSharePreviewText(text);
+    setShowSharePreview(true);
+  };
+
+  const [showSharePreview, setShowSharePreview] = useState(false);
+  const [sharePreviewText, setSharePreviewText] = useState('');
+
+  const copyPreviewToClipboard = async () => {
     try {
-      navigator.clipboard?.writeText(text);
+      await navigator.clipboard.writeText(sharePreviewText);
     } catch (e) {
-      // ignore clipboard errors
+      // ignore
     }
-    const url = `https://web.whatsapp.com/send?text=${encodeURIComponent(text)}`;
+  };
+
+  const openWhatsAppFromPreview = () => {
+    const encoded = encodeURIComponent(sharePreviewText);
+    const url = `https://wa.me/?text=${encoded}`;
     window.open(url, '_blank');
+    setShowSharePreview(false);
   };
 
   useEffect(() => {
@@ -587,29 +661,22 @@ export default function DailyDirectRevenuePage() {
               ))}
             </div>
 
-            <div className="space-y-3 rounded-3xl border border-slate-200 bg-white p-4 mt-6">
-              <p className="text-sm font-semibold text-slate-900">Notes</p>
-              {[
-                { label: '5', field: 'note5' as const },
-                { label: '10', field: 'note10' as const },
-                { label: '20', field: 'note20' as const },
-                { label: '50', field: 'note50' as const },
-                { label: '100', field: 'note100' as const },
-                { label: '500', field: 'note500' as const },
-                { label: '1000', field: 'note1000' as const },
-              ].map((item) => (
-                <label key={item.field} className="block text-sm text-slate-500">
-                  {item.label} MVR notes
-                  <input
-                    type="number"
-                    min={0}
-                    value={form.cashCounts[item.field]}
-                    onChange={(e) => updateCashCount(item.field, Number(e.target.value))}
-                    className="mt-2 w-full rounded-3xl border border-slate-200 bg-slate-50 px-4 py-3 text-slate-900 outline-none"
-                  />
-                </label>
-              ))}
-            </div>
+              <div className="mt-4 flex items-center justify-between gap-4 rounded-lg bg-white p-3 border">
+                <div>
+                  <p className="text-xs text-slate-500">Coins total</p>
+                  <p className="text-sm font-semibold">{formatMVR(coinsTotal)}</p>
+                </div>
+                <div>
+                  <p className="text-xs text-slate-500">Notes total</p>
+                  <p className="text-sm font-semibold">{formatMVR(notesTotal)}</p>
+                </div>
+                <div>
+                  <p className="text-xs text-slate-500">Cash total</p>
+                  <p className="text-sm font-semibold">{formatMVR(cashTotal)}</p>
+                </div>
+              </div>
+
+          
           </div>
 
           <div className="mt-8 rounded-3xl border border-slate-200 bg-slate-50 p-5">
@@ -693,7 +760,7 @@ export default function DailyDirectRevenuePage() {
                 />
               </label>
               <label className="block text-sm text-slate-500">
-                Daily salary
+                Salary paid from cash drawer
                 <input
                   type="number"
                   value={form.dailySalary}
@@ -701,6 +768,42 @@ export default function DailyDirectRevenuePage() {
                     setHasManuallyChangedSalary(true);
                     setForm({ ...form, dailySalary: Number(e.target.value) });
                   }}
+                  placeholder="e.g., 0"
+                  min="0"
+                  step="0.01"
+                  className="mt-2 w-full rounded-3xl border border-slate-200 bg-white px-4 py-3 text-slate-900 outline-none"
+                />
+              </label>
+              <label className="block text-sm text-slate-500">
+                Salary paid from company account
+                <input
+                  type="number"
+                  value={form.salaryPaidFromCompany}
+                  onChange={(e) => setForm({ ...form, salaryPaidFromCompany: Number(e.target.value) })}
+                  placeholder="e.g., 0"
+                  min="0"
+                  step="0.01"
+                  className="mt-2 w-full rounded-3xl border border-slate-200 bg-white px-4 py-3 text-slate-900 outline-none"
+                />
+              </label>
+              <label className="block text-sm text-slate-500">
+                Purchased from company account
+                <input
+                  type="number"
+                  value={form.purchasedFromCompanyAccount}
+                  onChange={(e) => setForm({ ...form, purchasedFromCompanyAccount: Number(e.target.value) })}
+                  placeholder="e.g., 0"
+                  min="0"
+                  step="0.01"
+                  className="mt-2 w-full rounded-3xl border border-slate-200 bg-white px-4 py-3 text-slate-900 outline-none"
+                />
+              </label>
+              <label className="block text-sm text-slate-500">
+                Bank transfer
+                <input
+                  type="number"
+                  value={form.bankTransfer}
+                  onChange={(e) => setForm({ ...form, bankTransfer: Number(e.target.value) })}
                   placeholder="e.g., 0"
                   min="0"
                   step="0.01"
@@ -883,11 +986,7 @@ export default function DailyDirectRevenuePage() {
                 type="button"
                 onClick={saveRevenue}
                 disabled={!form.closedBy.trim() || totalDirectRevenue <= 0 || saving}
-                className={`flex-1 rounded-3xl px-4 py-3 text-sm font-semibold text-white transition ${
-                  editingId
-                    ? 'bg-blue-600 hover:bg-blue-700 shadow-lg'
-                    : 'bg-emerald-600 hover:bg-emerald-500'
-                } disabled:cursor-not-allowed disabled:opacity-50`}
+                className="flex-1 rounded-3xl px-4 py-3 text-sm font-semibold text-white transition bg-emerald-600 hover:bg-emerald-500 shadow-sm disabled:cursor-not-allowed disabled:opacity-50"
               >
                 {editingId ? '✓ Update Daily Revenue' : 'Save Daily Revenue'}
               </button>
@@ -1054,6 +1153,41 @@ export default function DailyDirectRevenuePage() {
           </div>
         </section>
       </div>
+      {showSharePreview && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center">
+          <div className="absolute inset-0 bg-black/40" onClick={() => setShowSharePreview(false)} />
+          <div className="relative w-full max-w-lg rounded-2xl bg-white p-6 shadow-xl">
+            <h3 className="text-lg font-semibold">Share preview</h3>
+            <p className="text-sm text-slate-500 mt-1">Review the message before sharing</p>
+            <div className="mt-4 max-h-60 overflow-y-auto rounded-lg border bg-slate-50 p-3 text-sm whitespace-pre-wrap">
+              {sharePreviewText}
+            </div>
+            <div className="mt-4 flex items-center justify-end gap-3">
+              <button
+                type="button"
+                onClick={copyPreviewToClipboard}
+                className="rounded-lg border px-3 py-2 text-sm font-semibold bg-white text-slate-700 hover:bg-slate-50"
+              >
+                Copy
+              </button>
+              <button
+                type="button"
+                onClick={openWhatsAppFromPreview}
+                className="rounded-lg bg-emerald-600 px-4 py-2 text-sm font-semibold text-white hover:bg-emerald-500 shadow-sm"
+              >
+                Open WhatsApp
+              </button>
+              <button
+                type="button"
+                onClick={() => setShowSharePreview(false)}
+                className="rounded-lg border px-3 py-2 text-sm font-semibold bg-white text-slate-700 hover:bg-slate-50"
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </AppShell>
   );
 }

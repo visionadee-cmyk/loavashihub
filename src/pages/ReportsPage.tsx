@@ -128,8 +128,10 @@ export default function ReportsPage() {
     const dayBills = bills.filter((bill) => bill.createdAt.slice(0, 10) === dayStart);
     const posRevenue = dayBills.reduce((sum, bill) => sum + bill.items.reduce((itemSum, item) => itemSum + item.price * item.quantity, 0), 0);
 
-    // Get today's direct revenue
-    const dayDirectRevenue = directRevenueEntries.find((entry) => entry.date === dayStart);
+    // Get today's direct revenue: pick the latest entry for the date (by createdAt)
+    const dayDirectRevenue = directRevenueEntries
+      .filter((entry) => entry.date === dayStart)
+      .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())[0];
 
     // Get today's Purchased from Cash Drawer
     const purchasedFromCashDrawer = dayDirectRevenue?.purchasedFromCashDrawer || 0;
@@ -144,10 +146,12 @@ export default function ReportsPage() {
       .reduce((sum, expense) => sum + expense.amount, 0);
 
     const daySalary = (dayDirectRevenue as any)?.dailySalary ?? daySalaryFromExpenses;
-    // Get today's direct purchases (including all from DirectPurchasePage)
+    // Get today's direct purchases (only positive totals)
     const dayPurchases = directPurchases
-      .filter((purchase) => purchase.date === dayStart)
+      .filter((purchase) => purchase.date === dayStart && (purchase.total || 0) > 0)
       .reduce((sum, purchase) => sum + purchase.total, 0);
+    const purchasedFromCompanyAccount = (dayDirectRevenue as any)?.purchasedFromCompanyAccount || 0;
+    const salaryPaidFromCompany = (dayDirectRevenue as any)?.salaryPaidFromCompany || 0;
 
     const dayOutsourceRevenue = outsourceItems
       .filter((item) => item.date === dayStart)
@@ -158,11 +162,12 @@ export default function ReportsPage() {
       .reduce((sum, item) => sum + item.totalCost, 0);
 
     // Calculate revenue from POS + Direct Revenue (Cash + Card only, excluding Vikura) + Purchased from Cash Drawer + Outsource Revenue
-    const directRevenueWithoutVikura = (dayDirectRevenue?.cashTotal || 0) + (dayDirectRevenue?.cardTotal || 0);
-    const directRevenueWithDrawer = directRevenueWithoutVikura + purchasedFromCashDrawer;
+    const directRevenueWithoutVikura = (dayDirectRevenue?.cashTotal || 0) + (dayDirectRevenue?.cardTotal || 0) + ((dayDirectRevenue as any)?.bankTransfer || 0);
+    // Include purchasedFromCashDrawer (form) and any positive direct purchases made from cash drawer
+    const directRevenueWithDrawer = directRevenueWithoutVikura + purchasedFromCashDrawer + dayPurchases;
     // Include outsource revenue in total daily revenue to reflect all sales fields in the report
     const totalDayRevenue = posRevenue + directRevenueWithDrawer + dayOutsourceRevenue;
-    const totalDayExpenses = dayExpenses + dayPurchases + daySalary + dayOutsourceCost;
+    const totalDayExpenses = dayExpenses + dayPurchases + daySalary + dayOutsourceCost + purchasedFromCompanyAccount + salaryPaidFromCompany;
     const dailyProfit = totalDayRevenue - totalDayExpenses;
 
     // Build cash breakdown
@@ -181,6 +186,13 @@ export default function ReportsPage() {
       if (cashCounts.note1000 > 0) cashBreakdown.push({ denomination: '1000 Note', count: cashCounts.note1000, amount: 1000 * cashCounts.note1000 });
     }
 
+    // Build card payments: use recorded breakdown when available, otherwise fall back to a single Card total
+    let cardPayments = dayDirectRevenue?.cardPayments || [];
+    const totalCardPayments = dayDirectRevenue?.cardTotal || 0;
+    if ((!cardPayments || cardPayments.length === 0) && totalCardPayments > 0) {
+      cardPayments = [{ id: 'card-unknown', type: 'Card', amount: totalCardPayments }];
+    }
+
     return {
       date: dayStart,
       posRevenue,
@@ -189,16 +201,20 @@ export default function ReportsPage() {
       vikuraAmount: (dayDirectRevenue as any)?.vikuraAmount || 0,
       totalRevenue: totalDayRevenue,
       cashBreakdown,
-      cardPayments: dayDirectRevenue?.cardPayments || [],
-      totalCashDrawer: dayDirectRevenue?.cashTotal || 0,
-      totalCardPayments: dayDirectRevenue?.cardTotal || 0,
+      cardPayments,
+      // Sum the counted cash from DDR plus any positive direct purchases
+      totalCashDrawer: (dayDirectRevenue?.cashTotal || 0) + dayPurchases,
+      totalCardPayments: totalCardPayments,
       openingPettyCash: (dayDirectRevenue as any)?.openingPettyCash || 0,
       closingPettyCash: (dayDirectRevenue as any)?.closingPettyCash || 0,
       outsourceRevenue: dayOutsourceRevenue,
       outsourceCost: dayOutsourceCost,
       expenses: dayExpenses,
       purchases: dayPurchases,
+      purchasedFromCompanyAccount,
+      salaryPaidFromCompany,
       salary: daySalary,
+      bankTransfer: (dayDirectRevenue as any)?.bankTransfer || 0,
       totalExpenses: totalDayExpenses,
       profit: dailyProfit,
     };
@@ -299,18 +315,15 @@ export default function ReportsPage() {
     text += `💰 *REVENUE*\n`;
     text += `POS Sales: ${formatMVR(report.posRevenue)}\n`;
     text += `Direct Revenue:\n`;
-    text += `  Cash: ${formatMVR(report.totalCashDrawer)}\n`;
-    text += `  Card: ${formatMVR(report.totalCardPayments)}\n`;
-    if (report.purchasedFromCashDrawer > 0) {
+      text += `  Cash: ${formatMVR(report.totalCashDrawer)}\n`;
+      text += `  Card: ${formatMVR(report.totalCardPayments)}\n`;
       text += `  Purchased from Cash Drawer: ${formatMVR(report.purchasedFromCashDrawer)}\n`;
-    }
-    text += `  Total Direct Revenue: ${formatMVR(report.directRevenue)}\n`;
+      text += `  Bank transfer: ${formatMVR((report as any).bankTransfer)}\n`;
+      text += `  Total Direct Revenue: ${formatMVR(report.directRevenue)}\n`;
     if ((report as any).outsourceRevenue > 0) {
       text += `Outsource Revenue: ${formatMVR((report as any).outsourceRevenue)}\n`;
     }
-    if (report.vikuraAmount > 0) {
-      text += `Vikura (Manual POS): ${formatMVR(report.vikuraAmount)}\n`;
-    }
+    text += `Vikura (Manual POS): ${formatMVR(report.vikuraAmount)}\n`;
     text += `━━━━━━━━━━━━━━━━\n`;
     text += `Total Revenue: ${formatMVR(report.totalRevenue)}\n\n`;
     
@@ -347,14 +360,15 @@ export default function ReportsPage() {
 
     text += `📋 *EXPENSES*\n`;
     text += `Daily Expenses: ${formatMVR(report.expenses)}\n`;
-    text += `Direct Purchases: ${formatMVR(report.purchases)}\n`;
-    if (report.purchasedFromCashDrawer > 0) {
+      text += `Direct Purchases: ${formatMVR(report.purchases)}\n`;
       text += `Purchased from Cash Drawer: ${formatMVR(report.purchasedFromCashDrawer)}\n`;
-    }
-    if ((report as any).outsourceCost > 0) {
-      text += `Outsource Cost: ${formatMVR((report as any).outsourceCost)}\n`;
-    }
-    text += `Daily Salary: ${formatMVR(report.salary)}\n`;
+      text += `Purchased from Company Account: ${formatMVR((report as any).purchasedFromCompanyAccount)}\n`;
+      text += `Salary paid from Company Account: ${formatMVR((report as any).salaryPaidFromCompany)}\n`;
+      if ((report as any).outsourceCost > 0) {
+        text += `Outsource Cost: ${formatMVR((report as any).outsourceCost)}\n`;
+      }
+      text += `Salary paid (Cash Drawer): ${formatMVR(report.salary)}\n`;
+      text += `Daily Salary: ${formatMVR(report.salary)}\n`;
     text += `Total Expenses: ${formatMVR(report.totalExpenses)}\n\n`;
 
     text += `✅ *PROFIT/LOSS*\n`;
@@ -523,22 +537,23 @@ export default function ReportsPage() {
 
   // Daily revenue data (including direct revenue)
   const dailyRevenueData = useMemo(() => {
-    const grouped = filteredBills.reduce<Record<string, number>>((acc, bill) => {
+    const grouped: Record<string, number> = {};
+
+    // Start with bills totals
+    filteredBills.forEach((bill) => {
       const date = bill.createdAt.slice(0, 10);
       const amount = bill.items.reduce((itemSum, item) => itemSum + item.price * item.quantity, 0);
-      acc[date] = (acc[date] ?? 0) + amount;
-      return acc;
-    }, {});
+      grouped[date] = (grouped[date] ?? 0) + amount;
+    });
 
     // Add direct revenue entries
-    const filteredDirectRevenue = filteredDirectRevenueEntries;
-    filteredDirectRevenue.forEach((entry) => {
+    filteredDirectRevenueEntries.forEach((entry) => {
       grouped[entry.date] = (grouped[entry.date] ?? 0) + computeEntryDirectRevenue(entry);
     });
 
-    const filteredOutsource = filteredOutsourceItems;
-    filteredOutsource.forEach((item) => {
-      grouped[item.date] = (grouped[item.date] ?? 0) + item.totalRevenue;
+    // Add outsource revenue
+    filteredOutsourceItems.forEach((item) => {
+      grouped[item.date] = (grouped[item.date] ?? 0) + (item.totalRevenue || 0);
     });
 
     return Object.entries(grouped)
@@ -1004,7 +1019,7 @@ export default function ReportsPage() {
           </div>
         ) : null}
 
-          {dailyReport && (dailyReport.posRevenue !== 0 || dailyReport.directRevenue !== 0 || dailyReport.expenses !== 0 || dailyReport.purchases !== 0 || dailyReport.salary !== 0) ? (
+          {dailyReport ? (
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-6">
               <div className="rounded-2xl border border-white/50 bg-white p-4">
                 <p className="text-xs uppercase tracking-widest text-slate-500">POS Revenue</p>
@@ -1033,6 +1048,26 @@ export default function ReportsPage() {
               <div className="rounded-2xl border border-white/50 bg-white p-4">
                 <p className="text-xs uppercase tracking-widest text-slate-500">Salary</p>
                 <p className="mt-3 text-2xl font-bold text-rose-700">{formatMVR(dailyReport.salary)}</p>
+              </div>
+              <div className="rounded-2xl border border-white/50 bg-white p-4">
+                <p className="text-xs uppercase tracking-widest text-slate-500">Purchased (Cash Drawer)</p>
+                <p className="mt-3 text-2xl font-bold text-amber-700">{formatMVR(dailyReport.purchasedFromCashDrawer)}</p>
+              </div>
+              <div className="rounded-2xl border border-white/50 bg-white p-4">
+                <p className="text-xs uppercase tracking-widest text-slate-500">Salary paid (Cash Drawer)</p>
+                <p className="mt-3 text-2xl font-bold text-rose-700">{formatMVR(dailyReport.salary)}</p>
+              </div>
+              <div className="rounded-2xl border border-white/50 bg-white p-4">
+                <p className="text-xs uppercase tracking-widest text-slate-500">Purchased (Company)</p>
+                <p className="mt-3 text-2xl font-bold text-rose-700">{formatMVR((dailyReport as any).purchasedFromCompanyAccount)}</p>
+              </div>
+              <div className="rounded-2xl border border-white/50 bg-white p-4">
+                <p className="text-xs uppercase tracking-widest text-slate-500">Salary paid (Company)</p>
+                <p className="mt-3 text-2xl font-bold text-rose-700">{formatMVR((dailyReport as any).salaryPaidFromCompany)}</p>
+              </div>
+              <div className="rounded-2xl border border-white/50 bg-white p-4">
+                <p className="text-xs uppercase tracking-widest text-slate-500">Bank Transfer</p>
+                <p className="mt-3 text-2xl font-bold text-emerald-700">{formatMVR((dailyReport as any).bankTransfer)}</p>
               </div>
               <div className="rounded-2xl border border-white/50 bg-white p-4">
                 <p className="text-xs uppercase tracking-widest text-slate-500">Total Daily Expense</p>

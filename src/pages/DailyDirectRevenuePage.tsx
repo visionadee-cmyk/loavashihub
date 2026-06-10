@@ -946,7 +946,7 @@ export default function DailyDirectRevenuePage() {
                         <button
                           type="button"
                           onClick={() => shareDayReport(date, dayEntries)}
-                          className="inline-flex items-center gap-2 rounded-full bg-sky-600 px-3 py-1 text-xs font-semibold text-white hover:bg-sky-500"
+                          className="inline-flex items-center gap-2 rounded-full bg-emerald-600 px-4 py-1.5 text-xs font-semibold text-white hover:bg-emerald-500 shadow-sm"
                         >
                           Share
                         </button>

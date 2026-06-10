@@ -101,7 +101,7 @@ export default function DailyDirectRevenuePage() {
       .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())[0];
 
     if (prev && prev.closingPettyCash !== undefined && (form.openingPettyCash === 0 || form.openingPettyCash === null)) {
-      setForm((current) => ({ ...current, openingPettyCash: prev.closingPettyCash }));
+      setForm((current) => ({ ...current, openingPettyCash: prev.closingPettyCash ?? 0 }));
     }
   }, [showForm, form.date, entries, editingId, hasManuallyChangedOpeningFloat]);
 

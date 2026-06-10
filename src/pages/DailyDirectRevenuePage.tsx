@@ -405,19 +405,18 @@ export default function DailyDirectRevenuePage() {
   }, [entries]);
 
   const shareDayReport = (date: string, dayEntries: DailyDirectRevenue[]) => {
-    const totalIn = dayEntries.reduce((sum, e) => sum + (e.cashTotal || 0) + (e.cardTotal || 0), 0);
-    const totalExpenses = expenses
-      .filter((ex) => ex.date === date)
-      .reduce((sum, ex) => sum + (ex.amount || 0), 0);
-    const totalPurchases = directPurchases
-      .filter((p) => p.date === date)
-      .reduce((sum, p) => sum + (p.total || 0), 0);
-    const totalOut = totalExpenses + totalPurchases;
-    const net = totalIn - totalOut;
+    // Calculate components per requested formula:
+    // revenue = petty cash difference + cash breakdown (counts) + purchased from cash drawer + daily salary
+    const floatDifference = dayEntries.reduce((sum, e) => sum + ((e.closingPettyCash || 0) - (e.openingPettyCash || 0)), 0);
+    const cashBreakdown = dayEntries.reduce((sum, e) => sum + (e.cashTotal || 0), 0);
+    const purchasedFromCashDrawer = dayEntries.reduce((sum, e) => sum + (e.purchasedFromCashDrawer || 0), 0);
+    const dailySalaryTotal = dayEntries.reduce((sum, e) => sum + (e.dailySalary || 0), 0);
+
+    const revenue = floatDifference + cashBreakdown + purchasedFromCashDrawer + dailySalaryTotal;
 
     const formattedDate = new Date(date).toLocaleDateString('en-US', { weekday: 'short', year: 'numeric', month: 'short', day: 'numeric' });
 
-    const text = `${formattedDate}\nCash flow..\n\nTotal cash in (Total sales) ${formatMVR(totalIn)}\nTotal Cash out flow: ${formatMVR(totalOut)}\n\n${net < 0 ? 'Net cash outflow' : 'Net cash inflow'} (${formatMVR(Math.abs(net))})`;
+    const text = `${formattedDate}\nCash flow..\n\nPetty cash difference: ${formatMVR(floatDifference)}\nCash breakdown (counts): ${formatMVR(cashBreakdown)}\nPurchased from Cash Drawer: ${formatMVR(purchasedFromCashDrawer)}\nDaily salary: ${formatMVR(dailySalaryTotal)}\n\nCalculated revenue: ${formatMVR(revenue)}`;
 
     // Copy to clipboard and open WhatsApp Web share (falls back to wa.me)
     try {

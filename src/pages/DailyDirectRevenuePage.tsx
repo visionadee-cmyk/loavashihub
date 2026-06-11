@@ -452,7 +452,8 @@ export default function DailyDirectRevenuePage() {
       .reduce((sum, p) => sum + (p.total || 0), 0);
 
     // include card totals and only include positive cash-drawer direct purchases in revenue
-    const revenue = floatDifference + cashBreakdown + cardTotal + purchasedFromCashDrawer + dailySalaryTotal + cashDrawerTotal + bankTransferTotal + purchasedFromCompanyTotal - salaryPaidFromCompanyTotal;
+    // NOTE: purchasedFromCompanyAccount and salaryPaidFromCompany are NOT part of revenue (they're company-account transactions)
+    const revenue = floatDifference + cashBreakdown + cardTotal + purchasedFromCashDrawer + dailySalaryTotal + cashDrawerTotal + bankTransferTotal;
 
     // compute expenses for the date from expenses collection and include purchases and salaries
     const expensesForDate = expenses

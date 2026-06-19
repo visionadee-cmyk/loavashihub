@@ -147,6 +147,9 @@ export interface DailyDirectRevenue {
   cardPayments: CardPayment[];
   vikuraAmount?: number;
   purchasedFromCashDrawer?: number;
+  // timestamp and amount when a cash amount was taken from the drawer during the day
+  lastTookCashAt?: string;
+  lastTookCashAmount?: number;
   cashTotal: number;
   cardTotal: number;
   totalDirectRevenue: number;

@@ -6,43 +6,7 @@ import { loadCollection, saveDocument, deleteDocument } from '../lib/firestore';
 import { formatMVR } from '../lib/mvr';
 import type { CardPayment, DailyDirectRevenue, DirectPurchase, DirectPurchaseItem, Expense } from '../types';
 
-const initialCashCounts = {
-  fiftyLari: 0,
-  oneRf: 0,
-  twoRf: 0,
-  note5: 0,
-  note10: 0,
-  note20: 0,
-  note50: 0,
-  note100: 0,
-  note500: 0,
-  note1000: 0,
-};
-
-const defaultPaymentTypes = ['Visa debit', 'Visa', 'Master debit', 'Amex debit', 'Transfer'];
-
-const createDefaultCardPayments = (): CardPayment[] => {
-  return defaultPaymentTypes.map((type, index) => ({
-    id: `card-${Date.now()}-${index}`,
-    type,
-    amount: 0,
-  }));
-};
-
-function computeCashTotal(cash: typeof initialCashCounts) {
-  return (
-    cash.fiftyLari * 50 +
-    cash.oneRf * 1 +
-    cash.twoRf * 2 +
-    cash.note5 * 5 +
-    cash.note10 * 10 +
-    cash.note20 * 20 +
-    cash.note50 * 50 +
-    cash.note100 * 100 +
-    cash.note500 * 500 +
-    cash.note1000 * 1000
-  );
-}
+// cash counts removed: switch to single cash total input
 
 export default function DailyDirectRevenuePage() {
   const [entries, setEntries] = useState<DailyDirectRevenue[]>([]);
@@ -59,14 +23,17 @@ export default function DailyDirectRevenuePage() {
     salaryPaidFromCompany: 0,
     purchasedFromCompanyAccount: 0,
     bankTransfer: 0,
-    cashCounts: { ...initialCashCounts },
-    cardPayments: createDefaultCardPayments(),
+    cashTotal: 0,
+    cardTotal: 0,
+    otherCardPayments: [] as CardPayment[],
     cashDrawerPurchases: [] as Array<{
       id: string;
       shopName: string;
       items: DirectPurchaseItem[];
       amount: number;
     }>,
+    lastTookCashAt: undefined as string | undefined,
+    lastTookCashAmount: 0,
   });
   const [editingId, setEditingId] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
@@ -75,6 +42,9 @@ export default function DailyDirectRevenuePage() {
   const [hasManuallyChangedDrawer, setHasManuallyChangedDrawer] = useState(false);
   const [hasManuallyChangedSalary, setHasManuallyChangedSalary] = useState(false);
   const [hasManuallyChangedOpeningFloat, setHasManuallyChangedOpeningFloat] = useState(false);
+  const [showTookCash, setShowTookCash] = useState(false);
+  const [tookCashAmount, setTookCashAmount] = useState<number>(0);
+  const [lastTookCashAt, setLastTookCashAt] = useState<string | undefined>(undefined);
 
   useEffect(() => {
     if (!hasFirebaseConfig) return;
@@ -108,24 +78,10 @@ export default function DailyDirectRevenuePage() {
     }
   }, [showForm, form.date, entries, editingId, hasManuallyChangedOpeningFloat]);
 
-  const cashTotal = useMemo(() => computeCashTotal(form.cashCounts), [form.cashCounts]);
-  const notesTotal = useMemo(() => (
-    (form.cashCounts.note5 || 0) * 5 +
-    (form.cashCounts.note10 || 0) * 10 +
-    (form.cashCounts.note20 || 0) * 20 +
-    (form.cashCounts.note50 || 0) * 50 +
-    (form.cashCounts.note100 || 0) * 100 +
-    (form.cashCounts.note500 || 0) * 500 +
-    (form.cashCounts.note1000 || 0) * 1000
-  ), [form.cashCounts]);
-  const coinsTotal = useMemo(() => (
-    (form.cashCounts.fiftyLari || 0) * 0.5 +
-    (form.cashCounts.oneRf || 0) * 1 +
-    (form.cashCounts.twoRf || 0) * 2
-  ), [form.cashCounts]);
+  const cashTotal = form.cashTotal || 0;
   const cardTotal = useMemo(
-    () => form.cardPayments.reduce((sum, payment) => sum + (payment.amount || 0), 0),
-    [form.cardPayments],
+    () => (form.cardTotal || 0) + (form.otherCardPayments?.reduce((sum, p) => sum + (p.amount || 0), 0) || 0),
+    [form.cardTotal, form.otherCardPayments],
   );
   const vikuraAmount = form.vikuraAmount || 0;
   const totalDirectRevenue = useMemo(
@@ -147,40 +103,51 @@ export default function DailyDirectRevenuePage() {
     [expenses, form.date],
   );
 
-  const updateCashCount = (field: keyof typeof initialCashCounts, value: number) => {
-    setForm((current) => ({
-      ...current,
-      cashCounts: { ...current.cashCounts, [field]: value },
-    }));
+  const updateCashTotal = (value: number) => {
+    setForm((current) => ({ ...current, cashTotal: value }));
   };
 
-  const addCardPayment = () => {
-    // Generate a new payment type name (e.g., "Other 1", "Other 2", etc.)
-    const existingOtherPayments = form.cardPayments.filter((p) => p.type.startsWith('Other '));
-    const nextNumber = existingOtherPayments.length + 1;
-    
+  const handleTookCashSave = () => {
+    const value = Number(tookCashAmount) || 0;
+    if (value <= 0) return;
+    const now = new Date().toISOString();
     setForm((current) => ({
       ...current,
-      cardPayments: [
-        ...current.cardPayments,
+      purchasedFromCashDrawer: (current.purchasedFromCashDrawer || 0) + value,
+      lastTookCashAt: now,
+      lastTookCashAmount: value,
+    }));
+    setLastTookCashAt(now);
+    setHasManuallyChangedDrawer(true);
+    setTookCashAmount(0);
+    setShowTookCash(false);
+  };
+
+  const addOtherPayment = () => {
+    const existingOtherPayments = form.otherCardPayments?.filter((p) => p.type.startsWith('Other ')) || [];
+    const nextNumber = existingOtherPayments.length + 1;
+    setForm((current) => ({
+      ...current,
+      otherCardPayments: [
+        ...(current.otherCardPayments || []),
         { id: `card-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`, type: `Other ${nextNumber}`, amount: 0 },
       ],
     }));
   };
 
-  const updateCardPayment = (id: string, field: keyof CardPayment, value: string | number) => {
+  const updateOtherPayment = (id: string, field: keyof CardPayment, value: string | number) => {
     setForm((current) => ({
       ...current,
-      cardPayments: current.cardPayments.map((payment) =>
+      otherCardPayments: (current.otherCardPayments || []).map((payment) =>
         payment.id !== id ? payment : { ...payment, [field]: field === 'amount' ? Number(value) : value },
       ),
     }));
   };
 
-  const removeCardPayment = (id: string) => {
+  const removeOtherPayment = (id: string) => {
     setForm((current) => ({
       ...current,
-      cardPayments: current.cardPayments.filter((payment) => payment.id !== id),
+      otherCardPayments: (current.otherCardPayments || []).filter((payment) => payment.id !== id),
     }));
   };
 
@@ -294,9 +261,24 @@ export default function DailyDirectRevenuePage() {
       bankTransfer: form.bankTransfer,
       vikuraAmount: form.vikuraAmount,
       purchasedFromCashDrawer: form.purchasedFromCashDrawer,
-      cashCounts: { ...form.cashCounts },
-      cardPayments: form.cardPayments.filter((payment) => payment.amount > 0),
-      cashTotal,
+      // preserve legacy cashCounts shape with zeros (we store a single cashTotal separately)
+      cashCounts: {
+        fiftyLari: 0,
+        oneRf: 0,
+        twoRf: 0,
+        note5: 0,
+        note10: 0,
+        note20: 0,
+        note50: 0,
+        note100: 0,
+        note500: 0,
+        note1000: 0,
+      },
+      // store other card payment breakdown separately and the numeric card total
+      cardPayments: (form.otherCardPayments || []).filter((payment) => payment.amount > 0),
+      cashTotal: form.cashTotal || 0,
+      lastTookCashAt: (form as any).lastTookCashAt,
+      lastTookCashAmount: (form as any).lastTookCashAmount,
       cardTotal,
       totalDirectRevenue,
       createdAt: existingEntry?.createdAt ?? new Date().toISOString(),
@@ -345,12 +327,15 @@ export default function DailyDirectRevenuePage() {
         closingPettyCash: 0,
         vikuraAmount: 0,
         purchasedFromCashDrawer: 0,
+        lastTookCashAt: undefined,
+        lastTookCashAmount: 0,
         dailySalary: 0,
         salaryPaidFromCompany: 0,
         purchasedFromCompanyAccount: 0,
         bankTransfer: 0,
-        cashCounts: { ...initialCashCounts },
-        cardPayments: createDefaultCardPayments(),
+        cashTotal: 0,
+        cardTotal: 0,
+        otherCardPayments: [],
         cashDrawerPurchases: [],
       });
       setHasManuallyChangedOpeningFloat(false);
@@ -366,19 +351,6 @@ export default function DailyDirectRevenuePage() {
     setEditingId(entry.id);
     setHasManuallyChangedDrawer(true);
     setHasManuallyChangedSalary(true);
-    // Preserve existing card payments but ensure all default types are present
-    const existingPayments = entry.cardPayments || [];
-    const defaultPayments = createDefaultCardPayments();
-    
-    // Merge existing payments with defaults, updating amounts for existing types
-    const mergedPayments = defaultPayments.map((defaultPayment) => {
-      const existing = existingPayments.find((p) => p.type === defaultPayment.type);
-      return existing ? { ...existing, id: existing.id } : defaultPayment;
-    });
-    
-    // Add any extra payment types from the entry that aren't in defaults
-    const extraPayments = existingPayments.filter((p) => !defaultPaymentTypes.includes(p.type));
-    
     setForm({
       date: entry.date,
       closedBy: entry.closedBy,
@@ -390,10 +362,14 @@ export default function DailyDirectRevenuePage() {
       salaryPaidFromCompany: (entry as any).salaryPaidFromCompany || 0,
       purchasedFromCompanyAccount: (entry as any).purchasedFromCompanyAccount || 0,
       bankTransfer: (entry as any).bankTransfer || 0,
-      cashCounts: { ...entry.cashCounts },
-      cardPayments: [...mergedPayments, ...extraPayments],
+      cashTotal: (entry as any).cashTotal || 0,
+      cardTotal: (entry as any).cardTotal || 0,
+      otherCardPayments: (entry as any).cardPayments || [],
       cashDrawerPurchases: [],
+      lastTookCashAt: (entry as any).lastTookCashAt,
+      lastTookCashAmount: (entry as any).lastTookCashAmount || 0,
     });
+    setLastTookCashAt((entry as any).lastTookCashAt);
   };
 
   const cancelEdit = () => {
@@ -412,8 +388,9 @@ export default function DailyDirectRevenuePage() {
       salaryPaidFromCompany: 0,
       purchasedFromCompanyAccount: 0,
       bankTransfer: 0,
-      cashCounts: { ...initialCashCounts },
-      cardPayments: createDefaultCardPayments(),
+      cashTotal: 0,
+      cardTotal: 0,
+      otherCardPayments: [],
       cashDrawerPurchases: [],
     });
   };
@@ -633,77 +610,106 @@ export default function DailyDirectRevenuePage() {
           </div>
 
           <div className="mt-8 rounded-3xl border border-slate-200 bg-slate-50 p-5">
-            <h4 className="text-lg font-semibold text-slate-900">Cash breakdown</h4>
-            <p className="text-sm text-slate-500">Enter counts for coins and notes.</p>
+            <h4 className="text-lg font-semibold text-slate-900">Cash total</h4>
+            <p className="text-sm text-slate-500">Enter the total cash amount counted in the drawer (single value).</p>
 
-            <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3 mt-5">
-              {[
-                { label: '50 Laari', field: 'fiftyLari' as const },
-                { label: '1 Rf', field: 'oneRf' as const },
-                { label: '2 Rf', field: 'twoRf' as const },
-                { label: '5 Note', field: 'note5' as const },
-                { label: '10 Note', field: 'note10' as const },
-                { label: '20 Note', field: 'note20' as const },
-                { label: '50 Note', field: 'note50' as const },
-                { label: '100 Note', field: 'note100' as const },
-                { label: '500 Note', field: 'note500' as const },
-                { label: '1000 Note', field: 'note1000' as const },
-              ].map((item) => (
-                <label key={item.field} className="block text-sm text-slate-500">
-                  {item.label}
-                  <input
-                    type="number"
-                    min={0}
-                    value={form.cashCounts[item.field]}
-                    onChange={(e) => updateCashCount(item.field, Number(e.target.value))}
-                    className="mt-2 w-full rounded-3xl border border-slate-200 bg-slate-50 px-4 py-3 text-slate-900 outline-none"
-                  />
-                </label>
-              ))}
+            <div className="grid gap-4 sm:grid-cols-2 mt-5">
+              <label className="block text-sm text-slate-500">
+                Cash total (from drawer)
+                <input
+                  type="number"
+                  min={0}
+                  value={form.cashTotal}
+                  onChange={(e) => updateCashTotal(Number(e.target.value))}
+                  className="mt-2 w-full rounded-3xl border border-slate-200 bg-slate-50 px-4 py-3 text-slate-900 outline-none"
+                />
+              </label>
+              <div className="flex items-end gap-2">
+                <button
+                  type="button"
+                  onClick={() => setShowTookCash((s) => !s)}
+                  className="inline-flex items-center gap-2 rounded-3xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-700 hover:bg-slate-50"
+                >
+                  Took cash
+                </button>
+                {showTookCash && (
+                  <div className="inline-flex items-center gap-2">
+                    <input
+                      type="number"
+                      min={0}
+                      value={tookCashAmount}
+                      onChange={(e) => setTookCashAmount(Number(e.target.value))}
+                      placeholder="Amount"
+                      className="mt-0 w-36 rounded-3xl border border-slate-200 bg-white px-3 py-2 text-slate-900 outline-none"
+                    />
+                    <button
+                      type="button"
+                      onClick={handleTookCashSave}
+                      className="inline-flex items-center gap-2 rounded-3xl bg-violet-600 px-3 py-2 text-sm font-semibold text-white hover:bg-violet-500"
+                    >
+                      Save
+                    </button>
+                  </div>
+                )}
+              </div>
             </div>
 
-              <div className="mt-4 flex items-center justify-between gap-4 rounded-lg bg-white p-3 border">
+            <div className="mt-4 rounded-lg bg-white p-3 border">
+              <div className="grid grid-cols-1 gap-2 text-sm">
                 <div>
-                  <p className="text-xs text-slate-500">Coins total</p>
-                  <p className="text-sm font-semibold">{formatMVR(coinsTotal)}</p>
-                </div>
-                <div>
-                  <p className="text-xs text-slate-500">Notes total</p>
-                  <p className="text-sm font-semibold">{formatMVR(notesTotal)}</p>
-                </div>
-                <div>
-                  <p className="text-xs text-slate-500">Cash total</p>
+                  <p className="text-amber-700 text-xs">Cash total</p>
                   <p className="text-sm font-semibold">{formatMVR(cashTotal)}</p>
                 </div>
+                {(form as any).lastTookCashAt ? (
+                  <div>
+                    <p className="text-amber-700 text-xs">Last cash taken</p>
+                    <p className="text-sm font-medium">{formatMVR((form as any).lastTookCashAmount || 0)} — {new Date((form as any).lastTookCashAt).toLocaleString()}</p>
+                  </div>
+                ) : null}
               </div>
+            </div>
 
-          
           </div>
 
           <div className="mt-8 rounded-3xl border border-slate-200 bg-slate-50 p-5">
             <div className="flex items-center justify-between gap-3">
               <div>
                 <h4 className="text-lg font-semibold text-slate-900">Card / other payments</h4>
-                <p className="text-sm text-slate-500">Add one or more payment types.</p>
+                <p className="text-sm text-slate-500">Enter total card value and optionally add other payment types.</p>
               </div>
-              <button
-                type="button"
-                onClick={addCardPayment}
-                className="inline-flex items-center gap-2 rounded-full bg-emerald-600 px-4 py-2 text-sm font-semibold text-white hover:bg-emerald-500"
-              >
-                <Plus className="h-4 w-4" /> Add payment type
-              </button>
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={addOtherPayment}
+                  className="inline-flex items-center gap-2 rounded-full bg-emerald-600 px-4 py-2 text-sm font-semibold text-white hover:bg-emerald-500"
+                >
+                  <Plus className="h-4 w-4" /> Add payment type
+                </button>
+              </div>
             </div>
 
             <div className="mt-5 space-y-4">
-              {form.cardPayments.map((payment) => (
+              <div className="grid gap-3 sm:grid-cols-2">
+                <label className="block text-sm text-slate-500">
+                  Card total
+                  <input
+                    type="number"
+                    min={0}
+                    value={form.cardTotal}
+                    onChange={(e) => setForm((c) => ({ ...c, cardTotal: Number(e.target.value) }))}
+                    className="mt-2 w-full rounded-3xl border border-slate-200 bg-white px-4 py-3 text-slate-900 outline-none"
+                  />
+                </label>
+              </div>
+
+              {(form.otherCardPayments || []).map((payment) => (
                 <div key={payment.id} className="grid gap-3 sm:grid-cols-[2fr_1fr_48px]">
                   <label className="block text-sm text-slate-500">
                     Payment type
                     <input
                       type="text"
                       value={payment.type}
-                      onChange={(e) => updateCardPayment(payment.id, 'type', e.target.value)}
+                      onChange={(e) => updateOtherPayment(payment.id, 'type', e.target.value)}
                       className="mt-2 w-full rounded-3xl border border-slate-200 bg-white px-4 py-3 text-slate-900 outline-none"
                     />
                   </label>
@@ -713,13 +719,13 @@ export default function DailyDirectRevenuePage() {
                       type="number"
                       min={0}
                       value={payment.amount}
-                      onChange={(e) => updateCardPayment(payment.id, 'amount', Number(e.target.value))}
+                      onChange={(e) => updateOtherPayment(payment.id, 'amount', Number(e.target.value))}
                       className="mt-2 w-full rounded-3xl border border-slate-200 bg-white px-4 py-3 text-slate-900 outline-none"
                     />
                   </label>
                   <button
                     type="button"
-                    onClick={() => removeCardPayment(payment.id)}
+                    onClick={() => removeOtherPayment(payment.id)}
                     className="mt-8 inline-flex h-12 w-12 items-center justify-center rounded-full bg-red-500 text-white hover:bg-red-600 transition"
                     aria-label="Remove payment type"
                   >

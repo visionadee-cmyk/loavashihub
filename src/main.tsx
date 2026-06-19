@@ -7,11 +7,36 @@ createRoot(document.getElementById('root')!).render(<App />);
 // Global defensive handlers to surface and ignore unexpected errors
 // Protect against third-party content scripts or malformed messages causing uncaught exceptions
 window.addEventListener('error', (ev) => {
-  console.warn('Global error caught:', ev.message || ev.error || ev);
+  console.error('Global error caught:', ev.message || ev.error || ev);
 });
 
 window.addEventListener('unhandledrejection', (ev) => {
-  console.warn('Unhandled promise rejection:', ev.reason);
+  // Log detailed information to help locate the original failing promise
+  try {
+    // Prevent default browser/Vite logging so we only log once here
+    try {
+      ev.preventDefault();
+    } catch (e) {
+      // ignore if preventDefault is not available
+    }
+
+    const reason = ev && (ev as any).reason;
+    if (!reason) {
+      console.error('Unhandled promise rejection: <no reason provided>', ev);
+    } else if (reason instanceof Error) {
+      console.error('Unhandled promise rejection (Error):', reason.message);
+      if (reason.stack) console.error('Stack:', reason.stack);
+    } else {
+      // Try to stringify structured reasons safely
+      try {
+        console.error('Unhandled promise rejection (value):', JSON.stringify(reason));
+      } catch (_err) {
+        console.error('Unhandled promise rejection (unserializable):', reason);
+      }
+    }
+  } catch (err) {
+    console.error('Error while logging unhandledrejection:', err);
+  }
 });
 
 // Filter incoming postMessage events that are not objects to avoid other scripts causing runtime errors

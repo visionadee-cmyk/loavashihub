@@ -5,6 +5,8 @@ import { formatMVR } from '../lib/mvr';
 import { hasFirebaseConfig } from '../lib/firebase';
 import { deleteDocument, loadCollection, saveDocument } from '../lib/firestore';
 import { uploadImageToCloudinary, isCloudinaryEnabled } from '../lib/cloudinary';import { generateMenuItemId } from '../lib/ids';import type { MenuItem } from '../types';
+import * as XLSX from 'xlsx';
+import { saveAs } from 'file-saver';
 
 const CATEGORY_OPTIONS = ['Coffee', 'Tea', 'Burger', 'Pizza', 'Dessert', 'Juice', 'Others'] as const;
 
@@ -224,6 +226,28 @@ export default function MenuManagement() {
     }
   };
 
+  const exportMenuItems = () => {
+    const items = filteredProducts.map((p) => ({
+      ID: p.id,
+      MenuItemID: p.menuItemId ?? p.id,
+      Name: p.name,
+      NameBn: p.nameBn,
+      Category: p.category,
+      Price: p.price ?? 0,
+      CostPrice: p.costPrice ?? 0,
+      Description: p.description ?? '',
+      IsSignature: p.isSignature ? 'Yes' : 'No',
+      Image: p.image ?? '',
+    }));
+
+    const worksheet = XLSX.utils.json_to_sheet(items);
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, 'MenuItems');
+    const wbout = XLSX.write(workbook, { bookType: 'xlsx', type: 'array' });
+    const blob = new Blob([wbout], { type: 'application/octet-stream' });
+    saveAs(blob, 'menu-items.xlsx');
+  };
+
   return (
     <AppShell title="Menu items management">
       <div className="grid gap-6 xl:grid-cols-[0.85fr_0.95fr]">
@@ -379,7 +403,12 @@ export default function MenuManagement() {
                   <h3 className="text-xl font-semibold text-slate-900">Menu items</h3>
                   <p className="text-sm text-slate-600">Manage all products and update menu item details, images, and pricing.</p>
                 </div>
-                <span className="rounded-full bg-slate-800 px-3 py-1 text-xs uppercase tracking-[0.24em] text-slate-300">{filteredProducts.length} of {products.length}</span>
+                <div className="flex items-center gap-3">
+                  <span className="rounded-full bg-slate-800 px-3 py-1 text-xs uppercase tracking-[0.24em] text-slate-300">{filteredProducts.length} of {products.length}</span>
+                  <button type="button" onClick={exportMenuItems} className="inline-flex items-center gap-2 rounded-3xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-700 hover:bg-slate-50">
+                    Export Excel
+                  </button>
+                </div>
               </div>
               
               <div className="flex flex-col gap-3 sm:flex-row">

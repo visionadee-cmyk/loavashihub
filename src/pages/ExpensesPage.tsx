@@ -284,6 +284,7 @@ export default function ExpensesPage() {
                           ...current,
                           staffId,
                           title: staff ? staff.name : current.title,
+                          amount: staff ? (staff.salary ?? current.amount) : current.amount,
                         }));
                       }}
                       className="mt-2 w-full rounded-3xl border border-slate-300 bg-white px-4 py-3 text-slate-900 outline-none"

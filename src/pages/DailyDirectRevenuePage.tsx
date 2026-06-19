@@ -44,7 +44,7 @@ export default function DailyDirectRevenuePage() {
   const [hasManuallyChangedOpeningFloat, setHasManuallyChangedOpeningFloat] = useState(false);
   const [showTookCash, setShowTookCash] = useState(false);
   const [tookCashAmount, setTookCashAmount] = useState<number>(0);
-  const [lastTookCashAt, setLastTookCashAt] = useState<string | undefined>(undefined);
+  const [, setLastTookCashAt] = useState<string | undefined>(undefined);
 
   useEffect(() => {
     if (!hasFirebaseConfig) return;
@@ -384,6 +384,8 @@ export default function DailyDirectRevenuePage() {
       closingPettyCash: 0,
       vikuraAmount: 0,
       purchasedFromCashDrawer: 0,
+      lastTookCashAt: undefined,
+      lastTookCashAmount: 0,
       dailySalary: 0,
       salaryPaidFromCompany: 0,
       purchasedFromCompanyAccount: 0,
